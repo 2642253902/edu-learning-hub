@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.exampe.study.mapper.CloudComputingCourseMapper">
+
+    <select id="getTeacher" resultType="map">
+        SELECT
+            su.id AS value,
+            su.realname AS text,
+            su.realname AS title,
+            su.realname AS label
+        FROM sys_user_depart sud
+        INNER JOIN sys_depart sd ON sud.dep_id = sd.id
+        INNER JOIN sys_user su ON sud.user_id = su.id
+        WHERE sd.depart_name = '教师'
+    </select>
+
+    <delete id="deleteCourseById">
+        DELETE co, cr
+        FROM cloud_computing_course co
+        LEFT JOIN cloud_computing_course_resource cr ON cr.course_id = co.id
+        WHERE co.id = #{courseId}
+    </delete>
+
+    <select id="getSumcourse" resultType="int">
+        SELECT COUNT(*)
+        FROM cloud_computing_course AS a
+        LEFT JOIN cloud_computing_class AS b ON a.id = b.course_id
+        LEFT JOIN cloud_computing_class_student AS c ON b.id = c.class_id
+        LEFT JOIN sys_user AS d ON c.student_id = d.username
+        WHERE d.username = #{UserName}
+    </select>
+
+    <select id="getCompletedcourse" resultType="string">
+        SELECT a.id
+        FROM cloud_computing_course a
+        LEFT JOIN cloud_computing_class b ON a.id = b.course_id
+        LEFT JOIN cloud_computing_class_student c ON b.id = c.class_id
+        LEFT JOIN sys_user d ON c.student_id = d.username
+        LEFT JOIN cloud_computing_student_learning_record e ON a.id = e.course_id
+        WHERE d.username = #{UserName}
+          AND e.learning_status IS NOT NULL
+        GROUP BY a.id
+        HAVING COUNT(*) = SUM(CASE WHEN e.learning_status = 1 THEN 1 ELSE 0 END)
+    </select>
+
+    <select id="getTeachercourse" resultType="map">
+        SELECT c.id, c.course_name
+        FROM cloud_computing_course c
+        LEFT JOIN sys_user u ON c.teacher_id = u.ID
+        WHERE c.teacher_id = #{UserId}
+    </select>
+
+    <select id="getTeacherNumber" resultType="int">
+        SELECT COUNT(*)
+        FROM cloud_computing_course a
+        LEFT JOIN cloud_computing_class b ON a.ID = b.course_id
+        WHERE a.id = #{CourseId}
+          AND a.teacher_id = #{UserId}
+    </select>
+
+    <select id="getTeacherTime" resultType="int">
+        SELECT FLOOR(SUM(c.learning_time) / 3600) AS total_learning_time
+        FROM cloud_computing_course a
+        LEFT JOIN cloud_computing_class b ON a.id = b.course_id
+        LEFT JOIN cloud_computing_class_student d ON d.class_id = b.id
+        LEFT JOIN cloud_computing_student_learning_record c
+            ON c.course_id = a.id
+           AND c.update_by = d.student_id
+        WHERE a.id = #{CourseId}
+          AND a.teacher_id = #{UserId}
+          AND c.learning_time IS NOT NULL
+    </select>
+
+    <select id="getTeachersum" resultType="int">
+        SELECT COUNT(*)
+        FROM cloud_computing_course a
+        LEFT JOIN cloud_computing_class b ON a.ID = b.course_id
+        LEFT JOIN cloud_computing_class_student c ON c.class_id = b.ID
+        WHERE a.id = #{CourseId}
+          AND a.teacher_id = #{UserId}
+    </select>
+
+    <select id="getTeacherComplete" resultType="string">
+        SELECT c.student_id
+        FROM cloud_computing_course a
+        LEFT JOIN cloud_computing_class b ON a.id = b.course_id
+        LEFT JOIN cloud_computing_class_student c ON b.id = c.class_id
+        LEFT JOIN cloud_computing_student_learning_record e
+            ON a.id = e.course_id AND c.student_id = e.update_by
+        WHERE a.id = #{CourseId}
+          AND a.teacher_id = #{UserId}
+          AND e.learning_status = 1
+        GROUP BY a.course_name, b.class_name, c.student_id
+    </select>
+
+    <select id="getrole" resultType="string">
+        SELECT role_name
+        FROM sys_role
+        WHERE id = (
+            SELECT role_id
+            FROM sys_user_role
+            WHERE user_id = (
+                SELECT id
+                FROM sys_user
+                WHERE username = #{UserId}
+            )
+        )
+    </select>
+
+</mapper>
