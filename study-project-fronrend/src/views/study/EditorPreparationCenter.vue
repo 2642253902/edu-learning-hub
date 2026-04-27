@@ -53,10 +53,7 @@
 
               <el-col :xl="8" :lg="8" :md="12" :sm="24">
                 <el-form-item label="负责教师" prop="teacherId">
-                  <el-select v-model="form.teacherId" placeholder="请选择负责教师" :disabled="isTeacherSelectDisabled"
-                    class="w-full">
-                    <el-option v-for="item in teacherList" :key="item.id" :label="item.realname" :value="item.id" />
-                  </el-select>
+                  <el-input v-model="form.teacherId" placeholder="请输入负责教师姓名/ID" />
                 </el-form-item>
               </el-col>
 
@@ -173,10 +170,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { deleteMapping, get, post } from '@/net'
 import { ElMessage } from 'element-plus'
+import { Plus, VideoCamera, Document, Files } from '@element-plus/icons-vue'
 import CourseResourceModal from './modules/CourseResourceModal.vue'
 
 const route = useRoute()
@@ -202,7 +200,6 @@ const form = reactive({
 })
 
 const courseTypeList = ref<any[]>([])
-const teacherList = ref<any[]>([])
 const videoFiles = ref<any[]>([])
 const lectureFiles = ref<any[]>([])
 const experimentFiles = ref<any[]>([])
@@ -211,17 +208,27 @@ const resourceModalRef = ref()
 
 // 初始化
 const init = async () => {
-  const { id, mode, from } = route.query
+  const { id, mode } = route.query
 
   isAddMode.value = mode === 'add'
   disabled.value = mode === 'readonly'
-  isTeacherSelectDisabled.value = disabled.value || from === 'teacher'
 
   if (mode === 'readonly') title.value = '课程详情'
   else if (mode === 'add') title.value = '添加课程'
   else title.value = '编辑课程'
 
-  await Promise.all([loadCourseTypes(), loadTeachers()])
+  await loadCourseTypes()
+
+  // 尝试从 sessionStorage 获取 PreparationCenter 传过来的数据
+  const cachedData = sessionStorage.getItem('currentCourseEdit')
+  if (id && cachedData) {
+    const record = JSON.parse(cachedData)
+    if (String(record.id) === String(id)) {
+      Object.assign(form, record)
+      loadResources(id as string)
+      return
+    }
+  }
 
   if (id) {
     loadCourseDetail(id as string)
@@ -231,20 +238,8 @@ const init = async () => {
 
 const loadCourseTypes = () => {
   return new Promise((resolve) => {
-    get('/study/cloudComputingCourseType/list', (msg, data) => {
+    get('/study/cloudComputingCourseType/list?pageNo=1&pageSize=1000', (msg, data) => {
       courseTypeList.value = data?.records || []
-      resolve(true)
-    })
-  })
-}
-
-const loadTeachers = () => {
-  return new Promise((resolve) => {
-    get('/sys/dict/getDictItems/sys_user,realname,id', (msg, data) => {
-      teacherList.value = (data || []).map((item: any) => ({
-        id: item.value,
-        realname: item.label
-      }))
       resolve(true)
     })
   })
@@ -253,8 +248,9 @@ const loadTeachers = () => {
 const loadCourseDetail = (id: string) => {
   confirmLoading.value = true
   get(`/study/cloudComputingCourse/list?id=${id}`, (msg, data) => {
-    if (msg.records && msg.records.length > 0) {
-      const record = msg.records[0]
+    // 兼容 records 或 data 本身
+    const record = data?.records?.[0] || data?.[0]
+    if (record) {
       Object.assign(form, record)
       if (!isAddMode.value && !disabled.value) {
         title.value = '编辑课程'
@@ -268,15 +264,15 @@ const loadCourseDetail = (id: string) => {
 
 const loadResources = (id: string) => {
   get(`/study/cloudComputingCourseResource/list?courseId=${id}&pageSize=100`, (msg, data) => {
-    const resources = msg.records || []
-    videoFiles.value = resources.filter((r: any) => r.resourceType === 1)
-    lectureFiles.value = resources.filter((r: any) => r.resourceType === 2)
-    experimentFiles.value = resources.filter((r: any) => r.resourceType === 3)
+    const resources = data?.records || []
+    videoFiles.value = resources.filter((r: any) => String(r.resourceType) === '1')
+    lectureFiles.value = resources.filter((r: any) => String(r.resourceType) === '2')
+    experimentFiles.value = resources.filter((r: any) => String(r.resourceType) === '3')
   })
 }
 
 const handleCourseTypeChange = (val: string) => {
-  const selected = courseTypeList.value.find(item => item.id === val)
+  const selected = courseTypeList.value.find(item => String(item.id) === String(val))
   if (selected) {
     form.courseName = selected.courseTypeName
   }
@@ -289,7 +285,7 @@ const handleSubmit = () => {
   }
 
   confirmLoading.value = true
-  const url = '/study/cloudComputingCourse/edit'
+  const url = isAddMode.value ? '/study/cloudComputingCourse/add' : '/study/cloudComputingCourse/edit'
   post(url, form, (msg) => {
     ElMessage.success('操作成功')
     handleCancel()
@@ -299,9 +295,8 @@ const handleSubmit = () => {
 }
 
 const handleCancel = () => {
-  const from = route.query.from
-  const path = from === '/PreparationCenter'
-  router.push(path)
+  const from = route.query.from || '/study/PreparationCenter'
+  router.push(String(from))
 }
 
 const showModal = (type: number) => {

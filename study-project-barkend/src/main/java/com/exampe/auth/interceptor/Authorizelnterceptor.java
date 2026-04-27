@@ -26,11 +26,16 @@ public class Authorizelnterceptor implements HandlerInterceptor {
         SecurityContext context = SecurityContextHolder.getContext();
         // 获取当前的认证信息
         Authentication authentication = context.getAuthentication();
-        // 这里可以进行权限校验，如果没有权限，可以返回 false，拒绝访问
-        User user = (User) authentication.getPrincipal();
-        String username = user.getUsername();
-        AccountUser accountUser = userMapper.findAccountUserByNameOrEmail(username);
-        request.getSession().setAttribute("account", accountUser);
+
+        // 类型转换校验
+        Object principal = authentication.getPrincipal();   // 获取当前用户信息
+
+        if (principal instanceof User user) {   // 这里使用了 Java 16 的模式匹配特性，直接在 instanceof 中声明一个变量 user，并且自动进行类型转换
+            String username = user.getUsername();   // 获取用户名
+            AccountUser accountUser = userMapper.findAccountUserByNameOrEmail(username);    // 根据用户名或邮箱查询用户信息
+            request.getSession().setAttribute("account", accountUser);  // 将用户信息保存到 session 中
+        }
+
         return true;
     }
 }

@@ -1,184 +1,168 @@
 <template>
-  <div>
-    <el-card shadow="never">
-      <!-- 查询区域 -->
-      <el-form :inline="true" @submit.prevent>
-        <el-form-item label="课程分类名称">
-          <el-input v-model="queryParam.courseTypeName" placeholder="请输入课程分类名称" @keyup.enter="searchQuery" clearable />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="searchQuery" icon="Search">查询</el-button>
-          <el-button @click="searchReset" icon="Refresh">重置</el-button>
-        </el-form-item>
-      </el-form>
-
-      <!-- 操作按钮区域 -->
-      <div style="margin-bottom: 16px;">
-        <el-button type="primary" icon="Plus" @click="handleAdd">新增</el-button>
+  <div class="category-manager">
+    <el-card shadow="never" class="header-card">
+      <div class="header-flex">
+        <div class="header-info">
+          <h2 class="title">课程分类管理</h2>
+          <p class="desc">管理学习平台内所有课程的分类标签，帮助学生快速检索资源。</p>
+        </div>
+        <div class="header-actions">
+           <el-button type="primary" :icon="Plus" @click="handleAdd">新建分类</el-button>
+        </div>
       </div>
+    </el-card>
 
-      <!-- table区域-begin -->
-      <el-table :data="dataSource" v-loading="loading" border style="width: 100%" @selection-change="onSelectChange">
-        <el-table-column type="selection" width="55" align="center" />
-        <el-table-column type="index" label="#" width="60" align="center" />
-        <el-table-column prop="courseTypeName" label="课程分类名称" align="center" />
-        <el-table-column label="操作" width="200" align="center" fixed="right">
+    <div class="main-content mt-4">
+      <el-table :data="dataSource" v-loading="loading" border stripe class="modern-table">
+        <el-table-column type="index" label="序号" width="70" align="center" />
+        <el-table-column label="分类名称" prop="courseTypeName" min-width="180">
+           <template #default="{ row }">
+             <div class="name-cell">
+               <el-tag :type="getTagType(row.id)" effect="dark" class="mr-2">{{ row.courseTypeName.charAt(0) }}</el-tag>
+               <span class="name-text">{{ row.courseTypeName }}</span>
+             </div>
+           </template>
+        </el-table-column>
+        <el-table-column label="备注说明" prop="remark" show-overflow-tooltip>
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="primary" link @click="handleDetail(row)">详情</el-button>
-            <el-popconfirm title="确定删除吗?" @confirm="handleDelete(row.id)">
+            <span class="remark-text">{{ row.remark || '暂无描述' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="创建时间" prop="createTime" width="180" align="center">
+          <template #default="{ row }">
+            <span class="time-text">{{ row.createTime || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="180" align="center" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="handleEdit(row)">
+              <el-icon class="mr-1"><Edit /></el-icon>编辑
+            </el-button>
+            <el-divider direction="vertical" />
+            <el-popconfirm title="确定要永久删除此分类吗？" @confirm="handleDelete(row)" width="200">
               <template #reference>
-                <el-button type="danger" link>删除</el-button>
+                <el-button link type="danger">删除</el-button>
               </template>
             </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
+    </div>
 
-      <!-- 分页 -->
-      <div style="margin-top: 16px; text-align: right;">
-        <el-pagination v-model:current-page="ipagination.current" v-model:page-size="ipagination.pageSize"
-          :page-sizes="[10, 20, 30]" layout="total, sizes, prev, pager, next, jumper" :total="ipagination.total"
-          @size-change="handleSizeChange" @current-change="handleCurrentChange" />
-      </div>
-    </el-card>
+    <!-- 分页 (如果有需要) -->
+    <div class="pagination-container mt-4" v-if="total > 0">
+      <el-pagination v-model:current-page="pageNo" v-model:page-size="pageSize" :total="total"
+        layout="total, prev, pager, next" @current-change="loadData" />
+    </div>
 
-    <!-- 分类表单弹窗 -->
-    <el-dialog v-model="formVisible" :title="formTitle" width="600px" destroy-on-close>
-      <CategoryCreateForm ref="formRef" :disabled="formDisabled" @ok="handleFormOk" />
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="formVisible = false">取消</el-button>
-          <el-button v-if="!formDisabled" type="primary" @click="formRef?.submitForm()">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
+    <CourseTypeModal ref="modalRef" @ok="loadData" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { deleteMapping, get } from '@/net'
+import { ref, onMounted } from 'vue'
+import { get, deleteMapping } from '@/net'
+import { Plus, Edit } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import CategoryCreateForm from './modules/CategoryCreateForm.vue'
+import CourseTypeModal from './modules/CourseTypeModal.vue'
 
-interface CourseTypeRecord {
-  id: string
-  courseTypeName: string
-}
-
-interface CourseTypeFormExpose {
-  add: () => void
-  edit: (record: CourseTypeRecord) => void
-  submitForm: () => void
-}
-
-interface PaginationState {
-  current: number
-  pageSize: number
-  total: number
-}
-
-const queryParam = reactive({ courseTypeName: '' })
-const dataSource = ref<CourseTypeRecord[]>([])
 const loading = ref(false)
-const selectedRowKeys = ref<string[]>([])
-const formRef = ref<CourseTypeFormExpose>()
-const formVisible = ref(false)
-const formTitle = ref('')
-const formDisabled = ref(false)
-
-const ipagination = reactive<PaginationState>({
-  current: 1,
-  pageSize: 10,
-  total: 0
-})
-
-// 统一管理弹窗状态，避免新增/编辑/详情重复代码。
-const openForm = (title: string, disabled: boolean, record?: CourseTypeRecord) => {
-  formTitle.value = title
-  formDisabled.value = disabled
-  formVisible.value = true
-  setTimeout(() => {
-    if (record) {
-      formRef.value?.edit(record)
-      return
-    }
-    formRef.value?.add()
-  }, 0)
-}
+const dataSource = ref([])
+const modalRef = ref()
+const total = ref(0)
+const pageNo = ref(1)
+const pageSize = ref(10)
 
 const loadData = () => {
   loading.value = true
-  const params = new URLSearchParams()
-  params.append('pageNo', String(ipagination.current))
-  params.append('pageSize', String(ipagination.pageSize))
-  if (queryParam.courseTypeName) {
-    params.append('courseTypeName', `*${queryParam.courseTypeName}*`)
-  }
-
-  get('/study/cloudComputingCourseType/list?' + params.toString(), (msg, data) => {
-    const records = data?.records || []
-    dataSource.value = records
-    ipagination.total = data?.total || 0
+  // 移除 tree 相关逻辑，直接请求列表
+  get(`/study/cloudComputingCourseType/list?pageNo=${pageNo.value}&pageSize=${pageSize.value}`, (msg, data) => {
+    dataSource.value = data?.records || []
+    total.value = data?.total || 0
     loading.value = false
-  }, () => { loading.value = false }, () => { loading.value = false })
+  }, () => loading.value = false)
 }
 
-const searchQuery = () => {
-  ipagination.current = 1
-  loadData()
+const getTagType = (id: any) => {
+  const types = ['', 'success', 'info', 'warning', 'danger']
+  const index = String(id).charCodeAt(0) % types.length
+  return types[index]
 }
 
-const searchReset = () => {
-  queryParam.courseTypeName = ''
-  searchQuery()
-}
+const handleAdd = () => modalRef.value?.add()
+const handleEdit = (row: any) => modalRef.value?.edit(row)
 
-const handleSizeChange = (val: number) => {
-  ipagination.pageSize = val
-  loadData()
-}
-
-const handleCurrentChange = (val: number) => {
-  ipagination.current = val
-  loadData()
-}
-
-const onSelectChange = (selection: CourseTypeRecord[]) => {
-  selectedRowKeys.value = selection.map(item => item.id)
-}
-
-const handleAdd = () => {
-  openForm('新增课程分类', false)
-}
-
-const handleEdit = (row: CourseTypeRecord) => {
-  openForm('编辑课程分类', false, row)
-}
-
-const handleDetail = (row: CourseTypeRecord) => {
-  openForm('课程分类详情', true, row)
-}
-
-const handleFormOk = () => {
-  formVisible.value = false
-  loadData()
-}
-
-// 后端按 RequestParam 接收 id，因此 deleteMapping 内部会同时带 params 和 data。
-const handleDelete = (id: string) => {
-  deleteMapping('/study/cloudComputingCourseType/delete', { id }, (msg) => {
+const handleDelete = (row: any) => {
+  deleteMapping('/study/cloudComputingCourseType/delete', { id: row.id }, (msg) => {
     ElMessage.success(msg || '删除成功')
     loadData()
-  }, (failMsg) => {
-    ElMessage.warning(failMsg || '删除失败')
   })
 }
 
-onMounted(() => {
-  loadData()
-})
+onMounted(() => loadData())
 </script>
 
-<style scoped></style>
+<style scoped>
+.category-manager {
+  padding: 0;
+}
+
+.header-card {
+  border: none;
+  background-color: #ffffff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.desc {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #8c8c8c;
+}
+
+.name-cell {
+  display: flex;
+  align-items: center;
+}
+
+.name-text {
+  font-weight: 600;
+  color: #262626;
+}
+
+.remark-text {
+  color: #595959;
+}
+
+.time-text {
+  color: #8c8c8c;
+  font-size: 13px;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.modern-table :deep(.el-table__header) th {
+  background-color: #fafafa;
+  color: #262626;
+  font-weight: 600;
+}
+
+.mr-1 { margin-right: 4px; }
+.mr-2 { margin-right: 8px; }
+.mt-4 { margin-top: 16px; }
+</style>

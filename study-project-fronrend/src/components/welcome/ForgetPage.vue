@@ -1,21 +1,24 @@
 <template>
-    <div>
-        <div style="margin: 30px 20px">
-            <el-steps :active="active" finish-status="success" align-center>
-                <el-step title="验证电子邮件" />
-                <el-step title="重新设定密码" />
+    <div class="forget-page">
+        <div class="header">
+            <h2 class="title" v-if="active === 0">重置密码</h2>
+            <h2 class="title" v-if="active === 1">设置新密码</h2>
+            <p class="subtitle">通过已绑定的电子邮箱验证您的身份</p>
+        </div>
+
+        <div class="steps-container">
+            <el-steps :active="active" finish-status="success" simple>
+                <el-step title="身份验证" />
+                <el-step title="重设密码" />
             </el-steps>
         </div>
-        <transition name="el-fade-in-linear" mode="out-in">
-            <div style="text-align: center;margin: 0 20px;height: 100%" v-if="active === 0">
-                <div style="margin-top: 80px">
-                    <div style="font-size: 25px;font-weight: bold">重置密码</div>
-                    <div style="font-size: 14px;color: grey">请输入需要重置密码的电子邮件地址</div>
-                </div>
-                <div style="margin-top: 50px">
+
+        <div class="form-container mt-8">
+            <transition name="el-fade-in-linear" mode="out-in">
+                <div v-if="active === 0">
                     <el-form :model="form" :rules="rules" @validate="onValidate" ref="formRef">
                         <el-form-item prop="email">
-                            <el-input v-model="form.email" type="email" placeholder="电子邮件地址">
+                            <el-input v-model="form.email" size="large" type="email" placeholder="绑定的邮箱地址">
                                 <template #prefix>
                                     <el-icon>
                                         <Message />
@@ -23,42 +26,36 @@
                                 </template>
                             </el-input>
                         </el-form-item>
+
                         <el-form-item prop="code">
-                            <el-row :gutter="10" style="width: 100%">
-                                <el-col :span="17">
-                                    <el-input v-model="form.code" :maxlength="6" type="text" placeholder="请输入验证码">
-                                        <template #prefix>
-                                            <el-icon>
-                                                <EditPen />
-                                            </el-icon>
-                                        </template>
-                                    </el-input>
-                                </el-col>
-                                <el-col :span="5">
-                                    <el-button type="success" @click="validateEmail"
-                                        :disabled="!isEmailValid || coldTime > 0">
-                                        {{ coldTime > 0 ? '请稍后 ' + coldTime + ' 秒' : '获取验证码' }}
-                                    </el-button>
-                                </el-col>
-                            </el-row>
+                            <div class="code-row">
+                                <el-input v-model="form.code" :maxlength="6" size="large" placeholder="验证码">
+                                    <template #prefix>
+                                        <el-icon>
+                                            <EditPen />
+                                        </el-icon>
+                                    </template>
+                                </el-input>
+                                <el-button type="success" size="large" class="code-btn" @click="validateEmail"
+                                    :disabled="!isEmailValid || coldTime > 0">
+                                    {{ coldTime > 0 ? coldTime + 's' : '获取' }}
+                                </el-button>
+                            </div>
                         </el-form-item>
                     </el-form>
+
+                    <div class="actions mt-10">
+                        <el-button class="submit-btn reset-btn" size="large" type="danger" @click="startReset()">
+                            验证并下一步
+                        </el-button>
+                    </div>
                 </div>
-                <div style="margin-top: 70px">
-                    <el-button @click="startReset()" style="width: 270px;" type="danger" plain>开始重置密码</el-button>
-                </div>
-            </div>
-        </transition>
-        <transition name="el-fade-in-linear" mode="out-in">
-            <div style="text-align: center;margin: 0 20px;height: 100%" v-if="active === 1">
-                <div style="margin-top: 80px">
-                    <div style="font-size: 25px;font-weight: bold">重置密码</div>
-                    <div style="font-size: 14px;color: grey">请填写您的新密码，务必牢记，防止丢失</div>
-                </div>
-                <div style="margin-top: 50px">
+
+                <div v-else-if="active === 1">
                     <el-form :model="form" :rules="rules" @validate="onValidate" ref="formRef">
                         <el-form-item prop="password">
-                            <el-input v-model="form.password" :maxlength="16" type="password" placeholder="新密码">
+                            <el-input v-model="form.password" :maxlength="16" size="large" type="password"
+                                placeholder="输入新密码">
                                 <template #prefix>
                                     <el-icon>
                                         <Lock />
@@ -66,9 +63,10 @@
                                 </template>
                             </el-input>
                         </el-form-item>
+
                         <el-form-item prop="password_repeat">
-                            <el-input v-model="form.password_repeat" :maxlength="16" type="password"
-                                placeholder="重复新密码">
+                            <el-input v-model="form.password_repeat" :maxlength="16" size="large" type="password"
+                                placeholder="确认新密码">
                                 <template #prefix>
                                     <el-icon>
                                         <Lock />
@@ -77,29 +75,39 @@
                             </el-input>
                         </el-form-item>
                     </el-form>
+
+                    <div class="actions mt-10">
+                        <el-button class="submit-btn reset-btn" size="large" type="danger" @click="doReset()">
+                            立即修改密码
+                        </el-button>
+                    </div>
                 </div>
-                <div style="margin-top: 70px">
-                    <el-button @click="doReset()" style="width: 270px;" type="danger" plain>立即重置密码</el-button>
-                </div>
+            </transition>
+
+            <div class="login-link">
+                记起密码了? <el-link type="primary" underline="hover" @click="router.push('/')">立即登录</el-link>
             </div>
-        </transition>
+        </div>
     </div>
 </template>
 
 <script setup>
 import { reactive, ref } from "vue";
 import { EditPen, Lock, Message } from "@element-plus/icons-vue";
-import { post,postForm } from "@/net";
+import { post, postForm } from "@/net";
 import { ElMessage } from "element-plus";
 import router from "@/router";
 
 const active = ref(0)
+const formRef = ref()
+const coldTime = ref(0)
+const isEmailValid = ref(false)
 
 const form = reactive({
     email: '',
     code: '',
     password: '',
-    password_repeat: '',
+    password_repeat: ''
 })
 
 const validatePassword = (rule, value, callback) => {
@@ -118,7 +126,7 @@ const rules = {
         { type: 'email', message: '请输入合法的电子邮件地址', trigger: ['blur', 'change'] }
     ],
     code: [
-        { required: true, message: '请输入获取的验证码', trigger: 'blur' },
+        { required: true, message: '请输入验证码', trigger: 'blur' },
     ],
     password: [
         { required: true, message: '请输入密码', trigger: 'blur' },
@@ -129,25 +137,19 @@ const rules = {
     ],
 }
 
-const formRef = ref()
-const isEmailValid = ref(false)
-const coldTime = ref(0)
-
-const onValidate = (prop, isValid) => {
-    if (prop === 'email') {
+function onValidate(prop, isValid) {
+    if (prop === 'email')
         isEmailValid.value = isValid
-    }
 }
 
-const validateEmail = () => {
-    postForm('/api/auth/validate-rest-email', {
-        email: form.email
-    }, (message) => {
-        coldTime.value = 60 // 设置冷却时间为60秒
+function validateEmail() {
+    coldTime.value = 60
+    post(`/api/auth/ask-code?email=${form.email}&type=reset`, null, (message) => {
         ElMessage.success(message)
-        setInterval(() => {
-            if (coldTime.value > 0) {   // 每秒递减冷却时间
-                coldTime.value--
+        const handle = setInterval(() => {
+            coldTime.value--
+            if (coldTime.value === 0) {
+                clearInterval(handle)
             }
         }, 1000)
     }, (message) => {
@@ -156,44 +158,105 @@ const validateEmail = () => {
     })
 }
 
-const startReset = () => {
+function startReset() {
     formRef.value.validate((isValid) => {
         if (isValid) {
-            postForm('/api/auth/start-reset', {
+            post('/api/auth/reset-confirm', {
                 email: form.email,
                 code: form.code
-            }, (message) => {
-                ElMessage.success(message)
-                active.value++
-            })
-        } else {
-            ElMessage.warning('请检查输入是否正确')
-            return false
+            }, () => active.value++)
         }
     })
 }
 
-//2642253902@qq.com
-const doReset = () => {
+function doReset() {
     formRef.value.validate((isValid) => {
         if (isValid) {
-            postForm('/api/auth/do-rest', {
+            post('/api/auth/reset-password', {
+                email: form.email,
+                code: form.code,
                 password: form.password
             }, (message) => {
                 ElMessage.success(message)
                 router.push('/')
             })
-        } else {
-            ElMessage.warning('请检查输入是否正确')
-            return false
         }
     })
 }
-
-
-
-
-
 </script>
 
-<style scoped></style>
+<style scoped>
+.forget-page {
+    padding: 10px 0;
+}
+
+.header {
+    margin-bottom: 24px;
+}
+
+.title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #262626;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: #8c8c8c;
+}
+
+.steps-container {
+    margin-bottom: 32px;
+}
+
+:deep(.el-steps--simple) {
+    padding: 13px 8%;
+    background: #fafafa;
+    border-radius: 4px;
+}
+
+.code-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+.code-btn {
+    white-space: nowrap;
+    min-width: 90px;
+}
+
+.mt-8 {
+    margin-top: 32px;
+}
+
+.mt-10 {
+    margin-top: 40px;
+}
+
+.submit-btn {
+    width: 100%;
+    border-radius: 4px;
+    font-weight: 500;
+    height: 48px;
+    font-size: 16px;
+}
+
+.reset-btn {
+    background: #ff4d4f;
+    border-color: #ff4d4f;
+}
+
+.reset-btn:hover {
+    background: #ff7875;
+    border-color: #ff7875;
+}
+
+.login-link {
+    margin-top: 24px;
+    font-size: 14px;
+    color: #8c8c8c;
+    text-align: center;
+}
+</style>

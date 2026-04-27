@@ -6,15 +6,15 @@
 
 <script setup>
 import { get } from "@/net";
-import { useStore } from '@/stores/user'
+import { useUserStore } from '@/stores/user'
 import router from "./router";
 
-const store = useStore()
-if (store.auth.user == null) {
+const userStore = useUserStore()
+if (userStore.auth.user == null) {
   get('/api/user/me', (message, data) => {
-    store.auth.user = data
+    userStore.auth.user = data
   }, () => {
-    store.auth.user = null
+    userStore.auth.user = null
   })
 }
 

@@ -13,7 +13,7 @@ public class AccountUser implements Serializable {
     private static final long serialVersionUID = 1L;
 
 
-    @TableId(type = IdType.ASSIGN_UUID)
+    @TableId(type = IdType.ASSIGN_ID)
     private   String id;
     private  String username;;
     private String email;

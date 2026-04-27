@@ -28,7 +28,7 @@ public class CloudComputingCourseType implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** 主键ID（UUID） */
-    @TableId(type = IdType.ASSIGN_UUID)
+    @TableId(type = IdType.ASSIGN_ID)
     private String id;
 
     /** 创建人 */

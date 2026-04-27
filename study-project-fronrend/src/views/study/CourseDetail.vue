@@ -44,7 +44,7 @@
         <div class="panel-content">
           <div v-for="(item, index) in currentList" :key="index" class="resource-item-row"
             :class="{ active: currentItemIndex === index }" @click="selectItem(index)">
-            <el-checkbox :model-value="item.isCompleted" disabled class="res-checkbox" />
+            <el-checkbox :model-value="!!item.isCompleted" disabled class="res-checkbox" />
             <span class="item-text" :title="item.fileName">{{ item.fileName }}</span>
           </div>
           <el-empty v-if="currentList.length === 0" description="暂无资源" image-size="60" />
@@ -57,7 +57,8 @@
         <div v-if="currentModule === 'video'" class="display-box video-box">
           <div class="video-player-container">
             <video v-if="currentList[currentItemIndex]?.url" ref="videoRef" controls class="video-element"
-              :src="currentList[currentItemIndex]?.url" @ended="handleVideoEnded"></video>
+              :src="currentList[currentItemIndex]?.url" @ended="handleVideoEnded" @play="handleVideoPlay"
+              @pause="handleVideoPause"></video>
             <el-empty v-else description="无视频播放源" />
           </div>
           <div class="nav-controls">
@@ -73,18 +74,36 @@
 
         <!-- 讲义/资料预览 -->
         <div v-if="currentModule === 'lecture' || currentModule === 'data'" class="display-box preview-box">
-          <div class="preview-container">
-            <!-- 此处需要 vue-office 组件 -->
-            <div v-if="currentList[currentItemIndex]?.url" class="office-preview-placeholder">
-              <el-icon size="64" color="#409eff">
-                <Document />
-              </el-icon>
-              <p class="mt-4">文件预览模式 ({{ currentList[currentItemIndex]?.fileName }})</p>
-              <el-link :href="currentList[currentItemIndex].url" target="_blank" type="primary" class="mt-2">
-                点击在新窗口预览或下载
-              </el-link>
+          <div class="preview-container" v-loading="previewLoading" @scroll="handleDocScroll">
+            <!-- 重点：讲义内容需要一个内部容器来撑开高度以便外层 preview-container 产生滚动条 -->
+            <div v-if="renderedUrl && currentModule === 'lecture'" class="office-preview-wrapper"
+              :style="{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }">
+              <vue-office-docx v-if="getFileType(currentList[currentItemIndex]?.url) === 'docx'" :src="renderedUrl"
+                style="min-height: 100%;" @rendered="onOfficeRendered" />
+              <vue-office-excel
+                v-else-if="getFileType(currentList[currentItemIndex]?.url) === 'xlsx' || getFileType(currentList[currentItemIndex]?.url) === 'xls'"
+                :src="renderedUrl" style="min-height: 100%;" @rendered="onOfficeRendered" />
+              <vue-office-pdf v-else-if="getFileType(currentList[currentItemIndex]?.url) === 'pdf'" :src="renderedUrl"
+                style="min-height: 100%;" @rendered="onOfficeRendered" />
+              <div v-else class="unknown-file-type">
+                <el-result icon="warning" title="不支持的预览格式" sub-title="该文件格式暂不支持在线预览">
+                  <template #extra>
+                    <el-button type="primary" @click="handleDownload(currentList[currentItemIndex])">下载文件</el-button>
+                  </template>
+                </el-result>
+              </div>
             </div>
-            <el-empty v-else description="暂无预览文件" />
+            <div v-else-if="currentModule === 'data'" class="data-download-center">
+              <el-result icon="info" title="资料下载" sub-title="点击下方按钮下载参考资料，下载完成后将自动标记为已学">
+                <template #extra>
+                  <el-button type="success" size="large" :icon="Document"
+                    @click="handleDownload(currentList[currentItemIndex])">
+                    立即下载并标记完成
+                  </el-button>
+                </template>
+              </el-result>
+            </div>
+            <el-empty v-else-if="!previewLoading" description="暂无预览文件" />
           </div>
 
           <div class="nav-controls sticky-bottom">
@@ -93,7 +112,7 @@
             <el-button :icon="ArrowRight" plain @click="navigateNext"
               :disabled="currentItemIndex >= currentList.length - 1" />
 
-            <div class="zoom-tools ml-auto">
+            <div class="zoom-tools ml-auto" v-if="currentModule === 'lecture'">
               <el-button-group>
                 <el-button :icon="Minus" @click="zoomOut" />
                 <el-button disabled>{{ zoomLevel }}%</el-button>
@@ -125,9 +144,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { get } from '@/net'
+import { useUserStore } from '@/stores/user'
+import { get, post } from '@/net'
+import axios from 'axios'
 import {
   ArrowLeft,
   ArrowRight,
@@ -142,8 +163,16 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
+// 文档预览组件
+import VueOfficeDocx from '@vue-office/docx'
+import '@vue-office/docx/lib/index.css'
+import VueOfficeExcel from '@vue-office/excel'
+import '@vue-office/excel/lib/index.css'
+import VueOfficePdf from '@vue-office/pdf'
+
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 // --- 数据状态 ---
 const isLoading = ref(true)
@@ -154,6 +183,10 @@ const currentItemIndex = ref(0)
 const zoomLevel = ref(100)
 const courseDetails = ref<any>({})
 const allResources = ref<any[]>([])
+
+// 预览相关状态
+const renderedUrl = ref('')
+const previewLoading = ref(false)
 
 const menuItems = [
   { key: 'video', label: '视频课程', icon: VideoPlay },
@@ -180,21 +213,277 @@ const handleBack = () => router.back()
 const switchModule = (key: string) => {
   currentModule.value = key
   currentItemIndex.value = 0
+  stopProgressSaveTimer() // 每次切换模块停止定时器
+  // 切换模块后加载当前选中的资源的记录
+  if (currentList.value.length > 0) {
+    queryLearningRecord(currentList.value[0].id)
+  }
 }
 
 const selectItem = (index: number) => {
   currentItemIndex.value = index
+  stopProgressSaveTimer() // 每次切换项目停止定时器
+  // 选中资源后加载该资源的学习记录
+  const item = currentList.value[index]
+  if (item) {
+    queryLearningRecord(item.id)
+  }
 }
 
-const navigatePrev = () => { if (currentItemIndex.value > 0) currentItemIndex.value-- }
-const navigateNext = () => { if (currentItemIndex.value < currentList.value.length - 1) currentItemIndex.value++ }
+const navigatePrev = () => { if (currentItemIndex.value > 0) selectItem(currentItemIndex.value - 1) }
+const navigateNext = () => { if (currentItemIndex.value < currentList.value.length - 1) selectItem(currentItemIndex.value + 1) }
 
 const zoomIn = () => { if (zoomLevel.value < 200) zoomLevel.value += 10 }
 const zoomOut = () => { if (zoomLevel.value > 50) zoomLevel.value -= 10 }
 const resetZoom = () => zoomLevel.value = 100
 
 const handleVideoEnded = () => {
-  ElMessage.success('学习完成！')
+  markAsCompleted()
+}
+
+// 学习记录相关状态 (参考 CourseDetailsFrom)
+const learningRecord = ref<any>({
+  id: null,
+  courseId: courseId.value,
+  contentId: null,
+  learningStatus: '0',
+  learningTime: 0,
+  lastLearnTime: null,
+  createTime: null
+})
+
+// 查询学习记录
+const queryLearningRecord = async (contentId: string) => {
+  if (!courseId.value || !contentId) return
+
+  get(`/study/cloudComputingStudentLearningRecord/list?courseId=${courseId.value}&contentId=${contentId}&pageNo=1&pageSize=1`, (msg, data) => {
+    if (data && data.records && data.records.length > 0) {
+      learningRecord.value = data.records[0]
+      // 同步本地列表中的勾选状态
+      const item = currentList.value.find(i => i.id === contentId)
+      if (item && learningRecord.value.learningStatus === '1') {
+        item.isCompleted = 1
+      }
+    } else {
+      // 如果没有记录，则新建一条
+      createLearningRecord(contentId)
+    }
+  }, (msg) => {
+    console.warn('查询学习记录未找到，将创建新记录:', msg)
+    createLearningRecord(contentId)
+  })
+}
+
+// 创建学习记录
+const createLearningRecord = (contentId: string) => {
+  const now = new Date().toISOString().replace('T', ' ').substring(0, 19)
+  const recordData = {
+    courseId: courseId.value,
+    contentId: contentId,
+    // userId 不放在 JSON body 中，而是按后端要求放 URL 参数
+    learningStatus: '0',
+    learningTime: 0,
+    lastLearnTime: now,
+    createTime: now
+  }
+
+  // 后端 add 接口定义: @PostMapping(value = "/add") public RestBean<String> add(@RequestBody CloudComputingStudentLearningRecord cloudComputingStudentLearningRecord, @RequestParam(name = "userId", required = true) String userId)
+  post(`/study/cloudComputingStudentLearningRecord/add?userId=${userStore.auth.user?.id}`, recordData, (msg, data) => {
+    // 后端返回的是 RestBean<String> "添加成功！"，没有返回对象
+    // 我们需要通过查询或重新加载来获取生成的记录 ID，或者先手动处理局部状态
+    queryLearningRecord(contentId)
+  }, (err) => {
+    console.error('创建学习记录失败:', err)
+  })
+}
+
+// 标记为完成 (参考 CourseDetailsFrom 的 updateLearningRecord 逻辑)
+const markAsCompleted = () => {
+  const currentRes = currentList.value[currentItemIndex.value]
+  if (!currentRes || currentRes.isCompleted) return
+
+  const now = new Date().toISOString().replace('T', ' ').substring(0, 19)
+  const updateData = {
+    ...learningRecord.value,
+    learningStatus: '1',
+    lastLearnTime: now
+  }
+
+  // 后端 edit 接口定义: @RequestMapping(value = "/edit", method = {RequestMethod.PUT, RequestMethod.POST}) public RestBean<String> edit(@RequestBody CloudComputingStudentLearningRecord cloudComputingStudentLearningRecord)
+  // 注意：如果是 POST 方式，调用 post 工具函数即可
+  post('/study/cloudComputingStudentLearningRecord/edit', updateData, (msg, data) => {
+    learningRecord.value.learningStatus = '1'
+    // 更新当前资源项的勾选状态
+    // 注意：如果是通过计算属性得到的 currentList，直接修改 item 属性可能不响应，我们需要修改源数据 allResources
+    const targetItem = allResources.value.find(r => r.id === currentRes.id)
+    if (targetItem) {
+      targetItem.isCompleted = 1
+    }
+    ElMessage.success('学习完成！')
+  }, (err) => {
+    console.error('更新学习状态失败:', err)
+    ElMessage.error('无法同步学习状态')
+  })
+}
+
+// 视频播放记录逻辑
+const progressSaveTimer = ref<any>(null)
+const lastSaveTime = ref(0)
+
+const handleVideoPlay = () => {
+  startProgressSaveTimer()
+}
+
+const handleVideoPause = () => {
+  stopProgressSaveTimer()
+}
+
+const startProgressSaveTimer = () => {
+  stopProgressSaveTimer()
+  progressSaveTimer.value = setInterval(() => {
+    saveLearningProgress()
+  }, 10000) // 每10秒同步一次进度
+}
+
+const stopProgressSaveTimer = () => {
+  if (progressSaveTimer.value) {
+    clearInterval(progressSaveTimer.value)
+    progressSaveTimer.value = null
+  }
+}
+
+const saveLearningProgress = () => {
+  const video = document.querySelector('video')
+  if (video) {
+    // 这里可以调用接口保存视频进度，如果需要
+    // const currentTime = Math.floor(video.currentTime)
+  }
+}
+
+// 讲义/资料完成逻辑
+const onOfficeRendered = () => {
+  console.log('Office 组件渲染完成')
+  // 检查是否内容太短没有滚动条
+  const container = document.querySelector('.preview-container')
+  if (container) {
+    const { scrollHeight, clientHeight } = container
+    console.log('检查内容高度:', { scrollHeight, clientHeight })
+    // 如果总高度小于容器高度，或者超出很少（比如 20px 以内），视为直接完成
+    if (scrollHeight <= clientHeight + 20) {
+      console.log('检测到文档较短，无须滚动，自动标记完成')
+      if (learningRecord.value.learningStatus !== '1') {
+        markAsCompleted()
+      }
+    } else {
+      ElMessage.info('文档已加载，向下滚动可完成学习')
+    }
+  }
+}
+
+const handleDocScroll = (e: any) => {
+  console.log('滚动事件触发:', {
+    scrollTop: e.target.scrollTop,
+    scrollHeight: e.target.scrollHeight,
+    clientHeight: e.target.clientHeight
+  })
+
+  if (currentModule.value !== 'lecture') return
+
+  const target = e.target
+  const { scrollTop, scrollHeight, clientHeight } = target
+
+  // 更加宽松的判定：滚动条到底部的剩余距离小于 50 像素
+  const isAtBottom = scrollHeight - (scrollTop + clientHeight) < 50
+
+  if (isAtBottom) {
+    if (learningRecord.value.learningStatus !== '1') {
+      console.log('判定为滚动到底部，触发标记完成')
+      markAsCompleted()
+    }
+  }
+}
+
+const handleDownload = async (item: any) => {
+  if (!item?.url) return
+
+  // 资料只要点击，无论下载结果如何都标记为完成
+  if (currentModule.value === 'data') {
+    markAsCompleted()
+  }
+
+  try {
+    const response = await axios.get(item.url, {
+      responseType: 'blob',
+      withCredentials: true
+    })
+    const blob = new Blob([response.data])
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = item.fileName
+    link.click()
+    URL.revokeObjectURL(link.href)
+  } catch (err) {
+    console.error('下载过程中发生错误:', err)
+    // 注意：即使报错我们也保留之前的 markAsCompleted 状态，除非你想报错时撤回
+    ElMessage.error('下载失败，请稍后重试')
+  }
+}
+
+// 监听当前选中的 URL 变化，手动获取 Blob 以携带认证信息
+watch(() => currentList.value[currentItemIndex.value]?.url, async (newUrl) => {
+  // 如果当前不是预览模块，则不处理
+  if (currentModule.value !== 'lecture' && currentModule.value !== 'data') {
+    renderedUrl.value = ''
+    return
+  }
+
+  if (!newUrl) {
+    renderedUrl.value = ''
+    return
+  }
+
+  previewLoading.value = true
+  try {
+    const response = await axios.get(newUrl, {
+      responseType: 'blob',
+      withCredentials: true
+    })
+    // 释放旧的 URL 内存
+    if (renderedUrl.value) {
+      URL.revokeObjectURL(renderedUrl.value)
+    }
+    renderedUrl.value = URL.createObjectURL(response.data)
+  } catch (err: any) {
+    console.error('获取预览文件失败:', err)
+    ElMessage.error('无法加载预览文件，请检查登录状态或权限')
+    renderedUrl.value = ''
+  } finally {
+    previewLoading.value = false
+  }
+}, { immediate: true })
+
+// 监听模块切换，清空旧的预览地址
+watch(currentModule, (newVal) => {
+  if (newVal === 'video' || newVal === 'Details') {
+    if (renderedUrl.value) {
+      URL.revokeObjectURL(renderedUrl.value)
+      renderedUrl.value = ''
+    }
+  }
+})
+
+// 获取文件后缀类型
+const getFileType = (url: string) => {
+  if (!url) return ''
+  const part = url.split('.').pop()
+  return part ? part.toLowerCase() : ''
+}
+
+// 拼接完整的后端路径
+const getFullUrl = (url: string) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return `${axios.defaults.baseURL}/upload/download?fileName=${encodeURIComponent(url)}`
 }
 
 const initData = async () => {
@@ -205,16 +494,56 @@ const initData = async () => {
   }
 
   isLoading.value = true
-  get(`/study/cloudComputingCourse/queryById?id=${courseId.value}`, (msg, data) => {
-    courseDetails.value = data
+  get(`/study/cloudComputingCourse/list?id=${courseId.value}`, (msg, data) => {
+    // 确保从返回的记录中通过 ID 查找到正确的课程详情
+    const records = data?.records || data || []
+    const record = Array.isArray(records)
+      ? records.find((r: any) => String(r.id) === String(courseId.value)) || records[0]
+      : records
+
+    if (record) {
+      courseDetails.value = record
+    }
   })
 
-  get(`/study/cloudComputingCourseResource/list?courseId=${courseId.value}&pageSize=500`, (msg, data) => {
-    allResources.value = data?.records || []
+  get(`/study/cloudComputingCourseResource/list?courseId=${courseId.value}&pageSize=500`, async (msg, data) => {
+    const records = data?.records || []
+    allResources.value = records.map((item: any) => ({
+      ...item,
+      fileName: item.resourceName, // 适配组件内的 fileName 引用
+      url: getFullUrl(item.resourceUrl),
+      isCompleted: 0 // 默认未完成，稍后通过学习记录同步
+    }))
+
+    // 加载资源后，立即为当前选中的资源初始化学习记录
+    if (currentList.value.length > 0) {
+      await queryLearningRecord(currentList.value[currentItemIndex.value].id)
+    }
+
+    // 批量同步所有资源的状态（可选，为了让侧边栏勾选一致）
+    syncAllResourcesStatus()
+
     isLoading.value = false
   }, (err) => {
     error.value = '加载资源失败'
     isLoading.value = false
+  })
+}
+
+// 批量同步所有资源的状态
+const syncAllResourcesStatus = () => {
+  get(`/study/cloudComputingStudentLearningRecord/list?courseId=${courseId.value}&pageSize=500`, (msg, data) => {
+    if (data && data.records) {
+      const records = data.records
+      allResources.value.forEach(resItem => {
+        const record = records.find((r: any) => r.contentId === resItem.id)
+        if (record && record.learningStatus === '1') {
+          resItem.isCompleted = 1
+        }
+      })
+    }
+  }, (err) => {
+    console.error('同步所有资源状态失败:', err)
   })
 }
 
@@ -398,15 +727,26 @@ onMounted(() => {
   color: #909399;
 }
 
-.office-preview-placeholder {
+.preview-container {
   flex: 1;
+  overflow: auto;
+  background-color: #fff;
+  padding: 20px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  background: #fafafa;
-  border: 1px dashed #dcdfe6;
-  border-radius: 8px;
+}
+
+.office-preview-wrapper {
+  width: 100%;
+  max-width: 900px;
+  transition: transform 0.2s ease;
+}
+
+.unknown-file-type {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
 .info-box {

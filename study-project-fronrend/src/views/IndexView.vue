@@ -84,7 +84,7 @@
                             <!-- 随机学生头像，可以日后替换掉 -->
                             <el-avatar size="small"
                                 src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png" />
-                            <span class="username">{{ store.auth.user?.username || '默认用户' }}</span>
+                            <span class="username">{{ userStore.auth.user?.username || '默认用户' }}</span>
                             <el-icon>
                                 <CaretBottom />
                             </el-icon>
@@ -143,26 +143,28 @@ import {
 } from '@element-plus/icons-vue'
 import { get } from "@/net";
 import { useRouter, useRoute } from "vue-router";
-import { useStore } from '@/stores/user'
+import { useUserStore } from '@/stores/user'
+import { useMenuStore } from '@/stores/menu'
 import { resetRoutes } from '@/router'
 
 
-const store = useStore()
+const userStore = useUserStore()
+const menuStore = useMenuStore()
 const router = useRouter()
 const route = useRoute()
 
 const isCollapse = ref(false)
 const searchQuery = ref('')
 
-console.log('菜单列表：', store.menuList) // 调试输出菜单列表
+console.log('菜单列表：', menuStore.menuList) // 调试输出菜单列表
 
 
-const menuList =store.menuList
+const menuList = menuStore.menuList
 
 const logout = () => {
     get('/api/auth/logout', (message) => {
         ElMessage.success(message)
-        store.auth.user = null
+        userStore.auth.user = null
         resetRoutes() // 退出登录时，清空动态路由及菜单
         router.push('/')
     })

@@ -150,8 +150,8 @@ const handleResourceClick = (lesson: any, resourceType: string) => {
 const loadCourseTypes = async () => {
   return new Promise<void>((resolve) => {
     get('/study/cloudComputingCourseType/list?pageNo=1&pageSize=1000', (msg, data) => {
-      const records = data?.records || data
-      courseTypes.value = records.map((item: any) => ({
+      const records = data?.records || data || []
+      courseTypes.value = (Array.isArray(records) ? records : []).map((item: any) => ({
         id: item.id,
         courseTypeName: item.courseTypeName
       }))
@@ -178,16 +178,31 @@ const loadCourseListByCategory = async (categoryId: string) => {
 
   return new Promise<void>((resolve) => {
     get(url, (msg, data) => {
-      categoryData[categoryId] = (data?.records || []).map((course: any) => ({
+      const records = data?.records || []
+      categoryData[categoryId] = records.map((course: any) => ({
         id: course.id,
         courseName: course.courseName || '未命名课程',
         courseTag: course.courseTag || '选修',
-        videoCount: course.videoCount || 0,
-        lectureCount: course.lectureCount || 0,
-        resourceCount: course.resourceCount || 0,
-        available: course.courseStatus === 1
+        videoCount: 0,
+        lectureCount: 0,
+        resourceCount: 0,
+        available: String(course.courseStatus) === '1'
       }))
-      categoryPagination[categoryId].total = msg.total || 0
+
+      // 为每个课程异步加载真实的统计数据
+      categoryData[categoryId].forEach(item => {
+        get(`/study/cloudComputingCourseResource/counts?id=${item.id}`, (m, countData) => {
+          if (countData) {
+            item.videoCount = countData['1'] ?? 0
+            item.lectureCount = countData['2'] ?? 0
+            item.resourceCount = countData['3'] ?? 0
+            // 触发响应式更新
+            categoryData[categoryId] = [...categoryData[categoryId]]
+          }
+        })
+      })
+
+      categoryPagination[categoryId].total = data?.total || 0
       resolve()
     }, () => resolve())
   })

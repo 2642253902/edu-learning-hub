@@ -1,8 +1,9 @@
 
 // 导入自定义的 get 方法（封装了 axios 的 get 请求，见 src/net/index.ts）
 import { get, post, postForm } from '@/net'
-// 导入 pinia 用户状态管理
-import { useStore } from '@/stores/user'
+// 导入 pinia 状态管理
+import { useUserStore } from '@/stores/user'
+import { useMenuStore } from '@/stores/menu'
 import { ref } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
@@ -50,19 +51,25 @@ let hasAddedDynamicRoutes = false;
 
 // 路由守卫：每次路由跳转前都会执行
 router.beforeEach(async (to, from) => {
-  const store = useStore()
+  const userStore = useUserStore()
+  const menuStore = useMenuStore()
 
   // 已登录且还没加载动态路由时，先加载动态路由
-  if (store.auth.user !== null && !hasAddedDynamicRoutes) {
+  if (userStore.auth.user !== null && (!hasAddedDynamicRoutes || to.matched.length === 0)) {
     hasAddedDynamicRoutes = true // 设置标记，避免重复添加
     await routers() // 等待动态路由添加完成
+
+    // 如果加载后仍然匹配不到（且不是去首页），则说明无权访问
+    if (to.matched.length === 0 && to.path !== '/index') {
+      return { name: 'index' }
+    }
     return { ...to, replace: true }
   }
 
   // 已登录但访问 welcome 相关页面，强制跳转到 index
-  if (store.auth.user !== null && typeof to.name === 'string' && to.name.startsWith('welcome')) {
+  if (userStore.auth.user !== null && typeof to.name === 'string' && to.name.startsWith('welcome')) {
     return { name: 'index' }
-  } else if (store.auth.user === null && to.fullPath.startsWith('/index')) {
+  } else if (userStore.auth.user === null && to.fullPath.startsWith('/index')) {
     // 未登录访问 index 相关页面，强制跳转到登录页
     return { name: 'welcome-login' }
   }
@@ -76,70 +83,73 @@ router.beforeEach(async (to, from) => {
 // 例如 '../views/study/PreparationCenter.vue' => () => import('../views/study/PreparationCenter.vue')
 const modules = import.meta.glob('../views/**/*.vue')
 
+/**
+ * 核心：将路由数据注入到 vue-router
+ */
+const injectRoutes = (routesData: any[]) => {
+  const processRoutes = (arr: any[]) => {
+    arr.forEach(item => {
+      // 1. 路径补全
+      const routePath = item.path.startsWith('/') ? item.path : `/${item.path}`;
+      // 2. 组件路径拼接
+      const componentPath = `../views${routePath}.vue`;
+
+      // 3. 动态添加路由到 index 下
+      if (!router.hasRoute(item.name) && modules[componentPath]) {
+        router.addRoute('index', {
+          path: routePath,
+          name: item.name,
+          component: modules[componentPath]
+        });
+      }
+
+      // 4. 菜单 path 修正
+      item.path = routePath;
+
+      // 5. 递归处理子菜单
+      if (item.children && item.children.length > 0) {
+        processRoutes(item.children);
+      }
+    });
+  };
+  processRoutes(routesData);
+}
 
 /**
  * 动态加载后端返回的路由配置
- * 1. 登录后调用 get('/system/routes/tree', ...)
- * 2. 后端返回菜单/路由树（数组），遍历生成路由并 addRoute 动态注入
- * 3. 菜单数据同步到 pinia store.menuList，供左侧菜单渲染
- *
- * get('/system/routes/tree', onSuccess, onFailure, onError)
- *  get 方法见 src/net/index.ts，实际是 axios.get 封装
- *  - onSuccess: 请求成功，data 是后端返回的路由数组
- *  - onFailure/onError: 请求失败或未登录，直接 resolve，页面会跳转到登录页
  */
 const routers = () => {
   return new Promise<void>((resolve) => {
-    const store = useStore()
+    const userStore = useUserStore()
+    const menuStore = useMenuStore()
+
+    // 方案改进：如果本地已经有持久化的菜单，直接同步注入，保证浏览器重启后立刻可用
+    if (menuStore.menuList && menuStore.menuList.length > 0) {
+      injectRoutes(menuStore.menuList)
+      // 如果本地已经有数据了，就不必阻塞路由跳转，直接 resolve
+      resolve();
+    }
+
     // 请求成功回调
     const onSuccess = (message: string, data: any) => {
       // data 是后端返回的路由数组
       const routesData = data;
       // 如果不是数组直接结束
       if (!Array.isArray(routesData)) {
-        resolve();
+        if (menuStore.menuList.length === 0) resolve();
         return;
       }
 
+      injectRoutes(routesData);
 
+      // 更新持久化菜单
+      menuStore.menuList = routesData;
 
-      // 递归处理路由树，动态注入到 vue-router
-      const processRoutes = (arr: any[]) => {
-         console.log('请求动态路由，用户角色：')
-
-        arr.forEach(item => {
-          // 1. 路径补全
-
-          const routePath = item.path.startsWith('/') ? item.path : `/${item.path}`;
-          // 2. 组件路径拼接
-          const componentPath = `../views${routePath}.vue`;
-
-          // 3. 动态添加路由到 index 下
-          if (!router.hasRoute(item.name) && modules[componentPath]) {
-            router.addRoute('index', {
-              path: routePath,
-              name: item.name,
-              component: modules[componentPath]
-            });
-          }
-
-          // 4. 菜单 path 修正
-          item.path = routePath;
-
-          // 5. 递归处理子菜单
-          if (item.children && item.children.length > 0) {
-            processRoutes(item.children);
-          }
-        });
-      };
-
-      processRoutes(routesData);
-      // 菜单数据存入 pinia，供左侧菜单渲染
-      store.menuList = routesData;
+      // 如果之前没有数据（第一次登录），则在这里 resolve
       resolve();
     }
 
-    // 请求失败/未授权等，直接 resolve，页面会跳转到登录页
+    // 请求失败/未授权等，直接 resolve
     const onFailure = (message: any) => {
       resolve();
     }
@@ -147,27 +157,25 @@ const routers = () => {
       resolve();
     }
 
-    // 这里就是你看到的 get('/system/routes/tree'...)
-    // 实际会发起 axios.get('/system/routes/tree') 请求后端，
-    // 并根据返回结果动态生成路由和菜单
+    // 请求后端路由
     postForm('/api/routes/tree', {
-      role: store.auth.user?.role,
+      role: userStore.auth.user?.role,
     }, onSuccess, onFailure, onError)
   });
 }
 
 // 退出时清除动态路由和菜单
 export const resetRoutes = () => {
-  const store = useStore()
+  const menuStore = useMenuStore()
   // 重置标记
   hasAddedDynamicRoutes = false;
   // 清空菜单持久化
-  store.menuList = [];
+  menuStore.menuList = [];
 
   // 遍历所有当前路由，如果是动态添加的（非 welcome及index），就将其移除
   router.getRoutes().forEach(route => {
     if (route.name && route.name !== 'welcome' && route.name !== 'welcome-login' && route.name !== 'welcome-register' && route.name !== 'welcome-forget' && route.name !== 'index') {
-      router.removeRoute(route.name);
+      router.removeRoute(route.name as string);
     }
   });
 }

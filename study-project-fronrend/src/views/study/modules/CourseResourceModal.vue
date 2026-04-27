@@ -11,19 +11,8 @@
         </el-form-item>
 
         <el-form-item label="所属课程" prop="courseId">
-          <el-select 
-            v-model="model.courseId" 
-            placeholder="请选择课程" 
-            :disabled="courseLocked"
-            class="w-full"
-            filterable
-          >
-            <el-option 
-              v-for="course in courses" 
-              :key="course.id" 
-              :label="course.courseName" 
-              :value="course.id" 
-            />
+          <el-select v-model="model.courseId" placeholder="请选择课程" :disabled="courseLocked" class="w-full" filterable>
+            <el-option v-for="course in courses" :key="course.id" :label="course.courseName" :value="course.id" />
           </el-select>
         </el-form-item>
 
@@ -32,15 +21,9 @@
         </el-form-item>
 
         <el-form-item label="资源文件" prop="resourceUrl">
-          <el-upload
-            class="upload-demo"
-            action="/api/study/cloudComputingCourseResource/upload"
-            :limit="1"
-            :on-success="handleUploadSuccess"
-            :on-remove="handleRemove"
-            :file-list="fileList"
-            :accept="allowedFileTypes"
-          >
+          <el-upload class="upload-demo" :action="uploadUrl" :limit="1" :on-success="handleUploadSuccess"
+            :on-error="handleUploadError" :on-remove="handleRemove" :on-preview="handlePreview" :with-credentials="true"
+            :file-list="fileList" :accept="allowedFileTypes" :before-upload="beforeUpload">
             <el-button type="primary">点击上传</el-button>
             <template #tip>
               <div class="el-upload__tip">
@@ -69,6 +52,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { post, get } from '@/net'
 import { ElMessage } from 'element-plus'
+import axios from 'axios'
 
 const visible = ref(false)
 const title = ref('')
@@ -78,6 +62,19 @@ const courseLocked = ref(false)
 const formRef = ref()
 const courses = ref<any[]>([])
 const fileList = ref<any[]>([])
+
+// 拼接上传路径
+const uploadUrl = computed(() => {
+  return `${axios.defaults.baseURL}/upload/file`
+})
+
+const allowedFileTypes = computed(() => {
+  // 1-视频 2-讲义 3-资料
+  const type = String(model.resourceType)
+  if (type === '1') return '.mp4'
+  if (type === '2') return '.pdf,.doc,.docx'
+  return '*'
+})
 
 const model = reactive<any>({
   id: '',
@@ -96,15 +93,6 @@ const rules = {
 }
 
 const emit = defineEmits(['ok'])
-
-const allowedFileTypes = computed(() => {
-  switch (model.resourceType) {
-    case 1: return '.mp4,.avi,.mov'
-    case 2: return '.pdf,.pptx'
-    case 3: return '.pdf,.doc,.docx,.zip,.rar'
-    default: return '.pdf,.doc,.docx,.mp4,.zip'
-  }
-})
 
 const fetchCourses = () => {
   get('/study/cloudComputingCourse/list?pageNo=1&pageSize=1000', (msg, data: any) => {
@@ -133,17 +121,107 @@ const edit = (record: any) => {
   disabled.value = false
   courseLocked.value = false
   Object.assign(model, record)
-  fileList.value = record.resourceUrl ? [{ name: '已上传文件', url: record.resourceUrl }] : []
+  // 获取文件名，如果没有则显示默认名称
+  const fileName = record.resourceUrl ? record.resourceUrl.split('/').pop() : '已上传文件'
+  fileList.value = record.resourceUrl ? [{ name: fileName, url: record.resourceUrl }] : []
   visible.value = true
 }
 
-const handleUploadSuccess = (response: any) => {
-  model.resourceUrl = response.url || response.result
-  ElMessage.success('上传成功')
+const beforeUpload = (file: any) => {
+  const fileName = file.name.toLowerCase()
+  const type = String(model.resourceType)
+
+  if (type === '1') {
+    if (!fileName.endsWith('.mp4')) {
+      ElMessage.warning('视频仅支持 mp4 格式')
+      return false
+    }
+  } else if (type === '2') {
+    if (!fileName.endsWith('.pdf') && !fileName.endsWith('.doc') && !fileName.endsWith('.docx')) {
+      ElMessage.warning('讲义支持 pdf/doc/docx 格式')
+      return false
+    }
+  }
+  return true
 }
 
-const handleRemove = () => {
-  model.resourceUrl = ''
+const handleUploadSuccess = (response: any) => {
+  console.log('上传原始响应:', response)
+
+  let url = ''
+  // 1. 尝试直接从 data 字段获取
+  if (response.data) {
+    url = response.data
+  }
+  // 2. 如果 data 为空，尝试从 message 中通过正则提取文件名
+  // 匹配格式: "上传成功: xxx.mp4"
+  else if (response.message && response.message.includes('上传成功:')) {
+    url = response.message.split('上传成功:')[1].trim()
+  }
+
+  if (url) {
+    model.resourceUrl = url
+    // 同步更新 fileList 以便在 UI 上显示
+    fileList.value = [{ name: url.split('/').pop() || '新上传文件', url: url }]
+    ElMessage.success('上传成功')
+
+    // 如果是编辑模式（存在 id），上传完成后立即自动保存一次数据库，实现“想换就换”
+    if (model.id) {
+      console.log('检测到编辑模式，正在自动同步数据库...')
+      const syncUrl = '/study/cloudComputingCourseResource/edit'
+      post(syncUrl, model, () => {
+        console.log('数据库记录已自动更新')
+        emit('ok') // 通知父页面刷新列表（如有必要）
+      })
+    }
+  } else {
+    ElMessage.error('上传成功但未解析到文件路径，请检查后端返回格式')
+  }
+}
+
+const handleUploadError = (err: any) => {
+  console.error('上传失败详情:', err)
+  ElMessage.error('文件上传网络异常')
+}
+
+const handleRemove = (file: any) => {
+  const fileName = model.resourceUrl
+  if (!fileName) return
+
+  // 适配 RequestParam 接口: /upload/delete?fileName=xxx
+  const deleteUrl = `${axios.defaults.baseURL}/upload/delete`
+  // 注意：因为是 @RequestParam，所以使用 params 传参
+  axios.delete(deleteUrl, {
+    params: { fileName: fileName },
+    withCredentials: true
+  }).then(response => {
+    // 兼容不同的返回格式
+    const res = response.data
+    if (res.success || res.status === 200) {
+      ElMessage.success('文件已从服务器删除')
+      model.resourceUrl = ''
+      fileList.value = []
+      // 如果是编辑模式，同步更新数据库
+      if (model.id) {
+        post('/study/cloudComputingCourseResource/edit', model, () => {
+          emit('ok')
+        })
+      }
+    } else {
+      ElMessage.warning(res.message || '删除失败')
+    }
+  }).catch(err => {
+    console.error('删除文件出错:', err)
+    ElMessage.error('文件删除失败，请检查网络或权限')
+  })
+}
+
+const handlePreview = (file: any) => {
+  const fileName = model.resourceUrl
+  if (!fileName) return
+  // 适配 RequestParam 接口: /upload/download?fileName=xxx
+  const downloadUrl = `${axios.defaults.baseURL}/upload/download?fileName=${encodeURIComponent(fileName)}`
+  window.open(downloadUrl, '_blank')
 }
 
 const handleCancel = () => {
@@ -177,6 +255,32 @@ defineExpose({ add, edit })
 </script>
 
 <style scoped>
-.w-full { width: 100%; }
-.upload-demo { margin-top: 5px; }
+.w-full {
+  width: 100%;
+}
+
+.upload-demo {
+  margin-top: 5px;
+  width: 100%;
+}
+
+/* 限制上传文件列表的宽度，防止长文件名撑开弹窗 */
+:deep(.el-upload-list) {
+  max-width: 100%;
+}
+
+:deep(.el-upload-list__item) {
+  margin-bottom: 8px;
+}
+
+/* 限制文件名显示区域，超出部分省略号 */
+:deep(.el-upload-list__item-file-name) {
+  display: inline-block;
+  max-width: 80%;
+  /* 给删除按钮留出空间 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
 </style>

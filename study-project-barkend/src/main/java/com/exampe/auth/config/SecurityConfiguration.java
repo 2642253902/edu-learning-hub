@@ -46,8 +46,8 @@ public class SecurityConfiguration {
                 // 配置请求授权规则，允许访问根路径、登录相关路径和静态资源，其他请求需要认证
                 .authorizeHttpRequests(auth ->{
                     auth.requestMatchers("/", "/api/auth/**").permitAll();
-                            auth.anyRequest().authenticated();  // 所有请求通过验证才能访问
-                        })
+                    auth.anyRequest().authenticated();  // 所有请求通过验证才能访问
+                })
                 // 配置表单登录，指定登录处理 URL 和认证成功/失败的处理器
                 .formLogin(form ->form
                         // 指定登录处理 URL，前端发送登录请求时应该使用这个 URL，例如 POST /api/auth/login
