@@ -7,7 +7,7 @@
           <p class="desc">管理学习平台内所有课程的分类标签，帮助学生快速检索资源。</p>
         </div>
         <div class="header-actions">
-           <el-button type="primary" :icon="Plus" @click="handleAdd">新建分类</el-button>
+          <el-button type="primary" :icon="Plus" @click="handleAdd">新建分类</el-button>
         </div>
       </div>
     </el-card>
@@ -16,18 +16,18 @@
       <el-table :data="dataSource" v-loading="loading" border stripe class="modern-table">
         <el-table-column type="index" label="序号" width="70" align="center" />
         <el-table-column label="分类名称" prop="courseTypeName" min-width="180">
-           <template #default="{ row }">
-             <div class="name-cell">
-               <el-tag :type="getTagType(row.id)" effect="dark" class="mr-2">{{ row.courseTypeName.charAt(0) }}</el-tag>
-               <span class="name-text">{{ row.courseTypeName }}</span>
-             </div>
-           </template>
+          <template #default="{ row }">
+            <div class="name-cell">
+              <el-tag :type="getTagType(row.id)" effect="dark" class="mr-2">{{ row.courseTypeName.charAt(0) }}</el-tag>
+              <span class="name-text">{{ row.courseTypeName }}</span>
+            </div>
+          </template>
         </el-table-column>
-        <el-table-column label="备注说明" prop="remark" show-overflow-tooltip>
+        <!-- <el-table-column label="备注说明" prop="remark" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="remark-text">{{ row.remark || '暂无描述' }}</span>
           </template>
-        </el-table-column>
+        </el-table-column> -->
         <el-table-column label="创建时间" prop="createTime" width="180" align="center">
           <template #default="{ row }">
             <span class="time-text">{{ row.createTime || '-' }}</span>
@@ -36,7 +36,9 @@
         <el-table-column label="操作" width="180" align="center" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleEdit(row)">
-              <el-icon class="mr-1"><Edit /></el-icon>编辑
+              <el-icon class="mr-1">
+                <Edit />
+              </el-icon>编辑
             </el-button>
             <el-divider direction="vertical" />
             <el-popconfirm title="确定要永久删除此分类吗？" @confirm="handleDelete(row)" width="200">
@@ -162,7 +164,15 @@ onMounted(() => loadData())
   font-weight: 600;
 }
 
-.mr-1 { margin-right: 4px; }
-.mr-2 { margin-right: 8px; }
-.mt-4 { margin-top: 16px; }
+.mr-1 {
+  margin-right: 4px;
+}
+
+.mr-2 {
+  margin-right: 8px;
+}
+
+.mt-4 {
+  margin-top: 16px;
+}
 </style>

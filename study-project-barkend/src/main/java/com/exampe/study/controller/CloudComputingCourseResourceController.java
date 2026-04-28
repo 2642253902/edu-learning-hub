@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.exampe.auth.entity.user.AccountUser;
 import com.exampe.common.RestBean;
+import com.exampe.sys.controller.FileUploadController;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import com.exampe.study.entity.CloudComputingCourseResource;
 import com.exampe.study.service.ICloudComputingCourseResourceService;
@@ -12,9 +14,14 @@ import com.exampe.study.dto.CloudComputingCourseResourceVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.stream.Collectors;
+
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -22,14 +29,13 @@ import java.util.Map;
  * 云计算课程资源管理控制器
  * <p>提供课程资源的增删改查、资源统计、学习状态查询等接口</p>
  *
- * @author jeecg-boot
- * @since 2025-09-20
+ * @author admin
  */
 @RestController
 @RequestMapping("/study/cloudComputingCourseResource")
 @Slf4j
 public class CloudComputingCourseResourceController {
-    
+
     @Autowired
     private ICloudComputingCourseResourceService cloudComputingCourseResourceService;
 
@@ -50,7 +56,7 @@ public class CloudComputingCourseResourceController {
      * 查询课程资源列表（含学生学习状态）
      * <p>返回指定课程的资源列表及当前学生的学习记录状态</p>
      *
-     * @param courseId 课程ID
+     * @param courseId    课程ID
      * @param accountUser 当前登录用户（从Session获取）
      * @return 资源列表（包含学习状态）
      */
@@ -62,11 +68,27 @@ public class CloudComputingCourseResourceController {
     }
 
     /**
+     * 根据ID查询课程资源详情
+     *
+     * @param id 资源ID
+     * @return 资源信息
+     */
+    @GetMapping(value = "/queryById")
+    public RestBean<CloudComputingCourseResource> queryById(@RequestParam(name = "id", required = true) String id) {
+        CloudComputingCourseResource cloudComputingCourseResource = cloudComputingCourseResourceService.getById(id);
+        if (cloudComputingCourseResource == null) {
+            return RestBean.failure(404, "课程资源不存在");
+        }
+        return RestBean.success(cloudComputingCourseResource);
+    }
+
+
+    /**
      * 分页查询课程资源列表
      *
      * @param cloudComputingCourseResource 查询条件对象
-     * @param pageNo 页码，默认1
-     * @param pageSize 每页数量，默认10
+     * @param pageNo                       页码，默认1
+     * @param pageSize                     每页数量，默认10
      * @return 分页结果
      */
     @GetMapping(value = "/list")
@@ -87,7 +109,9 @@ public class CloudComputingCourseResourceController {
      * @return 操作结果
      */
     @PostMapping(value = "/add")
-    public RestBean<String> add(@RequestBody CloudComputingCourseResource cloudComputingCourseResource) {
+    public RestBean<String> add(@RequestBody CloudComputingCourseResource cloudComputingCourseResource, @SessionAttribute("account") AccountUser accountUser) {
+        cloudComputingCourseResource.setCreateBy(accountUser.getUsername());
+        cloudComputingCourseResource.setCreateTime(new Date());
         cloudComputingCourseResourceService.save(cloudComputingCourseResource);
         return RestBean.success("添加成功！");
     }
@@ -99,21 +123,42 @@ public class CloudComputingCourseResourceController {
      * @return 操作结果
      */
     @RequestMapping(value = "/edit", method = {RequestMethod.PUT, RequestMethod.POST})
-    public RestBean<String> edit(@RequestBody CloudComputingCourseResource cloudComputingCourseResource) {
+    public RestBean<String> edit(@RequestBody CloudComputingCourseResource cloudComputingCourseResource, @SessionAttribute("account") AccountUser accountUser) {
+        cloudComputingCourseResource.setUpdateBy(accountUser.getUsername());
+        cloudComputingCourseResource.setUpdateTime(new Date());
         cloudComputingCourseResourceService.updateById(cloudComputingCourseResource);
         return RestBean.success("编辑成功!");
     }
 
+    @Resource
+    FileUploadController fileUploadController;
+
     /**
      * 删除课程资源
      *
-     * @param id 资源ID
      * @return 操作结果
      */
     @DeleteMapping(value = "/delete")
     public RestBean<String> delete(@RequestParam(name = "id", required = true) String id) {
-        cloudComputingCourseResourceService.removeById(id);
-        return RestBean.success("删除成功!");
+        CloudComputingCourseResource resource = cloudComputingCourseResourceService.getById(id);
+        if (resource == null) {
+            return RestBean.failure(404, "课程资源不存在");
+        }
+
+        String resourceUrl = resource.getResourceUrl();
+        if (resourceUrl != null && !resourceUrl.isBlank()) {
+            try {
+                RestBean<String> stringRestBean = fileUploadController.deleteFile(resourceUrl);
+                if (!stringRestBean.isSuccess()) {
+                    return RestBean.failure(500, "文件删除失败：" + stringRestBean.getMessage());
+                }
+            } catch (Exception e) {
+                return RestBean.failure(500, "文件删除失败：" + e.getMessage());
+            }
+        }
+
+        boolean removed = cloudComputingCourseResourceService.removeById(id);
+        return removed ? RestBean.success("删除成功!") : RestBean.failure(500, "删除失败");
     }
 
     /**
@@ -124,23 +169,39 @@ public class CloudComputingCourseResourceController {
      */
     @DeleteMapping(value = "/deleteBatch")
     public RestBean<String> deleteBatch(@RequestParam(name = "ids", required = true) String ids) {
-        this.cloudComputingCourseResourceService.removeByIds(Arrays.asList(ids.split(",")));
-        return RestBean.success("批量删除成功!");
+        List<String> idList = Arrays.asList(ids.split(","));
+
+        // 查询所有要删除的资源
+        List<CloudComputingCourseResource> resourceList = cloudComputingCourseResourceService.listByIds(idList);
+
+        // 提取所有需要删除的文件路径
+        List<String> fileNames = resourceList.stream()
+                .map(CloudComputingCourseResource::getResourceUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .collect(Collectors.toList());
+
+        // 如果有文件需要删除，调用批量删除接口
+        if (!fileNames.isEmpty()) {
+            try {
+                RestBean<Object> batchDeleteResult = fileUploadController.batchDeleteFiles(fileNames);
+
+                // 检查批量删除是否全部成功
+                if (!batchDeleteResult.isSuccess()) {
+                    log.warn("批量删除资源时部分文件删除失败: {}", batchDeleteResult.getMessage());
+                    // 不阻断资源删除流程，继续执行
+                } else {
+                    log.info("批量删除资源的 {} 个文件删除成功", fileNames.size());
+                }
+            } catch (Exception e) {
+                log.error("批量删除资源文件异常", e);
+                // 不阻断资源删除流程，继续执行
+            }
+        }
+
+        // 删除数据库中的资源记录
+        boolean removed = cloudComputingCourseResourceService.removeByIds(idList);
+        return removed ? RestBean.success("批量删除成功!") : RestBean.failure(500, "批量删除失败");
     }
 
-    /**
-     * 根据ID查询课程资源详情
-     *
-     * @param id 资源ID
-     * @return 资源信息
-     */
-    @GetMapping(value = "/queryById")
-    public RestBean<CloudComputingCourseResource> queryById(@RequestParam(name = "id", required = true) String id) {
-        CloudComputingCourseResource cloudComputingCourseResource = cloudComputingCourseResourceService.getById(id);
-        if (cloudComputingCourseResource == null) {
-            return RestBean.failure(404, "课程资源不存在");
-        }
-        return RestBean.success(cloudComputingCourseResource);
-    }
 
 }

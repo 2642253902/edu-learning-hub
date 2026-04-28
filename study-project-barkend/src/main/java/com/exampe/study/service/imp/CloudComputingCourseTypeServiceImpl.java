@@ -7,10 +7,10 @@ import com.exampe.study.service.ICloudComputingCourseTypeService;
 import org.springframework.stereotype.Service;
 
 /**
- * @Description: 课程分类表
- * @Author: jeecg-boot
- * @Date:   2025-09-20
- * @Version: V1.0
+ * 云计算课程分类服务实现类
+ * <p>实现课程分类的基础CRUD操作</p>
+ *
+ * @author admin
  */
 @Service
 public class CloudComputingCourseTypeServiceImpl extends ServiceImpl<CloudComputingCourseTypeMapper, CloudComputingCourseType> implements ICloudComputingCourseTypeService {

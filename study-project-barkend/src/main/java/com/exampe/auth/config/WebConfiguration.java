@@ -6,21 +6,32 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * Web MVC 配置类
+ * <p>
+ * 配置拦截器、静态资源等 Web 相关功能
+ *
+ * @author admin
+ */
 @Configuration
 public class WebConfiguration implements WebMvcConfigurer {
 
     @Resource
     Authorizelnterceptor authorizelnterceptor;
 
+    /**
+     * 添加自定义拦截器
+     *
+     * @param registry 拦截器注册表
+     */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 添加自定义的权限拦截器，拦截所有的请求
-        registry.
-                // 添加自定义的权限拦截器
-                        addInterceptor(authorizelnterceptor)
-                // 拦截所有的请求，可以根据需要调整拦截的路径，例如只拦截 /api/** 的请求
+        registry
+                // 添加权限拦截器
+                .addInterceptor(authorizelnterceptor)
+                // 拦截所有请求
                 .addPathPatterns("/**")
-                // 排除不需要拦截的路径，例如根路径、登录相关路径和静态资源
+                // 排除不需要拦截的路径
                 .excludePathPatterns("/", "/api/auth/**");
     }
 }

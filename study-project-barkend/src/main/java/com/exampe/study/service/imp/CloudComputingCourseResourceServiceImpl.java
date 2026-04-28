@@ -13,10 +13,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Description: 学习资源表
- * @Author: jeecg-boot
- * @Date:   2025-09-20
- * @Version: V1.0
+ * 云计算课程资源服务实现类
+ * <p>实现课程资源管理、资源统计、学习状态查询等业务逻辑</p>
+ *
+ * @author admin
  */
 @Service
 public class CloudComputingCourseResourceServiceImpl extends ServiceImpl<CloudComputingCourseResourceMapper, CloudComputingCourseResource> implements ICloudComputingCourseResourceService {

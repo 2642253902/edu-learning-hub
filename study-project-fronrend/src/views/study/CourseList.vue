@@ -7,7 +7,8 @@
         </el-form-item>
         <el-form-item label="课程分类">
           <el-select v-model="queryParam.courseTypeId" placeholder="请选择分类" clearable style="width: 200px">
-            <el-option v-for="item in courseTypeDict" :key="item.id" :label="item.courseTypeName" :value="String(item.id)" />
+            <el-option v-for="item in courseTypeDict" :key="item.id" :label="item.courseTypeName"
+              :value="String(item.id)" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -42,7 +43,7 @@
         </el-table-column>
         <el-table-column label="分类" width="150" align="center">
           <template #default="{ row }">
-             <el-tag effect="light" round>{{ getCourseTypeText(row) }}</el-tag>
+            <el-tag effect="light" round>{{ getCourseTypeText(row) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="负责教师" width="150" align="center">
@@ -51,9 +52,9 @@
           </template>
         </el-table-column>
         <el-table-column label="学时" prop="courseHours" align="center" width="100">
-           <template #default="{ row }">
-             <span class="hours-val">{{ row.courseHours || 0 }}</span>h
-           </template>
+          <template #default="{ row }">
+            <span class="hours-val">{{ row.courseHours || 0 }}</span>h
+          </template>
         </el-table-column>
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
@@ -78,8 +79,7 @@
 
       <div class="pagination-container">
         <el-pagination v-model:current-page="ipagination.current" v-model:page-size="ipagination.pageSize"
-          :total="ipagination.total" :page-sizes="[10, 20, 50, 100]" 
-          layout="total, sizes, prev, pager, next, jumper"
+          :total="ipagination.total" :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
           @size-change="handleSizeChange" @current-change="handleCurrentChange" />
       </div>
     </el-card>
@@ -180,16 +180,16 @@ const loadDictData = () => {
 }
 
 const getCourseTypeText = (row: CourseRecord) => {
-  if (row.courseTypeId_dictText) return row.courseTypeId_dictText
-  if (row.courseTypeName) return row.courseTypeName
+  // if (row.courseTypeName) return row.courseTypeName
   const match = courseTypeDict.value.find(item => String(item.id) === String(row.courseTypeId))
   return match ? match.courseTypeName : '-'
 }
 
 const getTeacherText = (row: CourseRecord) => {
-  if (row.teacherId_dictText) return row.teacherId_dictText
-  if (row.teacherName) return row.teacherName
-  return '管理员'
+  // if (row.teacherName) return row.teacherName
+  const match = teacherDict.value.find(item => String(item.id) === String(row.teacherId))
+  if (match) return match.realname || match.username || match.name || '-'
+  return row.teacherId_dictText || '-'
 }
 
 const handleSearch = () => loadData(1)
@@ -220,9 +220,17 @@ const handleCurrentChange = (val: number) => {
   loadData(val)
 }
 
+const loadTeachers = () => {
+  get('/api/user/list/teachers', (msg, data) => {
+    teacherDict.value = unwrapListData(data)
+  }, () => { }, () => {
+  })
+}
+
 onMounted(() => {
   loadData()
   loadDictData()
+  loadTeachers()
 })
 </script>
 
@@ -287,7 +295,15 @@ onMounted(() => {
   font-weight: 600;
 }
 
-.mt-4 { margin-top: 16px; }
-.ml-2 { margin-left: 8px; }
-.mr-2 { margin-right: 8px; }
+.mt-4 {
+  margin-top: 16px;
+}
+
+.ml-2 {
+  margin-left: 8px;
+}
+
+.mr-2 {
+  margin-right: 8px;
+}
 </style>

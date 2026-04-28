@@ -8,12 +8,10 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * <p>
- * 
- * </p>
+ * 角色路由关联实体类
+ * <p>对应数据库表：sys_role_route，表示角色与路由的多对多关系</p>
  *
- * @author 26422
- * @since 2026-04-26
+ * @author admin
  */
 @TableName("sys_role_route")
 @Data
@@ -21,10 +19,19 @@ public class RoleRoute implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * 主键ID
+     */
     @TableId(type = IdType.ASSIGN_ID)
     private String id;
 
+    /**
+     * 角色ID
+     */
     private String roleId;
 
+    /**
+     * 路由ID
+     */
     private String routeId;
 }

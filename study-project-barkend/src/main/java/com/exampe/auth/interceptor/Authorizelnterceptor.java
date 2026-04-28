@@ -13,27 +13,45 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+/**
+ * 权限拦截器
+ * <p>
+ * 在请求处理前获取当前用户信息并保存到 Session 中
+ *
+ * @author admin
+ */
 @Component
 public class Authorizelnterceptor implements HandlerInterceptor {
 
     @Resource
     UserMapper userMapper;
 
+    /**
+     * 请求预处理，获取用户信息并保存到 Session
+     *
+     * @param request  HTTP 请求
+     * @param response HTTP 响应
+     * @param handler  处理器
+     * @return true 继续处理，false 中断处理
+     * @throws Exception 处理异常
+     */
     @Override
-    // 这里可以获取到当前的用户信息，进行权限校验
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // 获取当前的用户信息
+        // 获取当前安全上下文
         SecurityContext context = SecurityContextHolder.getContext();
-        // 获取当前的认证信息
+        // 获取认证信息
         Authentication authentication = context.getAuthentication();
 
-        // 类型转换校验
-        Object principal = authentication.getPrincipal();   // 获取当前用户信息
+        // 获取用户主体信息
+        Object principal = authentication.getPrincipal();
 
-        if (principal instanceof User user) {   // 这里使用了 Java 16 的模式匹配特性，直接在 instanceof 中声明一个变量 user，并且自动进行类型转换
-            String username = user.getUsername();   // 获取用户名
-            AccountUser accountUser = userMapper.findAccountUserByNameOrEmail(username);    // 根据用户名或邮箱查询用户信息
-            request.getSession().setAttribute("account", accountUser);  // 将用户信息保存到 session 中
+        // 类型校验并提取用户信息
+        if (principal instanceof User user) {
+            String username = user.getUsername();
+            // 根据用户名或邮箱查询用户详细信息
+            AccountUser accountUser = userMapper.findAccountUserByNameOrEmail(username);
+            // 将用户信息保存到 Session 中
+            request.getSession().setAttribute("account", accountUser);
         }
 
         return true;

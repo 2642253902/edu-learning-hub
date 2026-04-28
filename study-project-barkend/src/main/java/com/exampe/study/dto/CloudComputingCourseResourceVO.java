@@ -7,6 +7,8 @@ import java.util.Date;
 /**
  * 课程资源视图对象（VO）
  * <p>用于展示课程资源及其学生学习状态的组合信息</p>
+ * 
+ * @author admin
  */
 @Data
 public class CloudComputingCourseResourceVO {

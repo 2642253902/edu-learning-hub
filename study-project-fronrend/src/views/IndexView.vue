@@ -11,7 +11,7 @@
 
             <el-menu :default-active="route.path" class="el-menu-vertical" :collapse="isCollapse"
                 background-color="#2b303b" text-color="#a3a6ad" active-text-color="#ffffff" router>
-                <template v-for="menu in menuList" :key="menu.id">
+                <template v-for="menu in visibleMenuList" :key="menu.id">
                     <!-- 如果有子级 -->
                     <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="menu.path">
                         <template #title>
@@ -122,8 +122,8 @@
     </el-container>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { computed, ref } from 'vue'
 import { ElMessage } from "element-plus";
 import {
     Menu,
@@ -159,7 +159,18 @@ const searchQuery = ref('')
 console.log('菜单列表：', menuStore.menuList) // 调试输出菜单列表
 
 
-const menuList = menuStore.menuList
+const isMenuVisible = (menu: any) => (menu?.menuVisible ?? 1) === 1
+
+const buildVisibleMenus = (menus: any[]) => {
+    return (menus || [])
+        .filter((menu) => isMenuVisible(menu))
+        .map((menu) => ({
+            ...menu,
+            children: buildVisibleMenus(menu.children || [])
+        }))
+}
+
+const visibleMenuList = computed(() => buildVisibleMenus(menuStore.menuList as any[]))
 
 const logout = () => {
     get('/api/auth/logout', (message) => {

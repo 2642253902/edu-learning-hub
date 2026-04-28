@@ -3,10 +3,11 @@ package com.exampe.sys.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.exampe.sys.entity.Routes;
 import com.exampe.sys.mapper.RoutesMapper;
-import com.exampe.auth.dto.RouteTreeDTO;
+import com.exampe.sys.dto.RouteTreeDTO;
 import com.exampe.sys.service.RoutesService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -47,9 +48,14 @@ public class RoutesServiceImpl extends ServiceImpl<RoutesMapper, Routes> impleme
      * 返回值：List<RouteTreeDTO> — 顶层节点（parentId 为 0 的节点）组成的列表。
      */
     @Override
-    public List<RouteTreeDTO> getRoutesTree(int role) {
+    public List<RouteTreeDTO> getRoutesTree(Integer role) {
 
-        List<Routes> routes = routesMapper.selectAllOrdered(role);
+        List<Routes> routes;
+        if (role == null) {
+            routes = routesMapper.selectAllOrdered();
+        } else {
+            routes = routesMapper.selectAllOrderedByRole(String.valueOf(role));
+        }
         // 2) 若为空，直接返回空集合
         if (routes.isEmpty()) {
             return new ArrayList<>();
@@ -62,6 +68,33 @@ public class RoutesServiceImpl extends ServiceImpl<RoutesMapper, Routes> impleme
 
         // 4) 递归构建并返回以 "0" 为根的路由树
         return buildTree(childrenMap, "0");
+    }
+
+    @Override
+    public List<RouteTreeDTO> getAllRoutesTree() {
+        return getRoutesTree(null);
+    }
+
+    @Override
+    public List<Routes> listAllRoutes() {
+        return routesMapper.selectAllOrdered();
+    }
+
+    @Override
+    public boolean addRoute(Routes routes) {
+        normalizeDefaultFields(routes);
+        return save(routes);
+    }
+
+    @Override
+    public boolean editRoute(Routes routes) {
+        normalizeDefaultFields(routes);
+        return updateById(routes);
+    }
+
+    @Override
+    public boolean deleteRoute(String id) {
+        return removeById(id);
     }
 
     /**
@@ -101,10 +134,26 @@ public class RoutesServiceImpl extends ServiceImpl<RoutesMapper, Routes> impleme
                             parseInteger(route.getLevel()),
                             route.getRemark(),
                             parseInteger(route.getSort()),
+                            route.getMenuVisible(),
                             children
                     );
                 })
                 .collect(Collectors.toList());
+    }
+
+    private void normalizeDefaultFields(Routes routes) {
+        if (!StringUtils.hasText(routes.getParentId())) {
+            routes.setParentId("0");
+        }
+        if (!StringUtils.hasText(routes.getLevel())) {
+            routes.setLevel("1");
+        }
+        if (!StringUtils.hasText(routes.getSort())) {
+            routes.setSort("999");
+        }
+        if (routes.getMenuVisible() == null) {
+            routes.setMenuVisible(1);
+        }
     }
 
     /**

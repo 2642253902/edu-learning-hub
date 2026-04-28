@@ -73,7 +73,8 @@
         </div>
 
         <!-- 讲义/资料预览 -->
-        <div v-if="currentModule === 'lecture' || currentModule === 'data'" class="display-box preview-box">
+        <div v-if="currentModule === 'lecture' || currentModule === 'data'" class="display-box preview-box"
+          ref="previewBoxRef">
           <div class="preview-container" v-loading="previewLoading" @scroll="handleDocScroll">
             <!-- 重点：讲义内容需要一个内部容器来撑开高度以便外层 preview-container 产生滚动条 -->
             <div v-if="renderedUrl && currentModule === 'lecture'" class="office-preview-wrapper"
@@ -119,6 +120,7 @@
                 <el-button :icon="Plus" @click="zoomIn" />
               </el-button-group>
               <el-button class="ml-2" @click="resetZoom">重置</el-button>
+              <el-button class="ml-2" :icon="FullScreen" @click="toggleFullScreen">全屏</el-button>
             </div>
           </div>
         </div>
@@ -147,8 +149,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { get, post } from '@/net'
-import axios from 'axios'
+import { getApiBaseURL, get, getBlob, post } from '@/net'
 import {
   ArrowLeft,
   ArrowRight,
@@ -159,7 +160,8 @@ import {
   MoreFilled,
   Document,
   Plus,
-  Minus
+  Minus,
+  FullScreen
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -187,6 +189,7 @@ const allResources = ref<any[]>([])
 // 预览相关状态
 const renderedUrl = ref('')
 const previewLoading = ref(false)
+const previewBoxRef = ref<HTMLElement | null>(null)
 
 const menuItems = [
   { key: 'video', label: '视频课程', icon: VideoPlay },
@@ -236,6 +239,17 @@ const navigateNext = () => { if (currentItemIndex.value < currentList.value.leng
 const zoomIn = () => { if (zoomLevel.value < 200) zoomLevel.value += 10 }
 const zoomOut = () => { if (zoomLevel.value > 50) zoomLevel.value -= 10 }
 const resetZoom = () => zoomLevel.value = 100
+
+const toggleFullScreen = () => {
+  if (!previewBoxRef.value) return
+  if (!document.fullscreenElement) {
+    previewBoxRef.value.requestFullscreen().catch(err => {
+      ElMessage.error(`无法进入全屏模式: ${err.message}`)
+    })
+  } else {
+    document.exitFullscreen()
+  }
+}
 
 const handleVideoEnded = () => {
   markAsCompleted()
@@ -392,12 +406,15 @@ const handleDocScroll = (e: any) => {
   const target = e.target
   const { scrollTop, scrollHeight, clientHeight } = target
 
-  // 更加宽松的判定：滚动条到底部的剩余距离小于 50 像素
-  const isAtBottom = scrollHeight - (scrollTop + clientHeight) < 50
+  // 判断逻辑：
+  // 1. 如果没有滚动条 (scrollHeight <= clientHeight)，则在渲染完成时处理
+  // 2. 如果有滚动条，拖到 85% 算完成
+  const scrollRatio = (scrollTop + clientHeight) / scrollHeight
+  const isReachedThreshold = scrollRatio >= 0.85
 
-  if (isAtBottom) {
+  if (isReachedThreshold) {
     if (learningRecord.value.learningStatus !== '1') {
-      console.log('判定为滚动到底部，触发标记完成')
+      console.log('判定为滚动超过85%，触发标记完成')
       markAsCompleted()
     }
   }
@@ -412,11 +429,7 @@ const handleDownload = async (item: any) => {
   }
 
   try {
-    const response = await axios.get(item.url, {
-      responseType: 'blob',
-      withCredentials: true
-    })
-    const blob = new Blob([response.data])
+    const blob = await getBlob(item.url)
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
     link.download = item.fileName
@@ -444,15 +457,12 @@ watch(() => currentList.value[currentItemIndex.value]?.url, async (newUrl) => {
 
   previewLoading.value = true
   try {
-    const response = await axios.get(newUrl, {
-      responseType: 'blob',
-      withCredentials: true
-    })
+    const blob = await getBlob(newUrl)
     // 释放旧的 URL 内存
     if (renderedUrl.value) {
       URL.revokeObjectURL(renderedUrl.value)
     }
-    renderedUrl.value = URL.createObjectURL(response.data)
+    renderedUrl.value = URL.createObjectURL(blob)
   } catch (err: any) {
     console.error('获取预览文件失败:', err)
     ElMessage.error('无法加载预览文件，请检查登录状态或权限')
@@ -483,7 +493,7 @@ const getFileType = (url: string) => {
 const getFullUrl = (url: string) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  return `${axios.defaults.baseURL}/upload/download?fileName=${encodeURIComponent(url)}`
+  return `${getApiBaseURL()}/upload/download?fileName=${encodeURIComponent(url)}`
 }
 
 const initData = async () => {
@@ -696,6 +706,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   padding: 20px;
+  min-height: 0;
+  /* 关键：允许内容区域缩小以触发内部滚动 */
 }
 
 .video-player-container {
@@ -727,18 +739,66 @@ onMounted(() => {
   color: #909399;
 }
 
+.preview-box {
+  display: flex !important;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #fff;
+}
+
+.preview-box:fullscreen {
+  padding: 40px;
+  background: #f0f2f5;
+  overflow-y: auto !important;
+  display: block !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+.preview-box:fullscreen .preview-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  height: auto !important;
+  min-height: 100%;
+  display: block !important;
+  background: #fff;
+}
+
+.preview-box:fullscreen .office-preview-wrapper {
+  transform: none !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.preview-box:fullscreen .nav-controls {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px 20px;
+  border-radius: 30px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  width: auto;
+}
+
 .preview-container {
   flex: 1;
-  overflow: auto;
+  overflow-y: auto !important;
+  overflow-x: hidden;
   background-color: #fff;
   padding: 20px;
-  display: flex;
-  justify-content: center;
+  display: block;
+  position: relative;
 }
 
 .office-preview-wrapper {
   width: 100%;
   max-width: 900px;
+  margin: 0 auto;
   transition: transform 0.2s ease;
 }
 

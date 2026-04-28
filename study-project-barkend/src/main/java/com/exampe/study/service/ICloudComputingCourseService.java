@@ -12,9 +12,7 @@ import java.util.Map;
  * 云计算课程服务接口
  * <p>提供课程管理、教师信息查询、学习统计等业务逻辑</p>
  *
- * @author jeecg-boot
- * @since 2025-09-20
- * @version V1.0
+ * @author admin
  */
 public interface ICloudComputingCourseService extends IService<CloudComputingCourse> {
 

@@ -4,17 +4,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.stereotype.Controller;
 
 /**
- * <p>
- *  前端控制器
- * </p>
+ * 角色路由关联控制器
+ * <p>管理角色与路由的关联关系（当前为空实现）</p>
  *
- * @author 26422
- * @since 2026-04-26
+ * @author admin
  */
 @Controller
 @RequestMapping("/api/roleRoute")
 public class RoleRouteController {
-
 
 
 }

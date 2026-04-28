@@ -3,6 +3,7 @@ package com.exampe.study.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.exampe.auth.entity.user.AccountUser;
 import lombok.extern.slf4j.Slf4j;
 import com.exampe.common.RestBean;
 import com.exampe.study.entity.CloudComputingCourseType;
@@ -13,13 +14,13 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Arrays;
+import java.util.Date;
 
 /**
  * 云计算课程分类管理控制器
  * <p>提供课程分类的增删改查接口，支持模糊查询</p>
  *
- * @author jeecg-boot
- * @since 2025-09-20
+ * @author admin
  */
 @RestController
 @RequestMapping("/study/cloudComputingCourseType")
@@ -66,7 +67,9 @@ public class CloudComputingCourseTypeController {
      * @return 操作结果
      */
     @PostMapping(value = "/add")
-    public RestBean<String> add(@RequestBody CloudComputingCourseType cloudComputingCourseType) {
+    public RestBean<String> add(@RequestBody CloudComputingCourseType cloudComputingCourseType,@SessionAttribute("account") AccountUser accountUser) {
+        cloudComputingCourseType.setCreateBy(accountUser.getUsername());
+        cloudComputingCourseType.setCreateTime(new Date());
         cloudComputingCourseTypeService.save(cloudComputingCourseType);
         return RestBean.success("添加成功！");
     }
@@ -78,7 +81,9 @@ public class CloudComputingCourseTypeController {
      * @return 操作结果
      */
     @RequestMapping(value = "/edit", method = {RequestMethod.PUT, RequestMethod.POST})
-    public RestBean<String> edit(@RequestBody CloudComputingCourseType cloudComputingCourseType) {
+    public RestBean<String> edit(@RequestBody CloudComputingCourseType cloudComputingCourseType,@SessionAttribute("account") AccountUser accountUser) {
+        cloudComputingCourseType.setUpdateBy(accountUser.getUsername());
+        cloudComputingCourseType.setUpdateTime(new Date());
         cloudComputingCourseTypeService.updateById(cloudComputingCourseType);
         return RestBean.success("编辑成功!");
     }

@@ -16,9 +16,7 @@ import java.util.Date;
  * 云计算课程实体类
  * <p>对应数据库表：cloud_computing_course</p>
  *
- * @author study-project
- * @since 2025-09-20
- * @version V1.0
+ * @author admin
  */
 @Data
 @TableName("cloud_computing_course")
@@ -27,7 +25,7 @@ import java.util.Date;
 public class CloudComputingCourse implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    /** 主键ID（UUID） */
+    /** 主键ID */
     @TableId(type = IdType.ASSIGN_ID)
     private String id;
 
@@ -47,8 +45,6 @@ public class CloudComputingCourse implements Serializable {
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updateTime;
 
-    /** 所属部门编码 */
-    private String sysOrgCode;
 
     /** 课程名称 */
     private String courseName;

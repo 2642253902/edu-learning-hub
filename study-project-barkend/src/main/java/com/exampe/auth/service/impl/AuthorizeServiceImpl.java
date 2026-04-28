@@ -21,12 +21,26 @@ import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 认证服务实现类
+ * <p>
+ * 实现用户认证、注册、邮箱验证、密码重置等功能
+ *
+ * @author admin
+ */
 @Service
 public class AuthorizeServiceImpl implements AuthorizeService, UserDetailsService {
 
     @Resource
     UserMapper userMapper;
 
+    /**
+     * 加载用户详情用于认证
+     *
+     * @param username 用户名或邮箱
+     * @return 用户详情对象
+     * @throws UsernameNotFoundException 用户不存在异常
+     */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         if (username == null || username.trim().isEmpty()) {
@@ -56,12 +70,19 @@ public class AuthorizeServiceImpl implements AuthorizeService, UserDetailsServic
     BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     /**
-     * 1.生成对应邮箱的验证码，
-     * 2.邮箱和对应的验证码存储在redis里面，并设置过期时间（三分钟，如果此时重新要求发邮件
-     * 只要剩余时间低于2分钟，就可以重新发送一次，重复此流程）
-     * 3.发送邮件，邮件内容包含验证码
-     * 4.如果发送失败，把redis里面的验证码删除
-     * 5.用户在注册时，再把redis里面去除对应值，然后看验证码是否一致
+     * 发送验证邮件
+     * <p>
+     * 流程：
+     * 1. 生成6位随机验证码
+     * 2. 将验证码存储到 Redis，有效期3分钟
+     * 3. 如果剩余时间低于2分钟可重新发送
+     * 4. 发送邮件包含验证码
+     * 5. 如果发送失败，删除 Redis 中的验证码
+     *
+     * @param email      邮箱地址
+     * @param sessionId  会话ID
+     * @param hasAccount 是否已有账户
+     * @return 错误消息，成功返回 null
      */
     @Override
     public String sendValidateEmail(String email, String sessionId, boolean hasAccount) {
@@ -90,7 +111,6 @@ public class AuthorizeServiceImpl implements AuthorizeService, UserDetailsServic
         message.setText("您的验证码是" + format + "，请在三分钟内使用");
         try {
             mailSender.send(message);
-            // 按照密码进行存储，并设置有效期为 3 分钟。
             stringRedisTemplate.opsForValue().set(key, format, 3, TimeUnit.MINUTES);
             return null;
         } catch (Exception e) {
@@ -99,6 +119,16 @@ public class AuthorizeServiceImpl implements AuthorizeService, UserDetailsServic
         }
     }
 
+    /**
+     * 验证并注册用户
+     *
+     * @param username  用户名
+     * @param password  密码
+     * @param email     邮箱
+     * @param code      验证码
+     * @param sessionId 会话ID
+     * @return 错误消息，成功返回 null
+     */
     @Override
     public String validateAndRegister(String username, String password, String email, String code, String sessionId) {
         String key = "email" + sessionId + ":" + email + ":" + "false";
@@ -136,6 +166,14 @@ public class AuthorizeServiceImpl implements AuthorizeService, UserDetailsServic
         }
     }
 
+    /**
+     * 仅验证邮箱验证码（用于密码重置）
+     *
+     * @param email     邮箱地址
+     * @param code      验证码
+     * @param sessionId 会话ID
+     * @return 错误消息，成功返回 null
+     */
     @Override
     public String validateOnly(String email, String code, String sessionId) {
         String key = "email" + sessionId + ":" + email + ":true";
@@ -155,14 +193,24 @@ public class AuthorizeServiceImpl implements AuthorizeService, UserDetailsServic
         }
     }
 
+    /**
+     * 重置密码
+     *
+     * @param email       邮箱地址
+     * @param newPassword 新密码
+     * @return 是否成功
+     */
     @Override
     public boolean resetPassword(String email, String newPassword) {
-        // 对新密码进行加密
         newPassword = passwordEncoder.encode(newPassword);
         return userMapper.restPasswordByEmail(email, newPassword) > 0;
     }
 
-    //查询角色表中角色为教师的用户，并返回他们的基本信息（id、username、email）
+    /**
+     * 查询所有教师用户
+     *
+     * @return 教师用户列表
+     */
     @Override
     public List<AccountUser> getTeachers() {
         return userMapper.selectTeachers();

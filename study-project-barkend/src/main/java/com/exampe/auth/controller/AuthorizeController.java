@@ -12,6 +12,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 认证控制器
+ * <p>
+ * 提供用户注册、邮箱验证、密码重置等认证相关功能
+ *
+ * @author admin
+ */
 @Validated
 @RestController
 @RequestMapping("/api/auth")
@@ -25,6 +32,13 @@ public class AuthorizeController {
     AuthorizeService authorizeService;
 
 
+    /**
+     * 发送注册邮箱验证码
+     *
+     * @param email   用户邮箱地址
+     * @param session HTTP会话
+     * @return 发送结果提示
+     */
     @PostMapping("/validate-register-email")
     public RestBean<String> validateRegisterEmail(@Pattern(regexp = emailRegex) @RequestParam("email") String email, HttpSession session) {
         String string = authorizeService.sendValidateEmail(email, session.getId(), false);
@@ -36,7 +50,14 @@ public class AuthorizeController {
     }
 
 
-    @PostMapping("/validate-rest-email")
+    /**
+     * 发送密码重置邮箱验证码
+     *
+     * @param email   用户邮箱地址
+     * @param session HTTP会话
+     * @return 发送结果提示
+     */
+    @PostMapping("/validate-reset-email")
     public RestBean<String> validateRestEmail(@Pattern(regexp = emailRegex) @RequestParam("email") String email, HttpSession session) {
 
         String string = authorizeService.sendValidateEmail(email, session.getId(), true);
@@ -48,6 +69,16 @@ public class AuthorizeController {
     }
 
 
+    /**
+     * 用户注册
+     *
+     * @param username 用户名（3-8位，支持字母、数字、中文）
+     * @param password 密码（6-16位）
+     * @param email    邮箱地址
+     * @param code     邮箱验证码（6位）
+     * @param session  HTTP会话
+     * @return 注册结果提示
+     */
     @PostMapping("/register")
     public RestBean<String> register(
             @Pattern(regexp = usernameRegex) @Length(min = 3, max = 8) @RequestParam("username") String username,
@@ -65,9 +96,17 @@ public class AuthorizeController {
     }
 
     /**
-     * 1.用户输入邮箱，点击发送验证码
-     * 2.验证码是否正确，正确就在Session里面设置一个标志，表示这个邮箱已经验证过了
-     * 3.用户发起重置密码的请求，如果存在标记，允许重置密码
+     * 开始密码重置流程 - 验证邮箱验证码
+     * <p>
+     * 验证流程：
+     * 1. 用户输入邮箱，点击发送验证码
+     * 2. 验证码正确后在Session中设置标志，表示该邮箱已验证通过
+     * 3. 用户发起重置密码请求时，检查Session中的验证标志
+     *
+     * @param email   用户邮箱地址
+     * @param code    邮箱验证码（6位）
+     * @param session HTTP会话
+     * @return 验证结果提示
      */
     @PostMapping("/start-reset")
     public RestBean<String> startReset(@Pattern(regexp = emailRegex)
@@ -83,7 +122,14 @@ public class AuthorizeController {
         }
     }
 
-    @PostMapping("/do-rest")
+    /**
+     * 执行密码重置
+     *
+     * @param password 新密码（6-16位）
+     * @param session  HTTP会话
+     * @return 重置结果提示
+     */
+    @PostMapping("/do-reset")
     public RestBean<String> resetPassword(@Length(min = 6, max = 16) @RequestParam("password") String password, HttpSession session) {
         String email = (String) session.getAttribute("rest-password");
         if (email == null) {

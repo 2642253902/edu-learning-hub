@@ -258,7 +258,7 @@ const handleDelete = (row: any) => {
     confirmButtonText: '立即删除',
     confirmButtonClass: 'el-button--danger'
   }).then(() => {
-    deleteMapping('/study/cloudComputingCourse/delete', { id: row.id }, (msg) => {
+    deleteMapping('/study/cloudComputingCourse/deleteCourse', { courseId: row.id }, (msg) => {
       ElMessage.success('已移除该课程')
       loadData()
     })

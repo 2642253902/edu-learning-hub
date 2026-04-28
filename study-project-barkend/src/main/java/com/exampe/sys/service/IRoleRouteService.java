@@ -5,7 +5,7 @@ import com.exampe.sys.entity.RoleRoute;
 
 /**
  * <p>
- *  服务类
+ * 服务类
  * </p>
  *
  * @author 26422

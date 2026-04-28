@@ -82,7 +82,7 @@ import { EditPen, Lock, Message, User } from "@element-plus/icons-vue";
 import router from "@/router";
 import { reactive, ref, computed } from "vue";
 import { ElMessage } from "element-plus";
-import { post, postForm } from "@/net";
+import { post, postForm, get } from "@/net";
 
 const form = reactive({
     username: '',
@@ -160,9 +160,10 @@ function register() {
     })
 }
 
+//2642253902@qq.com
 function validateEmail() {
     coldTime.value = 60
-    get(`/api/auth/valid-register-email?email=${form.email}`, (message) => {
+    postForm(`/api/auth/validate-register-email`, {email: form.email}, (message) => {
         ElMessage.success(message)
         const handle = setInterval(() => {
             coldTime.value--

@@ -37,7 +37,12 @@
         <el-table-column label="操作" width="180" align="center">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-popconfirm title="确定要删除此课程吗？" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger">删除</el-button>
+              </template>
+            </el-popconfirm>
+
           </template>
         </el-table-column>
       </el-table>
@@ -55,7 +60,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { get } from '@/net'
+import { get, deleteMapping } from '@/net'
 import { Search, Plus } from '@element-plus/icons-vue'
 import CourseResourceModal from './modules/CourseResourceModal.vue'
 import { ElMessage } from 'element-plus'

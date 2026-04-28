@@ -4,10 +4,14 @@ import { ElMessage } from "element-plus";
 const defaultFailure = (message: string) => ElMessage.warning(message)
 const defaultError = (err: any) => ElMessage.error("网络异常，请稍后再试")
 
+export function getApiBaseURL() {
+    return axios.defaults.baseURL ?? ''
+}
+
 const handleAuthError = () => {
     // 检查是否已经在处理退出流程，避免循环
     if ((window as any)._isExiting) return
-    
+
     // 如果已经在登录页，不要再触发报错和跳转
     if (window.location.pathname === '/' || window.location.pathname === '/index') {
         return
@@ -19,9 +23,9 @@ const handleAuthError = () => {
     const storage = typeof window !== 'undefined' ? window.localStorage : null
     storage?.removeItem('user')
     storage?.removeItem('menuList')
-    
+
     ElMessage.error('会话已过期，请重新登录')
-    
+
     // 延迟导航，确保消息显示
     setTimeout(() => {
         if (typeof window !== 'undefined') {
@@ -123,6 +127,21 @@ export function get(
     }).catch(err => {
         error(err);
     });
+}
+
+export function getBlob(
+    url: string,
+    error: (err: any) => void = defaultError
+) {
+    return axios.get(url, {
+        withCredentials: true,
+        responseType: 'blob'
+    }).then(response => {
+        return response.data as Blob
+    }).catch(err => {
+        error(err)
+        throw err
+    })
 }
 
 export function deleteMapping(

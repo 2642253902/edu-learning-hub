@@ -9,30 +9,94 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Description: 课程表
- * @Author: jeecg-boot
- * @Date: 2025-09-20
- * @Version: V1.0
+ * 云计算课程 Mapper 接口
+ * <p>提供课程数据的数据库操作及统计查询</p>
+ *
+ * @author admin
  */
 @Mapper
 public interface CloudComputingCourseMapper extends BaseMapper<CloudComputingCourse> {
+    
+    /**
+     * 获取教师列表
+     * 
+     * @return 教师信息列表
+     */
     List<Map> getTeacher();
 
+    /**
+     * 删除课程及其关联数据
+     * 
+     * @param courseId 课程ID
+     * @return 删除行数
+     */
     int deleteCourseById(@Param("courseId") String courseId);
 
+    /**
+     * 获取用户完成的课程总数
+     * 
+     * @param UserName 用户名
+     * @return 完成课程数
+     */
     int getSumcourse(String UserName);
 
+    /**
+     * 获取用户已完成的课程列表
+     * 
+     * @param UserName 用户名
+     * @return 已完成课程ID列表
+     */
     List<String> getCompletedcourse(String UserName);
 
+    /**
+     * 获取教师教授的课程列表
+     * 
+     * @param UserId 教师ID
+     * @return 课程信息列表
+     */
     List<Map> getTeachercourse(String UserId);
 
+    /**
+     * 获取教师在指定课程中的学生数量
+     * 
+     * @param UserId 教师ID
+     * @param CourseId 课程ID
+     * @return 学生数量
+     */
     int getTeacherNumber(@Param("UserId") String UserId, @Param("CourseId") String CourseId);
 
+    /**
+     * 获取教师在指定课程中的总学习时长
+     * 
+     * @param UserId 教师ID
+     * @param CourseId 课程ID
+     * @return 总学习时长（秒）
+     */
     int getTeacherTime(@Param("UserId") String UserId, @Param("CourseId") String CourseId);
 
+    /**
+     * 获取教师在指定课程中的总学习次数
+     * 
+     * @param UserId 教师ID
+     * @param CourseId 课程ID
+     * @return 总学习次数
+     */
     int getTeachersum(@Param("UserId") String UserId, @Param("CourseId") String CourseId);
 
+    /**
+     * 获取教师在指定课程中完成的资源列表
+     * 
+     * @param UserId 教师ID
+     * @param CourseId 课程ID
+     * @return 已完成资源ID列表
+     */
     List<String> getTeacherComplete(@Param("UserId") String UserId, @Param("CourseId") String CourseId);
 
+    /**
+     * 获取用户角色
+     * 
+     * @param UserName 用户名
+     * @return 角色标识
+     */
     String getrole(@Param("UserId") String UserName);
 }

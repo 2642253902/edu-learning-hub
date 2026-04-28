@@ -10,14 +10,28 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Description: 学习资源表
- * @Author: jeecg-boot
- * @Date: 2025-09-20
- * @Version: V1.0
+ * 云计算课程资源 Mapper 接口
+ * <p>提供课程资源的数据库操作及统计查询</p>
+ *
+ * @author admin
  */
 @Mapper
 public interface CloudComputingCourseResourceMapper extends BaseMapper<CloudComputingCourseResource> {
+    
+    /**
+     * 根据课程ID分组统计各资源类型数量
+     * 
+     * @param courseId 课程ID
+     * @return 资源类型统计结果
+     */
     List<Map<String, Object>> countByCourseIdGroupByType(@Param("courseId") String courseId);
 
+    /**
+     * 查询课程资源列表（含学生学习状态）
+     * 
+     * @param courseId 课程ID
+     * @param studentId 学生ID
+     * @return 资源列表（包含学习状态）
+     */
     List<CloudComputingCourseResourceVO> listWithLearningStatus(@Param("courseId") String courseId, @Param("studentId") String studentId);
 }

@@ -53,7 +53,14 @@
 
               <el-col :xl="8" :lg="8" :md="12" :sm="24">
                 <el-form-item label="负责教师" prop="teacherId">
-                  <el-input v-model="form.teacherId" placeholder="请输入负责教师姓名/ID" />
+                  <el-select v-model="form.teacherId" placeholder="请选择负责教师" class="w-full" :disabled="isTeacherSelectDisabled">
+                    <el-option
+                      v-for="teacher in teacherList"
+                      :key="teacher.id"
+                      :label="getTeacherLabel(teacher)"
+                      :value="String(teacher.id)"
+                    />
+                  </el-select>
                 </el-form-item>
               </el-col>
 
@@ -177,6 +184,14 @@ import { ElMessage } from 'element-plus'
 import { Plus, VideoCamera, Document, Files } from '@element-plus/icons-vue'
 import CourseResourceModal from './modules/CourseResourceModal.vue'
 
+interface TeacherItem {
+  id: string | number
+  realname?: string
+  username?: string
+  email?: string
+  name?: string
+}
+
 const route = useRoute()
 const router = useRouter()
 
@@ -200,6 +215,7 @@ const form = reactive({
 })
 
 const courseTypeList = ref<any[]>([])
+const teacherList = ref<TeacherItem[]>([])
 const videoFiles = ref<any[]>([])
 const lectureFiles = ref<any[]>([])
 const experimentFiles = ref<any[]>([])
@@ -218,6 +234,7 @@ const init = async () => {
   else title.value = '编辑课程'
 
   await loadCourseTypes()
+  loadTeachers()
 
   // 尝试从 sessionStorage 获取 PreparationCenter 传过来的数据
   const cachedData = sessionStorage.getItem('currentCourseEdit')
@@ -242,6 +259,12 @@ const loadCourseTypes = () => {
       courseTypeList.value = data?.records || []
       resolve(true)
     })
+  })
+}
+
+const loadTeachers = () => {
+  get('/api/user/list/teachers', (msg, data) => {
+    teacherList.value = data?.data || data?.records || data || []
   })
 }
 
@@ -276,6 +299,10 @@ const handleCourseTypeChange = (val: string) => {
   if (selected) {
     form.courseName = selected.courseTypeName
   }
+}
+
+const getTeacherLabel = (teacher: TeacherItem) => {
+  return teacher.realname || teacher.username || teacher.email || teacher.name || '-'
 }
 
 const handleSubmit = () => {
@@ -330,8 +357,6 @@ const handleDeleteResource = (record: any) => {
   }, (failMsg) => {
     ElMessage.warning(failMsg)
   })
-
-
 }
 
 onMounted(() => {

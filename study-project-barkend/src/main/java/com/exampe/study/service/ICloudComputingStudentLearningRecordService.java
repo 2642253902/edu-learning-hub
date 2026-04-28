@@ -7,9 +7,7 @@ import com.exampe.study.entity.CloudComputingStudentLearningRecord;
  * 学生学习记录服务接口
  * <p>提供学生学习记录管理、学习统计等业务逻辑</p>
  *
- * @author jeecg-boot
- * @since 2025-09-22
- * @version V1.0
+ * @author admin
  */
 public interface ICloudComputingStudentLearningRecordService extends IService<CloudComputingStudentLearningRecord> {
     

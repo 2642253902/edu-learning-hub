@@ -99,7 +99,10 @@ const injectRoutes = (routesData: any[]) => {
         router.addRoute('index', {
           path: routePath,
           name: item.name,
-          component: modules[componentPath]
+          component: modules[componentPath],
+          meta: {
+            menuVisible: item.menuVisible ?? 1
+          }
         });
       }
 
