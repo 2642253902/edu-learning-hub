@@ -150,7 +150,7 @@ public class AuthorizeServiceImpl implements AuthorizeService, UserDetailsServic
                 newAccount.setUsername(username);
                 newAccount.setPassword(password);
                 newAccount.setEmail(email);
-                newAccount.setRole(3);
+                newAccount.setRole("3");
                 int result = userMapper.insert(newAccount);
                 newAccount.setEmail(email);
                 if (result > 0) {

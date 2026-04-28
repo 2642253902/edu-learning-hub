@@ -28,7 +28,7 @@
     <!-- 课程列表 -->
     <div v-else class="course-list">
       <div v-for="category in courseTypes" :key="`category-${category.id}`" class="course-category"
-        v-show="categoryData[category.id] && categoryData[category.id].length > 0">
+        v-show="categoryData[category.id] && (categoryData[category.id]?.length || 0) > 0">
         <!-- 课程分类标题 -->
         <div class="category-title">
           <span class="title-text">{{ category.courseTypeName }}</span>
@@ -78,7 +78,7 @@
           <el-pagination v-model:current-page="categoryPagination[category.id].pageNo"
             :page-size="categoryPagination[category.id].pageSize" :total="categoryPagination[category.id].total"
             layout="total, prev, pager, next, jumper"
-            @current-change="(val) => handleCategoryPageChange(val, category.id)" />
+            @current-change="(val: number) => handleCategoryPageChange(val, category.id)" />
         </div>
       </div>
     </div>
@@ -190,14 +190,14 @@ const loadCourseListByCategory = async (categoryId: string) => {
       }))
 
       // 为每个课程异步加载真实的统计数据
-      categoryData[categoryId].forEach(item => {
+      ;(categoryData[categoryId] || []).forEach(item => {
         get(`/study/cloudComputingCourseResource/counts?id=${item.id}`, (m, countData) => {
           if (countData) {
             item.videoCount = countData['1'] ?? 0
             item.lectureCount = countData['2'] ?? 0
             item.resourceCount = countData['3'] ?? 0
             // 触发响应式更新
-            categoryData[categoryId] = [...categoryData[categoryId]]
+            categoryData[categoryId] = [...(categoryData[categoryId] || [])]
           }
         })
       })

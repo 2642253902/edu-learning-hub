@@ -34,7 +34,7 @@
       </div>
 
       <!-- 右侧列表 -->
-      <div class="right-panel">
+      <div class="right-panel" v-if="currentModule !== 'Details'">
         <div class="panel-header">
           <span class="panel-title">{{ panelTitle }}</span>
           <el-icon>
@@ -94,7 +94,7 @@
                 </el-result>
               </div>
             </div>
-            <div v-else-if="currentModule === 'data'" class="data-download-center">
+           <div v-else-if="currentModule === 'data' && currentList[currentItemIndex]" class="data-download-center">
               <el-result icon="info" title="资料下载" sub-title="点击下方按钮下载参考资料，下载完成后将自动标记为已学">
                 <template #extra>
                   <el-button type="success" size="large" :icon="Document"
@@ -129,7 +129,7 @@
         <div v-if="currentModule === 'Details'" class="display-box info-box">
           <el-descriptions title="课程详细资料" :column="1" border>
             <el-descriptions-item label="课程名称">{{ courseDetails.courseName }}</el-descriptions-item>
-            <el-descriptions-item label="课程分类">{{ courseDetails.courseTypeName }}</el-descriptions-item>
+            <el-descriptions-item label="课程分类">{{ courseTypeName }}</el-descriptions-item>
             <el-descriptions-item label="标签">
               <el-tag size="small">{{ courseDetails.courseTag }}</el-tag>
             </el-descriptions-item>
@@ -139,6 +139,9 @@
               {{ courseDetails.courseStatus === 1 ? '启用中' : '已停用' }}
             </el-descriptions-item>
           </el-descriptions>
+
+            
+
         </div>
       </div>
     </div>
@@ -184,6 +187,7 @@ const currentModule = ref(route.query.resourceType as string || 'video')
 const currentItemIndex = ref(0)
 const zoomLevel = ref(100)
 const courseDetails = ref<any>({})
+const courseTypeDict = ref<any[]>([])
 const allResources = ref<any[]>([])
 
 // 预览相关状态
@@ -199,6 +203,12 @@ const menuItems = [
 ]
 
 // --- 计算属性 ---
+const courseTypeName = computed(() => {
+  if (courseDetails.value.courseTypeName) return courseDetails.value.courseTypeName
+  const match = courseTypeDict.value.find(item => String(item.id) === String(courseDetails.value.courseTypeId))
+  return match ? match.courseTypeName : '-'
+})
+
 const currentList = computed(() => {
   const typeMap: Record<string, string> = { 'video': '1', 'lecture': '2', 'data': '3' }
   const targetType = typeMap[currentModule.value]
@@ -504,6 +514,12 @@ const initData = async () => {
   }
 
   isLoading.value = true
+
+  // 加载字典数据
+  get('/study/cloudComputingCourseType/list?pageSize=1000', (msg, data) => {
+    courseTypeDict.value = data?.records || data || []
+  })
+
   get(`/study/cloudComputingCourse/list?id=${courseId.value}`, (msg, data) => {
     // 确保从返回的记录中通过 ID 查找到正确的课程详情
     const records = data?.records || data || []

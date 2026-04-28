@@ -170,3 +170,40 @@ export function deleteMapping(
         error(err);
     });
 }
+
+type ApiSuccess<T = any> = (data: T) => void
+type ApiFailure = (message: string, data?: any) => void
+
+export const communityApi = {
+    listGroups(success: ApiSuccess<any[]>, failure: ApiFailure = defaultFailure) {
+        return get('/api/community/groups', (_, data) => success(data || []), failure)
+    },
+    createGroup(payload: any, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
+        return post('/api/community/groups', payload, (_, data) => success(data), failure)
+    },
+    joinGroup(groupId: string, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
+        return post(`/api/community/groups/${groupId}/join`, {}, (_, data) => success(data), failure)
+    },
+    listPosts(groupId: string | undefined, success: ApiSuccess<any[]>, failure: ApiFailure = defaultFailure) {
+        const query = groupId ? `?groupId=${encodeURIComponent(groupId)}` : ''
+        return get(`/api/community/posts${query}`, (_, data) => success(data || []), failure)
+    },
+    createPost(payload: any, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
+        return post('/api/community/posts', payload, (_, data) => success(data), failure)
+    },
+    listComments(postId: string, success: ApiSuccess<any[]>, failure: ApiFailure = defaultFailure) {
+        return get(`/api/community/posts/${postId}/comments`, (_, data) => success(data || []), failure)
+    },
+    createComment(postId: string, payload: any, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
+        return post(`/api/community/posts/${postId}/comments`, payload, (_, data) => success(data), failure)
+    },
+    listReviews(resourceId: string, success: ApiSuccess<any[]>, failure: ApiFailure = defaultFailure) {
+        return get(`/api/community/reviews?resourceId=${encodeURIComponent(resourceId)}`, (_, data) => success(data || []), failure)
+    },
+    createReview(payload: any, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
+        return post('/api/community/reviews', payload, (_, data) => success(data), failure)
+    },
+    likeReview(reviewId: string, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
+        return post(`/api/community/reviews/${reviewId}/like`, {}, (_, data) => success(data), failure)
+    }
+}

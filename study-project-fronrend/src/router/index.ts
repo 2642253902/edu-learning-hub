@@ -31,7 +31,33 @@ const routes: Readonly<RouteRecordRaw[]> = [
       },
     ]
   },
-  { path: '/index', name: 'index', component: () => import('@/views/IndexView.vue'), }
+  {
+    path: '/index',
+    name: 'index',
+    component: () => import('@/views/IndexView.vue'),
+    children: [
+      {
+        path: 'home',
+        name: 'index-home',
+        component: () => import('@/views/HomeView.vue')
+      },
+      {
+        path: 'community/groups',
+        name: 'community-groups',
+        component: () => import('@/views/study/community/GroupList.vue')
+      },
+      {
+        path: 'community/group/:id',
+        name: 'community-group',
+        component: () => import('@/views/study/community/GroupDetail.vue')
+      },
+      {
+        path: 'community/public',
+        name: 'community-public',
+        component: () => import('@/views/study/community/PublicDiscussion.vue')
+      }
+    ]
+  }
 ]
 
 

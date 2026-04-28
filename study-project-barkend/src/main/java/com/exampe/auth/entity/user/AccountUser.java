@@ -39,5 +39,5 @@ public class AccountUser implements Serializable {
     /**
      * 角色ID
      */
-    private int role;
+    private String role;
 }

@@ -29,7 +29,7 @@ public class AccountDTO {
     /**
      * 角色ID
      */
-    private int role;
+    private String role;
 
     /**
      * 角色中文描述

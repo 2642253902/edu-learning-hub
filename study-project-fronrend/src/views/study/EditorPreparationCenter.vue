@@ -75,7 +75,7 @@
           <div v-show="!isAddMode" class="mt-8">
             <el-tabs v-model="activeTab" type="border-card">
               <!-- 视频 -->
-              <el-tab-pane label="视频" name="video">
+                <el-tab-pane label="视频" name="video">
                 <div class="flex justify-between items-center mb-4">
                   <el-button v-if="!disabled" type="primary" :icon="Plus" @click="showModal(1)">添加视频</el-button>
                   <span class="text-gray-500">已上传：{{ videoFiles.length }} 个视频</span>
@@ -166,6 +166,16 @@
                   </el-table-column>
                 </el-table>
               </el-tab-pane>
+
+              <!-- 评价 -->
+              <el-tab-pane label="评价" name="review">
+                <div class="mt-4">
+                  <resource-review-form :resourceId="form.id" @saved="() => { if (form.id) loadResources(form.id) }" />
+                  <div class="mt-4">
+                    <resource-review-list v-if="form.id" :resourceId="form.id" />
+                  </div>
+                </div>
+              </el-tab-pane>
             </el-tabs>
           </div>
         </template>
@@ -183,6 +193,8 @@ import { deleteMapping, get, post } from '@/net'
 import { ElMessage } from 'element-plus'
 import { Plus, VideoCamera, Document, Files } from '@element-plus/icons-vue'
 import CourseResourceModal from './modules/CourseResourceModal.vue'
+import ResourceReviewForm from './components/ResourceReviewForm.vue'
+import ResourceReviewList from './components/ResourceReviewList.vue'
 
 interface TeacherItem {
   id: string | number

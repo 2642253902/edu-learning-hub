@@ -49,14 +49,13 @@ public class AccountManageServiceImpl implements IAccountManageService {
         wrapper.orderByDesc("id");
         IPage<Account> accountPage = userMapper.selectPage(page, wrapper);
 
-        // 转换为 DTO 并补充角色描述
         return accountPage.convert(account -> {
             AccountDTO dto = new AccountDTO();
             dto.setId(account.getId());
             dto.setUsername(account.getUsername());
             dto.setEmail(account.getEmail());
             dto.setRole(account.getRole());
-            dto.setRoleDescription(getRoleDescription(account.getRole()));
+            dto.setRoleDescription((account.getRole()));
             return dto;
         });
     }
@@ -96,19 +95,18 @@ public class AccountManageServiceImpl implements IAccountManageService {
         accountAdd.setEmail(account.getEmail());
         accountAdd.setPassword(passwordEncoder.encode(account.getPassword()));
         // 默认学生角色
-        accountAdd.setRole(account.getRole() > 0 ? account.getRole() : 3);
+        accountAdd.setRole("3");
         return userMapper.insert(account) > 0;
     }
 
     /**
      * 编辑用户信息
      *
-     * @param id 用户ID
      * @return 是否更新成功
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean editAccount( Account account) {
+    public boolean editAccount(Account account) {
         if (account.getId() == null || account.getId().isBlank()) {
             return false;
         }
@@ -142,7 +140,7 @@ public class AccountManageServiceImpl implements IAccountManageService {
         }
 
         // 角色不为 0 时更新
-        if (account.getRole() > 0) {
+        if ((account.getRole().toString()) != " 0") {
             accountUpdate.setRole(account.getRole());
         }
 
@@ -202,8 +200,8 @@ public class AccountManageServiceImpl implements IAccountManageService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean changeUserRole(String id, int newRole) {
-        if (id == null || id.isBlank() || newRole <= 0) {
+    public boolean changeUserRole(String id, String newRole) {
+        if (id == null || id.isBlank() ) {
             return false;
         }
 
@@ -254,13 +252,13 @@ public class AccountManageServiceImpl implements IAccountManageService {
      * @param role 角色ID
      * @return 角色中文名称
      */
-    private String getRoleDescription(int role) {
-        return switch (role) {
-            case 1 -> "管理员";
-            case 2 -> "教师";
-            case 3 -> "学生";
-            case 4 -> "班级管理员";
-            default -> "未知角色";
-        };
-    }
+//    private String getRoleDescription(String role) {
+//        return switch (role) {
+//            case 1 -> "管理员";
+//            case 2 -> "教师";
+//            case 3 -> "学生";
+//            case 4 -> "班级管理员";
+//            default -> "未知角色";
+//        };
+//    }
 }

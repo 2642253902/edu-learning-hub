@@ -37,7 +37,7 @@ public interface IAccountManageService {
     /**
      * 修改用户角色（管理员专用）
      */
-    boolean changeUserRole(String id, int newRole);
+    boolean changeUserRole(String id, String newRole);
 
     /**
      * 检查用户名是否唯一

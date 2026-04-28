@@ -19,8 +19,8 @@
         <div class="btn-group">
             <el-radio-group v-model="queryParam.status" @change="loadData" size="default">
               <el-radio-button :value="''">全部</el-radio-button>
-              <el-radio-button :value="1">已发布</el-radio-button>
-              <el-radio-button :value="0">待完善</el-radio-button>
+              <el-radio-button :value="1">启用</el-radio-button>
+              <el-radio-button :value="0">禁用</el-radio-button>
             </el-radio-group>
         </div>
         <div class="search-group">

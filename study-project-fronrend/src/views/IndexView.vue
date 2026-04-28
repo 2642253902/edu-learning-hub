@@ -11,6 +11,14 @@
 
             <el-menu :default-active="route.path" class="el-menu-vertical" :collapse="isCollapse"
                 background-color="#2b303b" text-color="#a3a6ad" active-text-color="#ffffff" router>
+                <!-- 固定首页菜单项 -->
+                <el-menu-item index="/index/home">
+                    <el-icon>
+                        <House />
+                    </el-icon>
+                    <template #title>工作台首页</template>
+                </el-menu-item>
+
                 <template v-for="menu in visibleMenuList" :key="menu.id">
                     <!-- 如果有子级 -->
                     <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="menu.path">
@@ -63,7 +71,7 @@
                         <Expand v-else />
                     </el-icon>
                     <el-breadcrumb separator="/" class="breadcrumb">
-                        <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+                        <el-breadcrumb-item :to="{ path: '/index/home' }">首页</el-breadcrumb-item>
                         <el-breadcrumb-item>学习社区控制台</el-breadcrumb-item>
                     </el-breadcrumb>
                 </div>
@@ -139,7 +147,8 @@ import {
     Bell,
     CaretBottom,
     User,
-    SwitchButton
+    SwitchButton,
+    House
 } from '@element-plus/icons-vue'
 import { get } from "@/net";
 import { useRouter, useRoute } from "vue-router";
@@ -156,15 +165,13 @@ const route = useRoute()
 const isCollapse = ref(false)
 const searchQuery = ref('')
 
-console.log('菜单列表：', menuStore.menuList) // 调试输出菜单列表
-
 
 const isMenuVisible = (menu: any) => (menu?.menuVisible ?? 1) === 1
 
-const buildVisibleMenus = (menus: any[]) => {
+const buildVisibleMenus = (menus: any[]): any[] => {
     return (menus || [])
         .filter((menu) => isMenuVisible(menu))
-        .map((menu) => ({
+        .map((menu: any) => ({
             ...menu,
             children: buildVisibleMenus(menu.children || [])
         }))

@@ -80,11 +80,11 @@ public class AccountManageController {
     @RequestMapping(value = "/edit", method = {RequestMethod.POST, RequestMethod.PUT})
     public RestBean<String> editUser(@RequestBody Account account, HttpSession session) {
 
-        if (account.getId() == null || account.getId() .isBlank()) {
+        if (account.getId() == null || account.getId().isBlank()) {
             return RestBean.failure(400, "用户ID不能为空");
         }
 
-        boolean success = accountManageService.editAccount( account);
+        boolean success = accountManageService.editAccount(account);
         if (!success) {
             return RestBean.failure(400, "用户名或邮箱已存在，或用户不存在");
         }
@@ -128,13 +128,10 @@ public class AccountManageController {
      * 修改用户角色
      */
     @PostMapping("/changeRole")
-    public RestBean<String> changeUserRole(@RequestParam String id, @RequestParam int role, HttpSession session) {
+    public RestBean<String> changeUserRole(@RequestParam String id, @RequestParam String role, HttpSession session) {
 
-        if (id == null || id.isBlank()) {
-            return RestBean.failure(400, "用户ID不能为空");
-        }
-        if (role <= 0) {
-            return RestBean.failure(400, "角色ID必须大于0");
+        if (role == null || role.isBlank()) {
+            return RestBean.failure(400, "角色ID不能为空");
         }
 
         boolean success = accountManageService.changeUserRole(id, role);
