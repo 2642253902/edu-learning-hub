@@ -86,7 +86,7 @@ const loadData = () => {
 }
 
 const getTagType = (id: any) => {
-  const types = ['', 'success', 'info', 'warning', 'danger']
+  const types = ['primary', 'success', 'info', 'warning', 'danger']
   const index = String(id).charCodeAt(0) % types.length
   return types[index]
 }

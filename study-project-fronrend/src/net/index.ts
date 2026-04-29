@@ -207,3 +207,33 @@ export const communityApi = {
         return post(`/api/community/reviews/${reviewId}/like`, {}, (_, data) => success(data), failure)
     }
 }
+
+export const messageApi = {
+    manageList(params: { pageNo?: number; pageSize?: number; title?: string; level?: string | number; enabled?: string | number }, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
+        const search = new URLSearchParams()
+        search.append('pageNo', String(params.pageNo ?? 1))
+        search.append('pageSize', String(params.pageSize ?? 10))
+        if (params.title) search.append('title', params.title)
+        if (params.level !== undefined && params.level !== '') search.append('level', String(params.level))
+        if (params.enabled !== undefined && params.enabled !== '') search.append('enabled', String(params.enabled))
+        return get(`/api/message/manage/list?${search.toString()}`, (_, data) => success(data), failure)
+    },
+    add(payload: any, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
+        return post('/api/message/manage/add', payload, (_, data) => success(data), failure)
+    },
+    edit(payload: any, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
+        return post('/api/message/manage/edit', payload, (_, data) => success(data), failure)
+    },
+    delete(id: string, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
+        return deleteMapping('/api/message/manage/delete', { id }, (_, data) => success(data), failure)
+    },
+    userList(limit = 20, success: ApiSuccess<any[]>, failure: ApiFailure = defaultFailure) {
+        return get(`/api/message/user/list?limit=${limit}`, (_, data) => success(data || []), failure)
+    },
+    read(messageId: string, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
+        return post(`/api/message/user/read?messageId=${encodeURIComponent(messageId)}`, {}, (_, data) => success(data), failure)
+    },
+    readAll(success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
+        return post('/api/message/user/readAll', {}, (_, data) => success(data), failure)
+    }
+}

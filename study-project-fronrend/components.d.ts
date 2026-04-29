@@ -44,6 +44,7 @@ declare module 'vue' {
     ElOption: typeof import('element-plus/es')['ElOption']
     ElPagination: typeof import('element-plus/es')['ElPagination']
     ElPopconfirm: typeof import('element-plus/es')['ElPopconfirm']
+    ElPopover: typeof import('element-plus/es')['ElPopover']
     ElProgress: typeof import('element-plus/es')['ElProgress']
     ElRadio: typeof import('element-plus/es')['ElRadio']
     ElRadioButton: typeof import('element-plus/es')['ElRadioButton']
@@ -71,6 +72,8 @@ declare module 'vue' {
     ForgetPage: typeof import('./src/components/welcome/ForgetPage.vue')['default']
     LoginPage: typeof import('./src/components/welcome/LoginPage.vue')['default']
     RegisterPage: typeof import('./src/components/welcome/RegisterPage.vue')['default']
+    ResourceReviewForm: typeof import('./src/components/ResourceReviewForm.vue')['default']
+    ResourceReviewList: typeof import('./src/components/ResourceReviewList.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

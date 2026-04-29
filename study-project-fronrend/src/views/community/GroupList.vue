@@ -10,8 +10,8 @@
       <el-table-column prop="description" label="描述" />
       <el-table-column label="操作">
         <template #default="{ row }">
-          <el-button type="text" @click="joinGroup(row.id)">加入</el-button>
-          <el-button type="text" @click="goDetail(row.id)">进入</el-button>
+          <el-button link @click="joinGroup(row.id)">加入</el-button>
+          <el-button link @click="goDetail(row.id)">进入</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -45,7 +45,7 @@ const showCreate = ref(false)
 const form = ref({ name: '', description: '' })
 
 const load = () => {
-  communityApi.listGroups((d) => {
+  communityApi.listGroups((d: any) => {
     groups.value = d || []
   })
 }
@@ -65,8 +65,8 @@ const joinGroup = (groupId: string) => {
   })
 }
 
-const goDetail = (id:string) => {
-  router.push({ path: `/index/community/group/${id}` })
+const goDetail = (id: string) => {
+ router.push({ path: '/community/GroupDetail', query: { id } })
 }
 
 onMounted(load)

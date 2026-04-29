@@ -42,19 +42,29 @@ const routes: Readonly<RouteRecordRaw[]> = [
         component: () => import('@/views/HomeView.vue')
       },
       {
-        path: 'community/groups',
-        name: 'community-groups',
-        component: () => import('@/views/study/community/GroupList.vue')
+        path: 'personal-info',
+        name: 'index-personal-info',
+        component: () => import('@/views/sys/PersonalInfo.vue')
       },
       {
-        path: 'community/group/:id',
-        name: 'community-group',
-        component: () => import('@/views/study/community/GroupDetail.vue')
+        path: 'messages',
+        name: 'index-messages',
+        component: () => import('@/views/sys/MessageCenter.vue')
       },
       {
-        path: 'community/public',
-        name: 'community-public',
-        component: () => import('@/views/study/community/PublicDiscussion.vue')
+        path: 'community/group-manage',
+        name: 'community-group-manage',
+        component: () => import('@/views/community/GroupManage.vue')
+      },
+      {
+        path: 'community/post-manage',
+        name: 'community-post-manage',
+        component: () => import('@/views/community/PostManage.vue')
+      },
+      {
+        path: 'community/review-manage',
+        name: 'community-review-manage',
+        component: () => import('@/views/community/ReviewManage.vue')
       }
     ]
   }
@@ -203,7 +213,14 @@ export const resetRoutes = () => {
 
   // 遍历所有当前路由，如果是动态添加的（非 welcome及index），就将其移除
   router.getRoutes().forEach(route => {
-    if (route.name && route.name !== 'welcome' && route.name !== 'welcome-login' && route.name !== 'welcome-register' && route.name !== 'welcome-forget' && route.name !== 'index') {
+    if (
+      route.name &&
+      route.name !== 'welcome' &&
+      route.name !== 'welcome-login' &&
+      route.name !== 'welcome-register' &&
+      route.name !== 'welcome-forget' &&
+      route.name !== 'index'
+    ) {
       router.removeRoute(route.name as string);
     }
   });

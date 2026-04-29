@@ -153,8 +153,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { get, deleteMapping } from '@/net'
 import {
   Plus, Search, Refresh, Platform, VideoPlay, Reading, Edit,
@@ -164,6 +164,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import CourseForm from './modules/CourseForm.vue'
 
 const router = useRouter()
+const route = useRoute()
 const loading = ref(false)
 const dataSource = ref([])
 const drawerVisible = ref(false)
@@ -242,10 +243,13 @@ const handleFormOk = () => {
 const handleEdit = (row: any) => {
   router.push({
     path: '/study/EditorPreparationCenter',
-    query: { id: row.id, from: '/study/PreparationCenter' }
+    query: { id: row.id, from: `/study/PreparationCenter?refresh=${Date.now()}` }
   })
   sessionStorage.setItem('currentCourseEdit', JSON.stringify(row))
 }
+watch(() => route?.query?.refresh, () => {
+  loadData()
+})
 
 const handleDetail = (row: any) => {
   selectedCourse.value = row
@@ -267,6 +271,10 @@ const handleDelete = (row: any) => {
 
 onMounted(() => {
   loadCourseTypes()
+  loadData()
+})
+
+watch(() => route.query.refresh, () => {
   loadData()
 })
 </script>

@@ -34,7 +34,7 @@
       </div>
 
       <!-- 右侧列表 -->
-      <div class="right-panel" v-if="currentModule !== 'Details'">
+      <div class="right-panel" v-if="currentModule !== 'Details'&&currentModule !== 'Reviews'">
         <div class="panel-header">
           <span class="panel-title">{{ panelTitle }}</span>
           <el-icon>
@@ -47,7 +47,7 @@
             <el-checkbox :model-value="!!item.isCompleted" disabled class="res-checkbox" />
             <span class="item-text" :title="item.fileName">{{ item.fileName }}</span>
           </div>
-          <el-empty v-if="currentList.length === 0" description="暂无资源" image-size="60" />
+          <el-empty v-if="currentList.length === 0" description="暂无资源" :image-size="60" />
         </div>
       </div>
 
@@ -126,23 +126,49 @@
         </div>
 
         <!-- 详情模块 -->
-        <div v-if="currentModule === 'Details'" class="display-box info-box">
-          <el-descriptions title="课程详细资料" :column="1" border>
-            <el-descriptions-item label="课程名称">{{ courseDetails.courseName }}</el-descriptions-item>
-            <el-descriptions-item label="课程分类">{{ courseTypeName }}</el-descriptions-item>
-            <el-descriptions-item label="标签">
-              <el-tag size="small">{{ courseDetails.courseTag }}</el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item label="总课时">{{ courseDetails.courseHours }} 小时</el-descriptions-item>
-            <el-descriptions-item label="状态">
-              <el-badge :type="courseDetails.courseStatus === 1 ? 'success' : 'danger'" is-dot />
-              {{ courseDetails.courseStatus === 1 ? '启用中' : '已停用' }}
-            </el-descriptions-item>
-          </el-descriptions>
+        <div v-if="currentModule === 'Details'" class="detail-stack">
+          <div class="display-box info-box detail-card">
+            <div class="detail-card-head">
+              <div>
+                <div class="section-kicker">课程概览</div>
+                <h3 class="section-title">课程详细资料</h3>
+              </div>
+            </div>
+            <el-descriptions :column="1" border>
+              <el-descriptions-item label="课程名称">{{ courseDetails.courseName }}</el-descriptions-item>
+              <el-descriptions-item label="课程分类">{{ courseTypeName }}</el-descriptions-item>
+              <el-descriptions-item label="标签">
+                <el-tag size="small">{{ courseDetails.courseTag }}</el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="总课时">{{ courseDetails.courseHours }} 小时</el-descriptions-item>
+              <el-descriptions-item label="状态">
+                <el-badge :type="courseDetails.courseStatus === 1 ? 'success' : 'danger'" is-dot />
+                {{ courseDetails.courseStatus === 1 ? '启用中' : '已停用' }}
+              </el-descriptions-item>
+            </el-descriptions>
+          </div>
 
-            
-
+         
         </div>
+          <div v-if="currentModule === 'Reviews'" class="detail-stack">
+           <el-card shadow="never" class="review-card">
+            <template #header>
+              <div class="review-card-head">
+                <div>
+                  <div class="section-kicker">课程互动</div>
+                  <h3 class="section-title">课程评价</h3>
+                </div>
+                <span class="review-count">{{ courseId ? '支持实时发表与查看' : '暂无课程 ID' }}</span>
+              </div>
+            </template>
+            <resource-review-form v-if="courseId" :resourceId="courseId" @saved="handleReviewSaved" />
+            <div class="review-list-wrap">
+              <resource-review-list ref="detailReviewListRef" v-if="courseId" :resourceId="courseId" />
+            </div>
+          </el-card>
+        </div>
+
+
       </div>
     </div>
   </div>
@@ -175,6 +201,9 @@ import VueOfficeExcel from '@vue-office/excel'
 import '@vue-office/excel/lib/index.css'
 import VueOfficePdf from '@vue-office/pdf'
 
+import ResourceReviewForm from './components/ResourceReviewForm.vue'
+import ResourceReviewList from './components/ResourceReviewList.vue'
+
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
@@ -189,6 +218,7 @@ const zoomLevel = ref(100)
 const courseDetails = ref<any>({})
 const courseTypeDict = ref<any[]>([])
 const allResources = ref<any[]>([])
+const detailReviewListRef = ref()
 
 // 预览相关状态
 const renderedUrl = ref('')
@@ -199,7 +229,8 @@ const menuItems = [
   { key: 'video', label: '视频课程', icon: VideoPlay },
   { key: 'lecture', label: '课件讲义', icon: Files },
   { key: 'data', label: '参考资料', icon: FolderOpened },
-  { key: 'Details', label: '课程详情', icon: InfoFilled }
+  { key: 'Details', label: '课程详情', icon: InfoFilled },
+   { key: 'Reviews', label: '课程评价', icon: InfoFilled }
 ]
 
 // --- 计算属性 ---
@@ -556,6 +587,12 @@ const initData = async () => {
   })
 }
 
+const refreshCourseReviews = () => {
+  if (courseId.value) {
+    void initData()
+  }
+}
+
 // 批量同步所有资源的状态
 const syncAllResourcesStatus = () => {
   get(`/study/cloudComputingStudentLearningRecord/list?courseId=${courseId.value}&pageSize=500`, (msg, data) => {
@@ -581,6 +618,12 @@ const retryLoad = () => {
 onMounted(() => {
   initData()
 })
+
+const handleReviewSaved = (d: any) => {
+  if (detailReviewListRef.value && typeof detailReviewListRef.value.addReview === 'function') {
+    detailReviewListRef.value.addReview(d)
+  }
+}
 </script>
 
 <style scoped>
@@ -827,5 +870,52 @@ onMounted(() => {
 
 .info-box {
   padding: 40px;
+}
+
+.detail-stack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: auto;
+}
+
+.detail-card {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+}
+
+.detail-card-head,
+.review-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.section-kicker {
+  color: #8c8c8c;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.section-title {
+  margin: 0;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.review-card {
+  border-radius: 14px;
+}
+
+.review-count {
+  color: #8c8c8c;
+  font-size: 13px;
+}
+
+.review-list-wrap {
+  margin-top: 18px;
 }
 </style>

@@ -109,13 +109,17 @@ const quickLinks = computed(() => {
             { name: '用户管理', path: '/sys/user', icon: User },
             { name: '角色分配', path: '/sys/role', icon: Setting },
             { name: '课程管理', path: '/study/course-list', icon: Monitor },
-            { name: '用户列表', path: '/sys/user-list', icon: FolderChecked }
+                    { name: '学习小组管理', path: '/index/community/group-manage', icon: FolderChecked },
+                    { name: '讨论管理', path: '/index/community/post-manage', icon: Collection },
+                    { name: '评价管理', path: '/index/community/review-manage', icon: VideoCamera },
+                    { name: '消息中心', path: '/index/messages', icon: Monitor }
         ]
     }
     return [
         { name: '我的课程', path: '/study/course-list', icon: VideoCamera },
         { name: '学习记录', path: '/study/learning-record', icon: Collection },
-        { name: '课程中心', path: '/study/course-type', icon: Monitor }
+            { name: '个人信息', path: '/index/personal-info', icon: User },
+            { name: '消息中心', path: '/index/messages', icon: Monitor }
     ]
 })
 

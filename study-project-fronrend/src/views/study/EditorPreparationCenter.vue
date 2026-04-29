@@ -170,9 +170,9 @@
               <!-- 评价 -->
               <el-tab-pane label="评价" name="review">
                 <div class="mt-4">
-                  <resource-review-form :resourceId="form.id" @saved="() => { if (form.id) loadResources(form.id) }" />
+                  <resource-review-form v-if="form.id" :resourceId="form.id" @saved="handleReviewSaved" />
                   <div class="mt-4">
-                    <resource-review-list v-if="form.id" :resourceId="form.id" />
+                    <resource-review-list ref="reviewListRef" v-if="form.id" :resourceId="form.id" />
                   </div>
                 </div>
               </el-tab-pane>
@@ -233,6 +233,7 @@ const lectureFiles = ref<any[]>([])
 const experimentFiles = ref<any[]>([])
 
 const resourceModalRef = ref()
+const reviewListRef = ref()
 
 // 初始化
 const init = async () => {
@@ -357,6 +358,15 @@ const handleResourceModalOk = () => {
   if (form.id) loadResources(form.id)
 }
 
+const handleReviewSaved = (d: any) => {
+  // 如果组件返回了新建的数据，直接插入到列表里
+  if (reviewListRef.value && typeof reviewListRef.value.addReview === 'function') {
+    reviewListRef.value.addReview(d)
+  }
+  // 同步资源计数或其它数据
+  if (form.id) loadResources(form.id)
+}
+
 const handleDeleteResource = (record: any) => {
   // deleteMapping(`/study/cloudComputingCourseResource/delete?id=${record.id}`, (msg) => {
   //   ElMessage.success('删除成功')
@@ -382,7 +392,7 @@ onMounted(() => {
 }
 
 .tab-header {
-  dispay: flex;
+  display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;

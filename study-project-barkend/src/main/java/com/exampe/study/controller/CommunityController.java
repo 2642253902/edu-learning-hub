@@ -34,6 +34,11 @@ public class CommunityController {
         return RestBean.success(studyGroupService.listGroups());
     }
 
+    @GetMapping("/groups/all")
+    public RestBean<List<StudyGroup>> listAllGroups() {
+        return RestBean.success(studyGroupService.list());
+    }
+
     @PostMapping("/groups")
     public RestBean<StudyGroup> createGroup(@RequestBody StudyGroup group,
                                             @SessionAttribute("account") AccountUser accountUser) {
@@ -44,6 +49,21 @@ public class CommunityController {
         // 创建者自动加入小组
         studyGroupService.joinGroup(group.getId(), accountUser.getId(), accountUser.getUsername());
         return RestBean.success(group);
+    }
+
+    @RequestMapping(value = "/groups/{id}", method = {RequestMethod.POST, RequestMethod.PUT})
+    public RestBean<StudyGroup> updateGroup(@PathVariable String id,
+                                            @RequestBody StudyGroup group,
+                                            @SessionAttribute("account") AccountUser accountUser) {
+        group.setId(id);
+        boolean ok = studyGroupService.updateById(group);
+        return ok ? RestBean.success(group) : RestBean.failure(500, "更新失败");
+    }
+
+    @DeleteMapping("/groups/{id}")
+    public RestBean<String> deleteGroup(@PathVariable String id) {
+        boolean ok = studyGroupService.removeById(id);
+        return ok ? RestBean.success("删除成功") : RestBean.failure(500, "删除失败");
     }
 
     @PostMapping("/groups/{groupId}/join")
@@ -64,9 +84,29 @@ public class CommunityController {
         return RestBean.success(post);
     }
 
+    @RequestMapping(value = "/posts/{id}", method = {RequestMethod.POST, RequestMethod.PUT})
+    public RestBean<GroupPost> updatePost(@PathVariable String id,
+                                          @RequestBody GroupPost post,
+                                          @SessionAttribute("account") AccountUser accountUser) {
+        post.setId(id);
+        boolean ok = groupPostService.updateById(post);
+        return ok ? RestBean.success(post) : RestBean.failure(500, "更新失败");
+    }
+
+    @DeleteMapping("/posts/{id}")
+    public RestBean<String> deletePost(@PathVariable String id) {
+        boolean ok = groupPostService.removeById(id);
+        return ok ? RestBean.success("删除成功") : RestBean.failure(500, "删除失败");
+    }
+
     @GetMapping("/posts")
     public RestBean<List<GroupPost>> listPosts(@RequestParam(required = false) String groupId) {
         return RestBean.success(groupPostService.listByGroupId(groupId));
+    }
+
+    @GetMapping("/posts/all")
+    public RestBean<List<GroupPost>> listAllPosts() {
+        return RestBean.success(groupPostService.list());
     }
 
     @PostMapping("/posts/{postId}/comments")
@@ -106,8 +146,28 @@ public class CommunityController {
         return RestBean.success(resourceReviewService.listByResourceId(resourceId));
     }
 
+    @GetMapping("/reviews/all")
+    public RestBean<List<ResourceReview>> listAllReviews() {
+        return RestBean.success(resourceReviewService.list());
+    }
+
     @PostMapping("/reviews/{id}/like")
     public RestBean<String> likeReview(@PathVariable String id) {
         return resourceReviewService.likeReview(id) ? RestBean.success("点赞成功") : RestBean.failure(404, "未找到评论");
+    }
+
+    @RequestMapping(value = "/reviews/{id}", method = {RequestMethod.POST, RequestMethod.PUT})
+    public RestBean<ResourceReview> updateReview(@PathVariable String id,
+                                                 @RequestBody ResourceReview review,
+                                                 @SessionAttribute("account") AccountUser accountUser) {
+        review.setId(id);
+        boolean ok = resourceReviewService.updateById(review);
+        return ok ? RestBean.success(review) : RestBean.failure(500, "更新失败");
+    }
+
+    @DeleteMapping("/reviews/{id}")
+    public RestBean<String> deleteReview(@PathVariable String id) {
+        boolean ok = resourceReviewService.removeById(id);
+        return ok ? RestBean.success("删除成功") : RestBean.failure(500, "删除失败");
     }
 }

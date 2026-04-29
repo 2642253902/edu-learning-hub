@@ -1,0 +1,208 @@
+<template>
+  <div class="manage-page">
+    <el-card shadow="never" class="header-card">
+      <div class="header-flex">
+        <div>
+          <h2 class="title">课程评价管理</h2>
+          <p class="desc">管理员可查看、编辑、删除课程和资源评价。</p>
+        </div>
+        <el-button type="primary" :icon="Plus" @click="openAdd">新增评价</el-button>
+      </div>
+    </el-card>
+
+    <el-card shadow="never" class="mt-4 list-card">
+      <el-table :data="reviews" v-loading="loading" border stripe>
+        <el-table-column type="index" label="#" width="60" align="center" />
+        <el-table-column label="课程" min-width="160" show-overflow-tooltip>
+          <template #default="{ row }">{{ getCourseLabel(row.courseId) }}</template>
+        </el-table-column>
+        <el-table-column label="资源" min-width="200" show-overflow-tooltip>
+          <template #default="{ row }">{{ getResourceLabelById(row.resourceId) }}</template>
+        </el-table-column>
+        <el-table-column prop="username" label="评价人" width="120" align="center" />
+        <el-table-column label="评分" width="100" align="center">
+          <template #default="{ row }">
+            <el-rate :model-value="Number(row.rating || 0)" disabled />
+          </template>
+        </el-table-column>
+        <el-table-column prop="likes" label="点赞" width="90" align="center" />
+        <el-table-column prop="createTime" label="发布时间" width="180" align="center" />
+        <el-table-column label="操作" width="180" align="center" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <el-divider direction="vertical" />
+            <el-popconfirm title="确定删除此评价吗？" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger">删除</el-button>
+              </template>
+            </el-popconfirm>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <el-dialog v-model="dialogVisible" :title="dialogMode === 'add' ? '新增评价' : '编辑评价'" width="640px">
+      <el-form :model="form" label-width="90px">
+        <el-form-item label="课程">
+          <el-select v-model="form.courseId" filterable clearable placeholder="请选择课程" style="width: 100%">
+            <el-option v-for="item in courseOptions" :key="item.id" :label="item.courseName || '-'" :value="String(item.id)" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="资源">
+          <el-select v-model="form.resourceId" filterable clearable placeholder="请选择资源" style="width: 100%">
+            <el-option v-for="item in resourceOptions" :key="item.id" :label="getResourceLabel(item)" :value="String(item.id)" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="评分">
+          <el-rate v-model="form.rating" />
+        </el-form-item>
+        <el-form-item label="内容">
+          <el-input v-model="form.content" type="textarea" :rows="5" placeholder="请输入评价内容" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submit">保存</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, reactive, ref } from 'vue'
+import { Plus } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { deleteMapping, get, post } from '@/net'
+
+const loading = ref(false)
+const reviews = ref<any[]>([])
+const courseOptions = ref<any[]>([])
+const resourceOptions = ref<any[]>([])
+const dialogVisible = ref(false)
+const dialogMode = ref<'add' | 'edit'>('add')
+const form = reactive({ id: '', courseId: '', resourceId: '', rating: 5, content: '' })
+
+const unwrapList = (payload: any) => {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.records)) return payload.records
+  return []
+}
+
+const loadCourses = () => {
+  get('/study/cloudComputingCourse/list?pageNo=1&pageSize=1000', (_msg, data) => {
+    courseOptions.value = unwrapList(data)
+  })
+}
+
+const loadResources = () => {
+  get('/study/cloudComputingCourseResource/list?pageNo=1&pageSize=1000', (_msg, data) => {
+    resourceOptions.value = unwrapList(data)
+  })
+}
+
+const loadData = () => {
+  loading.value = true
+  get('/api/community/reviews/all', (_msg, data) => {
+    reviews.value = unwrapList(data)
+    loading.value = false
+  }, () => {
+    loading.value = false
+  })
+}
+
+const getCourseLabel = (courseId: any) => {
+  const match = courseOptions.value.find(item => String(item.id) === String(courseId))
+  return match ? match.courseName || '-' : String(courseId || '-')
+}
+
+const getResourceLabel = (item: any) => item?.resourceName || item?.fileName || item?.name || '-'
+
+const getResourceLabelById = (resourceId: any) => {
+  const match = resourceOptions.value.find(item => String(item.id) === String(resourceId))
+  return match ? getResourceLabel(match) : String(resourceId || '-')
+}
+
+const openAdd = () => {
+  dialogMode.value = 'add'
+  form.id = ''
+  form.courseId = ''
+  form.resourceId = ''
+  form.rating = 5
+  form.content = ''
+  dialogVisible.value = true
+}
+
+const openEdit = (row: any) => {
+  dialogMode.value = 'edit'
+  form.id = row.id
+  form.courseId = row.courseId || ''
+  form.resourceId = row.resourceId || ''
+  form.rating = Number(row.rating || 5)
+  form.content = row.content || ''
+  dialogVisible.value = true
+}
+
+const submit = () => {
+  const payload = {
+    courseId: form.courseId,
+    resourceId: form.resourceId,
+    rating: form.rating,
+    content: form.content
+  }
+  const url = dialogMode.value === 'add' ? '/api/community/reviews' : `/api/community/reviews/${form.id}`
+  post(url, dialogMode.value === 'add' ? payload : { ...payload, id: form.id }, (msg) => {
+    ElMessage.success(msg)
+    dialogVisible.value = false
+    loadData()
+  })
+}
+
+const handleDelete = (row: any) => {
+  deleteMapping(`/api/community/reviews/${row.id}`, { id: row.id }, (msg) => {
+    ElMessage.success(msg)
+    loadData()
+  })
+}
+
+onMounted(() => {
+  loadCourses()
+  loadResources()
+  loadData()
+})
+</script>
+
+<style scoped>
+.manage-page {
+  padding: 0;
+}
+
+.header-card,
+.list-card {
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.desc {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+.mt-4 {
+  margin-top: 16px;
+}
+</style>

@@ -19,9 +19,9 @@
                     <template #title>工作台首页</template>
                 </el-menu-item>
 
-                <template v-for="menu in visibleMenuList" :key="menu.id">
+                <template v-for="menu in visibleMenuList">
                     <!-- 如果有子级 -->
-                    <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="menu.path">
+                    <el-sub-menu v-if="menu.children && menu.children.length > 0" :key="`${menu.id}-sub`" :index="menu.path">
                         <template #title>
                             <el-icon>
                                 <Menu />
@@ -29,9 +29,9 @@
                             <span>{{ menu.remark }}</span>
                         </template>
 
-                        <template v-for="child in menu.children" :key="child.id">
+                        <template v-for="child in menu.children">
                             <!-- 二级菜单如果有三级子菜单 -->
-                            <el-sub-menu v-if="child.children && child.children.length > 0" :index="child.path">
+                            <el-sub-menu v-if="child.children && child.children.length > 0" :key="`${child.id}-sub`" :index="child.path">
                                 <template #title>
                                     <span>{{ child.remark }}</span>
                                 </template>
@@ -44,14 +44,14 @@
                             </el-sub-menu>
 
                             <!-- 二级菜单项（无子级） -->
-                            <el-menu-item v-else :index="child.path">
+                            <el-menu-item v-else :key="`${child.id}-item`" :index="child.path">
                                 {{ child.remark }}
                             </el-menu-item>
                         </template>
                     </el-sub-menu>
 
                     <!-- 如果没有子级（一级菜单项） -->
-                    <el-menu-item v-else :index="menu.path">
+                    <el-menu-item v-else :key="`${menu.id}-item`" :index="menu.path">
                         <el-icon>
                             <Menu />
                         </el-icon>
@@ -77,15 +77,54 @@
                 </div>
 
                 <div class="header-right">
-                    <!-- 预留的全局搜索框 -->
-                    <el-input v-model="searchQuery" placeholder="搜索课程、资源..." class="search-input"
-                        prefix-icon="Search" />
+                    <el-select
+                        v-model="searchModulePath"
+                        class="search-select"
+                        filterable
+                        clearable
+                        :filter-method="filterModuleOptions"
+                        placeholder="搜索菜单模块并跳转"
+                        @change="handleModuleSearchChange"
+                    >
+                        <el-option
+                            v-for="item in filteredModuleOptions"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
+                        />
+                    </el-select>
 
-                    <el-badge :value="5" class="notice-badge">
-                        <el-icon class="notice-icon">
-                            <Bell />
-                        </el-icon>
-                    </el-badge>
+                    <el-popover placement="bottom-end" :width="380" trigger="click" @show="handleMessagePopoverShow">
+                        <template #reference>
+                            <el-badge :value="unreadMessageCount" :hidden="unreadMessageCount === 0" class="notice-badge">
+                                <el-icon class="notice-icon">
+                                    <Bell />
+                                </el-icon>
+                            </el-badge>
+                        </template>
+
+                        <div class="message-popover">
+                            <div class="message-popover-head">
+                                <span>消息提醒</span>
+                                <el-link type="primary" @click="goMessages">查看全部</el-link>
+                            </div>
+
+                            <el-scrollbar max-height="280px">
+                                <div
+                                    v-for="item in messageList"
+                                    :key="item.key"
+                                    class="message-popover-item"
+                                    :class="{ unread: item.unread }"
+                                    @click="openMessage(item)"
+                                >
+                                    <div class="message-popover-title">{{ item.title }}</div>
+                                    <div class="message-popover-desc">{{ item.desc }}</div>
+                                    <div class="message-popover-time">{{ item.timeText }}</div>
+                                </div>
+                                <el-empty v-if="messageList.length === 0" description="暂无消息" />
+                            </el-scrollbar>
+                        </div>
+                    </el-popover>
 
                     <el-dropdown trigger="click">
                         <div class="user-info">
@@ -99,7 +138,7 @@
                         </div>
                         <template #dropdown>
                             <el-dropdown-menu>
-                                <el-dropdown-item>
+                                <el-dropdown-item @click="goPersonalInfo">
                                     <el-icon>
                                         <User />
                                     </el-icon> 个人信息
@@ -131,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage } from "element-plus";
 import {
     Menu,
@@ -150,7 +189,7 @@ import {
     SwitchButton,
     House
 } from '@element-plus/icons-vue'
-import { get } from "@/net";
+import { get, messageApi } from "@/net";
 import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from '@/stores/user'
 import { useMenuStore } from '@/stores/menu'
@@ -163,7 +202,12 @@ const router = useRouter()
 const route = useRoute()
 
 const isCollapse = ref(false)
-const searchQuery = ref('')
+const searchModulePath = ref('')
+const searchKeyword = ref('')
+const messageList = ref<any[]>([])
+let messageTimer: number | undefined
+
+const unreadMessageCount = computed(() => messageList.value.filter(item => item.unread).length)
 
 
 const isMenuVisible = (menu: any) => (menu?.menuVisible ?? 1) === 1
@@ -179,6 +223,99 @@ const buildVisibleMenus = (menus: any[]): any[] => {
 
 const visibleMenuList = computed(() => buildVisibleMenus(menuStore.menuList as any[]))
 
+const flattenMenus = (menus: any[], parent = ''): Array<{ label: string; value: string }> => {
+    const result: Array<{ label: string; value: string }> = []
+    ;(menus || []).forEach((item: any) => {
+        const title = item.remark || item.name || item.path
+        const label = parent ? `${parent} / ${title}` : title
+        if (item.path) {
+            result.push({ label, value: item.path })
+        }
+        if (item.children && item.children.length > 0) {
+            result.push(...flattenMenus(item.children, label))
+        }
+    })
+    return result
+}
+
+const moduleOptions = computed(() => {
+    const dynamicOptions = flattenMenus(visibleMenuList.value || [])
+    return [{ label: '首页 / 工作台首页', value: '/index/home' }, ...dynamicOptions]
+})
+
+const filteredModuleOptions = computed(() => {
+    if (!searchKeyword.value) return moduleOptions.value
+    const keyword = searchKeyword.value.toLowerCase()
+    return moduleOptions.value.filter(item => item.label.toLowerCase().includes(keyword) || item.value.toLowerCase().includes(keyword))
+})
+
+const filterModuleOptions = (keyword: string) => {
+    searchKeyword.value = keyword
+}
+
+const handleModuleSearchChange = (path: string) => {
+    if (!path) return
+    router.push(path)
+    searchModulePath.value = ''
+}
+
+const unwrapListData = (payload: any): any[] => {
+    if (Array.isArray(payload)) return payload
+    if (Array.isArray(payload?.records)) return payload.records
+    if (Array.isArray(payload?.list)) return payload.list
+    return []
+}
+
+const formatTime = (value: any) => {
+    if (!value) return ''
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return String(value)
+    const pad = (num: number) => String(num).padStart(2, '0')
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+const loadMessages = async () => {
+    messageApi.userList(12, (list: any[]) => {
+        messageList.value = (list || []).map((item: any) => ({
+            ...item,
+            key: item.id,
+            desc: item.content,
+            timeText: formatTime(item.createTime),
+            unread: Number(item.unread) === 1,
+            target: '/index/messages'
+        }))
+    })
+}
+
+const markMessagesRead = () => {
+    messageApi.readAll(() => {
+        messageList.value = messageList.value.map(item => ({ ...item, unread: false }))
+    })
+}
+
+const handleMessagePopoverShow = () => {
+    loadMessages()
+}
+
+const openMessage = (item: any) => {
+    if (!item?.id) return
+    messageApi.read(item.id, () => {
+        loadMessages()
+        if (item?.target) {
+            router.push(item.target)
+        }
+    })
+}
+
+const goMessages = () => {
+    markMessagesRead()
+    router.push('/index/messages')
+}
+
+const goPersonalInfo = () => {
+    router.push('/index/personal-info')
+}
+
 const logout = () => {
     get('/api/auth/logout', (message) => {
         ElMessage.success(message)
@@ -187,6 +324,17 @@ const logout = () => {
         router.push('/')
     })
 }
+
+onMounted(() => {
+    loadMessages()
+    messageTimer = window.setInterval(loadMessages, 60000)
+})
+
+onUnmounted(() => {
+    if (messageTimer) {
+        window.clearInterval(messageTimer)
+    }
+})
 </script>
 
 <style scoped>
@@ -297,17 +445,17 @@ const logout = () => {
     gap: 20px;
 }
 
-.search-input {
+.search-select {
     width: 220px;
 }
 
-:deep(.search-input .el-input__wrapper) {
+:deep(.search-select .el-input__wrapper) {
     border-radius: 20px;
     background-color: #f2f3f5;
     box-shadow: none;
 }
 
-:deep(.search-input .el-input__wrapper:focus-within) {
+:deep(.search-select .el-input__wrapper:focus-within) {
     box-shadow: 0 0 0 1px #409EFF inset;
     background-color: #fff;
 }
@@ -326,6 +474,51 @@ const logout = () => {
 
 .notice-icon:hover {
     color: #409EFF;
+}
+
+.message-popover {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message-popover-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+}
+
+.message-popover-item {
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    border: 1px solid #ebeef5;
+    background: #fff;
+}
+
+.message-popover-item.unread {
+    background: #f0f7ff;
+    border-color: #cfe2ff;
+}
+
+.message-popover-title {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.message-popover-desc {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+.message-popover-time {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #9ca3af;
 }
 
 .user-info {

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.exampe.study.mapper.MessageNoticeMapper">
+
+    <select id="listForUser" resultType="com.exampe.study.dto.MessageNoticeUserVO">
+        SELECT m.id,
+               m.title,
+               m.content,
+               m.level,
+               m.create_by,
+               m.create_time,
+               CASE WHEN r.id IS NULL THEN 1 ELSE 0 END AS unread
+        FROM message_notice m
+                 LEFT JOIN message_notice_read r
+                           ON r.message_id = m.id AND r.user_id = #{userId}
+        WHERE m.enabled = 1
+          AND (
+            m.target_role IS NULL
+                OR m.target_role = ''
+                OR FIND_IN_SET(#{role}, REPLACE(m.target_role, ' ', '')) > 0
+            )
+        ORDER BY m.create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+</mapper>

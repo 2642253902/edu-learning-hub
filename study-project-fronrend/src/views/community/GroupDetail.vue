@@ -14,18 +14,18 @@
       <el-table-column prop="username" label="作者" width="140" />
       <el-table-column label="操作">
         <template #default="{ row }">
-          <el-button type="text" @click="openPost(row.id)">查看</el-button>
+          <el-button link @click="openPost(row.id)">查看</el-button>
         </template>
       </el-table-column>
     </el-table>
 
     <el-dialog v-model="showPost" width="60%" :before-close="()=>{ showPost=false }">
-      <template #title>帖子</template>
+      <template #header>帖子</template>
       <div v-if="currentPost">
         <h4 class="font-bold">{{ currentPost.title }}</h4>
         <div class="mt-2">{{ currentPost.content }}</div>
         <div class="mt-4">
-          <comment-list :postId="currentPost.id" />
+          <comment-list v-if="currentPost?.id" :postId="String(currentPost.id)" />
         </div>
       </div>
     </el-dialog>
