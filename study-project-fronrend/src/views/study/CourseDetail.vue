@@ -220,7 +220,7 @@ const courseTypeDict = ref<any[]>([])
 const allResources = ref<any[]>([])
 const detailReviewListRef = ref()
 
-// 预览相关状态
+// 预览相关状态：renderedUrl 始终是带鉴权后的 blob URL，而不是后端原始路径
 const renderedUrl = ref('')
 const previewLoading = ref(false)
 const previewBoxRef = ref<HTMLElement | null>(null)
@@ -254,6 +254,7 @@ const panelTitle = computed(() => {
 // --- 方法 ---
 const handleBack = () => router.back()
 
+// 切换模块时重置索引并停止视频进度定时器，避免旧资源残留副作用
 const switchModule = (key: string) => {
   currentModule.value = key
   currentItemIndex.value = 0
@@ -296,7 +297,7 @@ const handleVideoEnded = () => {
   markAsCompleted()
 }
 
-// 学习记录相关状态 (参考 CourseDetailsFrom)
+// 学习记录对象用于和后端 edit 接口保持同构，避免更新时字段丢失
 const learningRecord = ref<any>({
   id: null,
   courseId: courseId.value,
@@ -311,6 +312,7 @@ const learningRecord = ref<any>({
 const queryLearningRecord = async (contentId: string) => {
   if (!courseId.value || !contentId) return
 
+  // 约定只取一条最新记录：pageSize=1，后续编辑均基于该记录
   get(`/study/cloudComputingStudentLearningRecord/list?courseId=${courseId.value}&contentId=${contentId}&pageNo=1&pageSize=1`, (msg, data) => {
     if (data && data.records && data.records.length > 0) {
       learningRecord.value = data.records[0]
@@ -344,6 +346,7 @@ const createLearningRecord = (contentId: string) => {
 
   // 后端 add 接口定义: @PostMapping(value = "/add") public RestBean<String> add(@RequestBody CloudComputingStudentLearningRecord cloudComputingStudentLearningRecord, @RequestParam(name = "userId", required = true) String userId)
   post(`/study/cloudComputingStudentLearningRecord/add?userId=${userStore.auth.user?.id}`, recordData, (msg, data) => {
+    // add 接口仅返回成功文案，不返回新建记录实体，所以这里二次查询回填 id
     // 后端返回的是 RestBean<String> "添加成功！"，没有返回对象
     // 我们需要通过查询或重新加载来获取生成的记录 ID，或者先手动处理局部状态
     queryLearningRecord(contentId)
@@ -410,6 +413,7 @@ const stopProgressSaveTimer = () => {
 const saveLearningProgress = () => {
   const video = document.querySelector('video')
   if (video) {
+    // 预留：后续可在此接入断点续播接口，避免打断现有学习流程
     // 这里可以调用接口保存视频进度，如果需要
     // const currentTime = Math.floor(video.currentTime)
   }
@@ -464,7 +468,7 @@ const handleDocScroll = (e: any) => {
 const handleDownload = async (item: any) => {
   if (!item?.url) return
 
-  // 资料只要点击，无论下载结果如何都标记为完成
+  // 资料型资源按业务定义为“触发下载即完成”，不强依赖浏览器下载结果
   if (currentModule.value === 'data') {
     markAsCompleted()
   }
@@ -513,7 +517,7 @@ watch(() => currentList.value[currentItemIndex.value]?.url, async (newUrl) => {
   }
 }, { immediate: true })
 
-// 监听模块切换，清空旧的预览地址
+// 监听模块切换，主动释放旧 blob URL，避免多次切换后的内存累积
 watch(currentModule, (newVal) => {
   if (newVal === 'video' || newVal === 'Details') {
     if (renderedUrl.value) {
@@ -530,7 +534,7 @@ const getFileType = (url: string) => {
   return part ? part.toLowerCase() : ''
 }
 
-// 拼接完整的后端路径
+// 拼接完整的后端路径：资源字段可能是完整 URL，也可能是后端存储文件名
 const getFullUrl = (url: string) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
@@ -546,7 +550,7 @@ const initData = async () => {
 
   isLoading.value = true
 
-  // 加载字典数据
+  // 字典和课程详情并行请求，资源列表返回后再统一触发学习状态同步
   get('/study/cloudComputingCourseType/list?pageSize=1000', (msg, data) => {
     courseTypeDict.value = data?.records || data || []
   })
@@ -593,7 +597,7 @@ const refreshCourseReviews = () => {
   }
 }
 
-// 批量同步所有资源的状态
+// 批量同步所有资源的状态：用于列表勾选回显，不替代当前项的单条记录查询
 const syncAllResourcesStatus = () => {
   get(`/study/cloudComputingStudentLearningRecord/list?courseId=${courseId.value}&pageSize=500`, (msg, data) => {
     if (data && data.records) {

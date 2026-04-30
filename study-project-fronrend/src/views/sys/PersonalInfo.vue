@@ -56,6 +56,7 @@ const loading = ref(false)
 const profile = ref<any>({})
 const avatarUrl = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 
+// 与后端角色码保持一致，集中在计算属性中做展示映射，模板层只消费结果。
 const roleText = computed(() => {
   const role = String(profile.value?.role || '')
   if (role === '1') return '管理员'
@@ -74,6 +75,7 @@ const roleTagType = computed(() => {
 
 const loadProfile = () => {
   loading.value = true
+  // 统一从登录态接口获取“当前用户”信息，避免依赖本地缓存造成数据漂移。
   get('/api/user/me', (_msg, data) => {
     profile.value = data || {}
     loading.value = false

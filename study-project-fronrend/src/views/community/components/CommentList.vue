@@ -3,12 +3,7 @@
     <el-card class="reply-card" shadow="never">
       <el-form :model="form" class="reply-form">
         <el-form-item>
-          <el-input
-            v-model="form.content"
-            type="textarea"
-            :rows="3"
-            placeholder="写回复..."
-          />
+          <el-input v-model="form.content" type="textarea" :rows="3" placeholder="写回复..." />
         </el-form-item>
         <el-form-item class="reply-actions">
           <el-button type="primary" @click="submit">回复</el-button>
@@ -32,7 +27,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { communityApi } from '@/net'
+import { get, post } from '@/net'
 
 const props = defineProps<{ postId?: string }>()
 
@@ -41,7 +36,7 @@ const form = ref({ content: '' })
 
 const load = () => {
   if (!props.postId) return
-  communityApi.listComments(props.postId, (d: any) => {
+  get(`/api/community/posts/${props.postId}/comments`, (_message: string, d: any) => {
     comments.value = (d || []).sort((a: any, b: any) => {
       const timeA = Number(a.createTime || a.create_time || a.createdAt || 0)
       const timeB = Number(b.createTime || b.create_time || b.createdAt || 0)
@@ -53,7 +48,7 @@ const load = () => {
 const submit = () => {
   if (!props.postId) return
   if (!form.value.content.trim()) return
-  communityApi.createComment(props.postId, form.value, () => {
+  post(`/api/community/posts/${props.postId}/comments`, form.value, () => {
     form.value.content = ''
     load()
   })

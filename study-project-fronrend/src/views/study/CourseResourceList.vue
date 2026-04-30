@@ -136,7 +136,6 @@ const handleDelete = (row: any) => {
 }
 
 
-
 onMounted(() => {
   loadData()
   loadCourseDict()

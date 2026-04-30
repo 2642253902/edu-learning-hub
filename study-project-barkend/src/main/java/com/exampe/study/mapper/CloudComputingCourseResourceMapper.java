@@ -5,6 +5,7 @@ import com.exampe.study.entity.CloudComputingCourseResource;
 import com.exampe.study.dto.CloudComputingCourseResourceVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,10 @@ public interface CloudComputingCourseResourceMapper extends BaseMapper<CloudComp
      * @param courseId 课程ID
      * @return 资源类型统计结果
      */
+    @Select("SELECT resource_type AS type, COUNT(*) AS cnt " +
+            "FROM cloud_computing_course_resource " +
+            "WHERE course_id = #{courseId} " +
+            "GROUP BY resource_type")
     List<Map<String, Object>> countByCourseIdGroupByType(@Param("courseId") String courseId);
 
     /**

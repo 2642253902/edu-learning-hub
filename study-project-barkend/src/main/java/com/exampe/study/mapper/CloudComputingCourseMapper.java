@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.exampe.study.entity.CloudComputingCourse;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,11 @@ public interface CloudComputingCourseMapper extends BaseMapper<CloudComputingCou
      * 
      * @return 教师信息列表
      */
+    @Select("SELECT su.id AS value, su.realname AS text, su.realname AS title, su.realname AS label " +
+            "FROM sys_user_depart sud " +
+            "INNER JOIN sys_depart sd ON sud.dep_id = sd.id " +
+            "INNER JOIN sys_account su ON sud.user_id = su.id " +
+            "WHERE sd.depart_name = '教师'")
     List<Map> getTeacher();
 
     /**
@@ -54,6 +60,10 @@ public interface CloudComputingCourseMapper extends BaseMapper<CloudComputingCou
      * @param UserId 教师ID
      * @return 课程信息列表
      */
+    @Select("SELECT c.id, c.course_name " +
+            "FROM cloud_computing_course c " +
+            "LEFT JOIN sys_account u ON c.teacher_id = u.ID " +
+            "WHERE c.teacher_id = #{UserId}")
     List<Map> getTeachercourse(String UserId);
 
     /**
@@ -98,5 +108,8 @@ public interface CloudComputingCourseMapper extends BaseMapper<CloudComputingCou
      * @param UserName 用户名
      * @return 角色标识
      */
+    @Select("SELECT role_name FROM sys_role " +
+            "WHERE id = (SELECT role_id FROM sys_user_role " +
+            "WHERE user_id = (SELECT id FROM sys_account WHERE username = #{UserId}))")
     String getrole(@Param("UserId") String UserName);
 }

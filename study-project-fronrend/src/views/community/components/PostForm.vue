@@ -5,12 +5,7 @@
         <el-input v-model="form.title" placeholder="写一个吸引人的标题" />
       </el-form-item>
       <el-form-item label="内容" class="field-item">
-        <el-input
-          v-model="form.content"
-          type="textarea"
-          :rows="4"
-          placeholder="分享你的问题、经验或者想法"
-        />
+        <el-input v-model="form.content" type="textarea" :rows="4" placeholder="分享你的问题、经验或者想法" />
       </el-form-item>
       <el-form-item class="submit-row">
         <el-button type="primary" @click="submit">发布</el-button>
@@ -21,7 +16,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { communityApi } from '@/net'
+import { post } from '@/net'
 
 const props = defineProps<{ groupId: string }>()
 const emit = defineEmits(['created'])
@@ -29,7 +24,7 @@ const emit = defineEmits(['created'])
 const form = ref({ title: '', content: '', groupId: props.groupId })
 
 const submit = () => {
-  communityApi.createPost(form.value, (d: any) => {
+  post('/api/community/posts', form.value, (_message: string, d: any) => {
     emit('created', d)
     form.value.title = ''
     form.value.content = ''

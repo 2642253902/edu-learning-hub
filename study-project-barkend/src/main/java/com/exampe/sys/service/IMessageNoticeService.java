@@ -1,8 +1,8 @@
-package com.exampe.study.service;
+package com.exampe.sys.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.exampe.study.dto.MessageNoticeUserVO;
-import com.exampe.study.entity.MessageNotice;
+import com.exampe.sys.dto.MessageNoticeUserVO;
+import com.exampe.sys.entity.MessageNotice;
 
 import java.util.List;
 

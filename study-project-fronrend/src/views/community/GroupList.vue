@@ -26,7 +26,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreate=false">取消</el-button>
+        <el-button @click="showCreate = false">取消</el-button>
         <el-button type="primary" @click="create">创建</el-button>
       </template>
     </el-dialog>
@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { communityApi } from '@/net'
+import { get, post } from '@/net'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
@@ -45,14 +45,14 @@ const showCreate = ref(false)
 const form = ref({ name: '', description: '' })
 
 const load = () => {
-  communityApi.listGroups((d: any) => {
+  get('/api/community/groups', (_message: string, d: any) => {
     groups.value = d || []
   })
 }
 
 const openCreate = () => { showCreate.value = true }
 const create = () => {
-  communityApi.createGroup(form.value, () => {
+  post('/api/community/groups', form.value, () => {
     showCreate.value = false
     form.value = { name: '', description: '' }
     load()
@@ -60,18 +60,20 @@ const create = () => {
 }
 
 const joinGroup = (groupId: string) => {
-  communityApi.joinGroup(groupId, () => {
+  post(`/api/community/groups/${groupId}/join`, {}, () => {
     ElMessage.success('已加入小组')
   })
 }
 
 const goDetail = (id: string) => {
- router.push({ path: '/community/GroupDetail', query: { id } })
+  router.push({ path: '/community/GroupDetail', query: { id } })
 }
 
 onMounted(load)
 </script>
 
 <style scoped>
-.p-4 { padding: 16px }
+.p-4 {
+  padding: 16px
+}
 </style>

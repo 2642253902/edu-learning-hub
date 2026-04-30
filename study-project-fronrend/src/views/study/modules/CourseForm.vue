@@ -103,6 +103,7 @@ const validatorRules = {
   courseStatus: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
 
+// 新增时仅重置业务字段，选项列表由 loadCourseTypes/loadTeachers 维护
 const add = () => {
   Object.assign(model, {
     id: '',
@@ -118,11 +119,13 @@ const add = () => {
 const edit = (record: any) => {
   Object.assign(model, {
     ...record,
+    // 下拉组件统一使用字符串值，避免 number/string 混用导致回显失败
     courseTypeId: record?.courseTypeId ? String(record.courseTypeId) : '',
     teacherId: record?.teacherId ? String(record.teacherId) : ''
   })
 }
 
+// 统一处理 records/list/array 三种返回结构
 const unwrapListData = (payload: any): any[] => {
   if (Array.isArray(payload)) return payload
   if (Array.isArray(payload?.records)) return payload.records
@@ -158,6 +161,7 @@ const submitForm = async () => {
   await formRef.value.validate((valid: boolean) => {
     if (valid) {
       confirmLoading.value = true
+      // 同一表单通过 id 判断新增/编辑，减少重复组件
       const url = model.id ? '/study/cloudComputingCourse/edit' : '/study/cloudComputingCourse/add'
       post(url, model, (msg) => {
         ElMessage.success(msg)

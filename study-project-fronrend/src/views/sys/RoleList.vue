@@ -100,6 +100,7 @@ const loadRoles = () => {
 }
 
 const loadRouteTree = () => {
+  // 授权树使用全量路由结构；真正勾选状态在 openGrant 时按角色单独回填。
   get('/api/routes/allTree', (_, data) => {
     routeTree.value = data || []
   })
@@ -147,6 +148,7 @@ const openGrant = (row: any) => {
   grantDialog.roleName = row.name || '-'
   grantDialog.visible = true
 
+  // 每次打开都重新拉取已授权菜单，确保弹窗展示的是最新授权结果。
   get(`/api/role/routes?roleId=${row.id}`, (_, data) => {
     const checked = Array.isArray(data) ? data : []
     treeRef.value?.setCheckedKeys(checked)
@@ -156,6 +158,7 @@ const openGrant = (row: any) => {
 const submitGrant = () => {
   const checkedKeys = treeRef.value?.getCheckedKeys(false) || []
   const halfCheckedKeys = treeRef.value?.getHalfCheckedKeys() || []
+  // 后端期望接收“最终有效节点集合”，因此要合并全选与半选节点并去重。
   const routeIds = [...new Set([...checkedKeys, ...halfCheckedKeys])]
 
   post('/api/role/grant', {

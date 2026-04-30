@@ -47,14 +47,14 @@
 import { ref, onMounted } from 'vue'
 import PostForm from './components/PostForm.vue'
 import CommentList from './components/CommentList.vue'
-import { communityApi } from '@/net'
+import { get } from '@/net'
 
 const posts = ref<any[]>([])
 const showPost = ref(false)
 const currentPost = ref<any>(null)
 
 const loadPosts = () => {
-  communityApi.listPosts('', (d: any) => {
+  get('/api/community/posts', (_message: string, d: any) => {
     posts.value = d || []
   })
 }

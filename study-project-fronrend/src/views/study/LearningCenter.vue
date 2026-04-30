@@ -189,18 +189,18 @@ const loadCourseListByCategory = async (categoryId: string) => {
         available: String(course.courseStatus) === '1'
       }))
 
-      // 为每个课程异步加载真实的统计数据
-      ;(categoryData[categoryId] || []).forEach(item => {
-        get(`/study/cloudComputingCourseResource/counts?id=${item.id}`, (m, countData) => {
-          if (countData) {
-            item.videoCount = countData['1'] ?? 0
-            item.lectureCount = countData['2'] ?? 0
-            item.resourceCount = countData['3'] ?? 0
-            // 触发响应式更新
-            categoryData[categoryId] = [...(categoryData[categoryId] || [])]
-          }
+        // 为每个课程异步加载真实的统计数据
+        ; (categoryData[categoryId] || []).forEach(item => {
+          get(`/study/cloudComputingCourseResource/counts?id=${item.id}`, (m, countData) => {
+            if (countData) {
+              item.videoCount = countData['1'] ?? 0
+              item.lectureCount = countData['2'] ?? 0
+              item.resourceCount = countData['3'] ?? 0
+              // 触发响应式更新
+              categoryData[categoryId] = [...(categoryData[categoryId] || [])]
+            }
+          })
         })
-      })
 
       categoryPagination[categoryId].total = data?.total || 0
       resolve()

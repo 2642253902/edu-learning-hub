@@ -1,13 +1,12 @@
-package com.exampe.study.service.imp;
+package com.exampe.sys.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.exampe.study.dto.MessageNoticeUserVO;
-import com.exampe.study.entity.MessageNotice;
-import com.exampe.study.entity.MessageNoticeRead;
-import com.exampe.study.mapper.MessageNoticeMapper;
-import com.exampe.study.mapper.MessageNoticeReadMapper;
-import com.exampe.study.service.IMessageNoticeService;
+import com.exampe.sys.dto.MessageNoticeUserVO;
+import com.exampe.sys.entity.MessageNotice;
+import com.exampe.sys.entity.MessageNoticeRead;
+import com.exampe.sys.mapper.MessageNoticeMapper;
+import com.exampe.sys.mapper.MessageNoticeReadMapper;
+import com.exampe.sys.service.IMessageNoticeService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 

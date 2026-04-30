@@ -1,15 +1,12 @@
 
-// 导入自定义的 get 方法（封装了 axios 的 get 请求，见 src/net/index.ts）
-import { get, post, postForm } from '@/net'
-// 导入 pinia 状态管理
+// 路由层只依赖 net 封装，不直接碰 axios，便于统一处理鉴权、消息和错误。
+import { postForm } from '@/net'
+// 路由守卫需要读取用户和菜单状态，判断当前访问权限。
 import { useUserStore } from '@/stores/user'
 import { useMenuStore } from '@/stores/menu'
-import { ref } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
-
-
-// 静态路由配置，未登录时只允许访问 welcome 相关页面，登录后进入 index
+// 静态路由只描述应用骨架：欢迎页和首页壳子先固定下来，动态页面后面再补。
 const routes: Readonly<RouteRecordRaw[]> = [
   {
     path: '/', name: 'welcome', component: () => import('@/views/WelcomeView.vue'),
@@ -38,99 +35,70 @@ const routes: Readonly<RouteRecordRaw[]> = [
     children: [
       {
         path: 'home',
-        name: 'index-home',
+        name: 'home',
         component: () => import('@/views/HomeView.vue')
       },
-      {
-        path: 'personal-info',
-        name: 'index-personal-info',
-        component: () => import('@/views/sys/PersonalInfo.vue')
-      },
-      {
-        path: 'messages',
-        name: 'index-messages',
-        component: () => import('@/views/sys/MessageCenter.vue')
-      },
-      {
-        path: 'community/group-manage',
-        name: 'community-group-manage',
-        component: () => import('@/views/community/GroupManage.vue')
-      },
-      {
-        path: 'community/post-manage',
-        name: 'community-post-manage',
-        component: () => import('@/views/community/PostManage.vue')
-      },
-      {
-        path: 'community/review-manage',
-        name: 'community-review-manage',
-        component: () => import('@/views/community/ReviewManage.vue')
-      }
     ]
   }
 ]
 
-
-
-
-// 创建路由实例
+// 创建路由实例，后续统一在这里挂载守卫和动态路由。
 const router = createRouter({
   history: createWebHistory(),
   routes: routes,
 })
 
-
-// 标记是否已经添加过动态路由，防止重复添加
+// 记录动态路由是否已经注入，避免登录态变化或重复跳转时反复添加。
 let hasAddedDynamicRoutes = false;
 
-
-
-// 路由守卫：每次路由跳转前都会执行
-router.beforeEach(async (to, from) => {
+// 全局前置守卫：负责把“登录态、动态路由、欢迎页跳转”这几件事串起来。
+router.beforeEach(async (to, _from) => {
   const userStore = useUserStore()
-  const menuStore = useMenuStore()
 
-  // 已登录且还没加载动态路由时，先加载动态路由
+  // 已登录但动态菜单还没注入时，先拉后端菜单并把可访问页面补进路由表。
   if (userStore.auth.user !== null && (!hasAddedDynamicRoutes || to.matched.length === 0)) {
-    hasAddedDynamicRoutes = true // 设置标记，避免重复添加
-    await routers() // 等待动态路由添加完成
+    hasAddedDynamicRoutes = true // 先打标记，避免并发跳转时重复触发注入流程。
+    await routers() // 等动态路由完成注入后，再继续本次跳转。
 
-    // 如果加载后仍然匹配不到（且不是去首页），则说明无权访问
+    // 注入后仍匹配不到，说明当前路径没有对应菜单或页面，统一回到首页兜底。
     if (to.matched.length === 0 && to.path !== '/index') {
       return { name: 'index' }
     }
     return { ...to, replace: true }
   }
 
-  // 已登录但访问 welcome 相关页面，强制跳转到 index
+  // 已登录时不允许回到欢迎页，直接把用户送回主界面。
   if (userStore.auth.user !== null && typeof to.name === 'string' && to.name.startsWith('welcome')) {
     return { name: 'index' }
   } else if (userStore.auth.user === null && to.fullPath.startsWith('/index')) {
-    // 未登录访问 index 相关页面，强制跳转到登录页
+    // 未登录访问主界面或其子页面，统一重定向到登录页。
     return { name: 'welcome-login' }
   }
-  else if (to.matched.length === 0) {//没有匹配到路由
+  else if (to.matched.length === 0) {// 仍然没有匹配到路由时，给一个可用的落点，避免空白页。
     return { name: 'index' }
   }
+
+  // 其余场景默认放行，避免触发“并非所有代码路径都返回值”的类型错误。
+  return true
 })
 
-
-// 获取 views 下所有的 vue 文件组件 (作为动态组件导入的基础)
+// 扫描 views 下的所有页面组件，后端返回路由树后再按路径进行懒加载绑定。
 // 例如 '../views/study/PreparationCenter.vue' => () => import('../views/study/PreparationCenter.vue')
 const modules = import.meta.glob('../views/**/*.vue')
 
 /**
- * 核心：将路由数据注入到 vue-router
+ * 将后端路由树转换成 vue-router 可识别的动态路由。
+ * 这里同时负责把路径统一成绝对路径，并把菜单树递归处理到底。
  */
 const injectRoutes = (routesData: any[]) => {
   const processRoutes = (arr: any[]) => {
     arr.forEach(item => {
-      // 1. 路径补全
+      // 后端可能返回相对路径，这里统一补成绝对路径，保证路由匹配稳定。
       const routePath = item.path.startsWith('/') ? item.path : `/${item.path}`;
-      // 2. 组件路径拼接
+      // 组件文件名按路由路径拼接，和 views 目录保持一一对应。
       const componentPath = `../views${routePath}.vue`;
 
-      // 3. 动态添加路由到 index 下
+      // 只有本地确实存在对应页面组件时，才把它挂到 index 下。
       if (!router.hasRoute(item.name) && modules[componentPath]) {
         router.addRoute('index', {
           path: routePath,
@@ -142,10 +110,10 @@ const injectRoutes = (routesData: any[]) => {
         });
       }
 
-      // 4. 菜单 path 修正
+      // 回写标准化路径，后续菜单渲染和跳转都直接使用同一个字段。
       item.path = routePath;
 
-      // 5. 递归处理子菜单
+      // 子菜单继续递归处理，保证整棵菜单树都能注入。
       if (item.children && item.children.length > 0) {
         processRoutes(item.children);
       }
@@ -155,25 +123,27 @@ const injectRoutes = (routesData: any[]) => {
 }
 
 /**
- * 动态加载后端返回的路由配置
+ * 拉取后端路由树并注入到前端路由表。
+ * 本地已有缓存时先同步注入，避免刷新后页面空白。
  */
 const routers = () => {
   return new Promise<void>((resolve) => {
     const userStore = useUserStore()
     const menuStore = useMenuStore()
 
-    // 方案改进：如果本地已经有持久化的菜单，直接同步注入，保证浏览器重启后立刻可用
+    // 如果本地已经有持久化菜单，优先同步注入，浏览器刷新后也能立即恢复可访问页面。
     if (menuStore.menuList && menuStore.menuList.length > 0) {
       injectRoutes(menuStore.menuList)
-      // 如果本地已经有数据了，就不必阻塞路由跳转，直接 resolve
+      // 本地菜单已经可用时，不必等待接口返回，直接继续路由跳转。
       resolve();
+      return;
     }
 
-    // 请求成功回调
-    const onSuccess = (message: string, data: any) => {
-      // data 是后端返回的路由数组
+    // 接口成功后，把后端路由树转成动态路由并同步进持久化菜单。
+    const onSuccess = (_message: string, data: any) => {
+      // data 理论上是后端返回的路由数组。
       const routesData = data;
-      // 如果不是数组直接结束
+      // 如果返回结构异常，直接结束本次注入，不让路由守卫卡死。
       if (!Array.isArray(routesData)) {
         if (menuStore.menuList.length === 0) resolve();
         return;
@@ -181,37 +151,37 @@ const routers = () => {
 
       injectRoutes(routesData);
 
-      // 更新持久化菜单
+      // 更新持久化菜单，供刷新后恢复和侧边栏渲染使用。
       menuStore.menuList = routesData;
 
-      // 如果之前没有数据（第一次登录），则在这里 resolve
+      // 首次登录时，路由注入完成后继续当前跳转。
       resolve();
     }
 
-    // 请求失败/未授权等，直接 resolve
-    const onFailure = (message: any) => {
+    // 请求失败、未授权或异常时，直接放行，避免守卫无限等待。
+    const onFailure = (_message: any) => {
       resolve();
     }
-    const onError = (err: any) => {
+    const onError = (_err: any) => {
       resolve();
     }
 
-    // 请求后端路由
+    // 按当前角色请求可访问的路由树。
     postForm('/api/routes/tree', {
       role: userStore.auth.user?.role,
     }, onSuccess, onFailure, onError)
   });
 }
 
-// 退出时清除动态路由和菜单
+// 退出登录时清掉动态路由和菜单缓存，避免下次登录继承上一个角色的权限树。
 export const resetRoutes = () => {
   const menuStore = useMenuStore()
-  // 重置标记
+  // 先把注入标记复位，下一次登录可以重新加载路由。
   hasAddedDynamicRoutes = false;
-  // 清空菜单持久化
+  // 清空本地菜单缓存，防止刷新后仍然渲染旧权限菜单。
   menuStore.menuList = [];
 
-  // 遍历所有当前路由，如果是动态添加的（非 welcome及index），就将其移除
+  // 遍历当前路由表，只移除动态注入的业务页面，保留欢迎页和首页骨架。
   router.getRoutes().forEach(route => {
     if (
       route.name &&
@@ -219,7 +189,8 @@ export const resetRoutes = () => {
       route.name !== 'welcome-login' &&
       route.name !== 'welcome-register' &&
       route.name !== 'welcome-forget' &&
-      route.name !== 'index'
+      route.name !== 'index' &&
+      route.name !== 'home'
     ) {
       router.removeRoute(route.name as string);
     }

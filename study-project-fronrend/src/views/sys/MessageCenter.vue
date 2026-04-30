@@ -25,13 +25,8 @@
           </template>
 
           <div v-if="messages.length > 0" class="message-list">
-            <div
-              v-for="item in messages"
-              :key="item.id"
-              class="message-item"
-              :class="{ unread: Number(item.unread) === 1 }"
-              @click="openItem(item)"
-            >
+            <div v-for="item in messages" :key="item.id" class="message-item"
+              :class="{ unread: Number(item.unread) === 1 }" @click="openItem(item)">
               <div class="message-main">
                 <div class="message-title">{{ item.title }}</div>
                 <div class="message-desc">{{ item.content }}</div>
@@ -100,13 +95,9 @@
           </el-table>
 
           <div class="mt-3 flex-end">
-            <el-pagination
-              :current-page="managePagination.current"
-              :page-size="managePagination.pageSize"
-              :total="managePagination.total"
-              layout="total, prev, pager, next"
-              @current-change="handleManagePageChange"
-            />
+            <el-pagination :current-page="managePagination.current" :page-size="managePagination.pageSize"
+              :total="managePagination.total" layout="total, prev, pager, next"
+              @current-change="handleManagePageChange" />
           </div>
         </el-card>
       </el-col>
@@ -158,7 +149,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { messageApi } from '@/net'
+import { deleteMapping, get, post } from '@/net'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
@@ -173,8 +164,9 @@ const targetRoleList = ref<string[]>(['1', '2', '3'])
 const manageQuery = ref<any>({ title: '', level: '' })
 const managePagination = ref({ current: 1, pageSize: 10, total: 0 })
 
+// 角色ID约定：1=管理员；管理员才能看到“消息管理”区域。
 const isAdmin = computed(() => String(userStore.auth.user?.role || '') === '1')
-const unreadCount = computed(() => messages.value.filter(item => Number(item.unread) === 1).length)
+const unreadCount = computed(() => messages.value.filter((item: any) => Number(item.unread) === 1).length)
 
 const formatTime = (value: any) => {
   if (!value) return ''
@@ -186,7 +178,7 @@ const formatTime = (value: any) => {
 
 const loadMessages = () => {
   loading.value = true
-  messageApi.userList(50, (list: any[]) => {
+  get('/api/message/user/list?limit=50', (_message: string, list: any[]) => {
     messages.value = list || []
     loading.value = false
   }, () => {
@@ -195,14 +187,14 @@ const loadMessages = () => {
 }
 
 const markAllRead = () => {
-  messageApi.readAll((msg: any) => {
+  post('/api/message/user/readAll', {}, (msg: any) => {
     ElMessage.success(typeof msg === 'string' ? msg : '已全部标记已读')
     loadMessages()
   })
 }
 
 const openItem = (item: any) => {
-  messageApi.read(item.id, () => {
+  post(`/api/message/user/read?messageId=${encodeURIComponent(item.id)}`, {}, () => {
     loadMessages()
   })
 }
@@ -231,14 +223,15 @@ const roleTextByTarget = (targetRole: string) => {
 
 const loadManageList = (arg = 0) => {
   if (!isAdmin.value) return
+  // arg=1 表示由“查询”触发，此时重置到第一页，避免沿用旧页码导致结果为空。
   if (arg === 1) managePagination.value.current = 1
   manageLoading.value = true
-  messageApi.manageList({
-    pageNo: managePagination.value.current,
-    pageSize: managePagination.value.pageSize,
-    title: manageQuery.value.title,
-    level: manageQuery.value.level
-  }, (data: any) => {
+  const search = new URLSearchParams()
+  search.append('pageNo', String(managePagination.value.current))
+  search.append('pageSize', String(managePagination.value.pageSize))
+  if (manageQuery.value.title) search.append('title', manageQuery.value.title)
+  if (manageQuery.value.level !== undefined && manageQuery.value.level !== '') search.append('level', String(manageQuery.value.level))
+  get(`/api/message/manage/list?${search.toString()}`, (_message: string, data: any) => {
     manageList.value = data?.records || []
     managePagination.value.total = data?.total || 0
     manageLoading.value = false
@@ -262,6 +255,7 @@ const openAdd = () => {
 const openEdit = (row: any) => {
   dialogMode.value = 'edit'
   form.value = { ...row }
+  // 编辑时把后端逗号字符串转换为勾选数组，保证复选框双向绑定正确。
   targetRoleList.value = row.targetRole ? String(row.targetRole).split(',').map((i: string) => i.trim()) : ['1', '2', '3']
   dialogVisible.value = true
 }
@@ -275,16 +269,21 @@ const submitForm = () => {
     ElMessage.warning('请输入消息内容')
     return
   }
+  if (targetRoleList.value.length === 0) {
+    ElMessage.warning('请至少选择一个接收角色')
+    return
+  }
+  // 后端字段为逗号拼接字符串，提交前统一做一次转换。
   form.value.targetRole = targetRoleList.value.join(',')
   if (dialogMode.value === 'add') {
-    messageApi.add(form.value, () => {
+    post('/api/message/manage/add', form.value, () => {
       ElMessage.success('发布成功')
       dialogVisible.value = false
       loadManageList()
       loadMessages()
     })
   } else {
-    messageApi.edit(form.value, () => {
+    post('/api/message/manage/edit', form.value, () => {
       ElMessage.success('更新成功')
       dialogVisible.value = false
       loadManageList()
@@ -294,8 +293,9 @@ const submitForm = () => {
 }
 
 const removeNotice = (row: any) => {
-  messageApi.delete(row.id, () => {
+  deleteMapping('/api/message/manage/delete', { id: row.id }, () => {
     ElMessage.success('删除成功')
+    // 删除后同时刷新管理列表和个人消息，避免管理员看到过期数据。
     loadManageList()
     loadMessages()
   })

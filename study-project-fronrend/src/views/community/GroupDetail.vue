@@ -19,7 +19,7 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="showPost" width="60%" :before-close="()=>{ showPost=false }">
+    <el-dialog v-model="showPost" width="60%" :before-close="() => { showPost = false }">
       <template #header>帖子</template>
       <div v-if="currentPost">
         <h4 class="font-bold">{{ currentPost.title }}</h4>
@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { communityApi } from '@/net'
+import { get } from '@/net'
 import PostForm from './components/PostForm.vue'
 import CommentList from './components/CommentList.vue'
 import { useRoute } from 'vue-router'
@@ -47,26 +47,28 @@ const showPost = ref(false)
 const currentPost = ref<any>(null)
 
 const loadGroup = () => {
-  communityApi.listGroups((d) => {
+  get('/api/community/groups', (_message: string, d: any) => {
     const g = (d || []).find((x: any) => x.id === groupId)
     group.value = g
   })
 }
 
 const loadPosts = () => {
-  communityApi.listPosts(groupId, (d) => {
+  get(`/api/community/posts?groupId=${encodeURIComponent(groupId)}`, (_message: string, d: any) => {
     posts.value = d || []
   })
 }
 
-const openPost = (id:string) => {
-  currentPost.value = posts.value.find(p=>p.id===id)
+const openPost = (id: string) => {
+  currentPost.value = posts.value.find((p: any) => p.id === id)
   showPost.value = true
 }
 
-onMounted(()=>{ loadGroup(); loadPosts() })
+onMounted(() => { loadGroup(); loadPosts() })
 </script>
 
 <style scoped>
-.p-4 { padding: 16px }
+.p-4 {
+  padding: 16px
+}
 </style>

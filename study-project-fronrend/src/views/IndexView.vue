@@ -21,7 +21,8 @@
 
                 <template v-for="menu in visibleMenuList">
                     <!-- 如果有子级 -->
-                    <el-sub-menu v-if="menu.children && menu.children.length > 0" :key="`${menu.id}-sub`" :index="menu.path">
+                    <el-sub-menu v-if="menu.children && menu.children.length > 0" :key="`${menu.id}-sub`"
+                        :index="menu.path">
                         <template #title>
                             <el-icon>
                                 <Menu />
@@ -31,7 +32,8 @@
 
                         <template v-for="child in menu.children">
                             <!-- 二级菜单如果有三级子菜单 -->
-                            <el-sub-menu v-if="child.children && child.children.length > 0" :key="`${child.id}-sub`" :index="child.path">
+                            <el-sub-menu v-if="child.children && child.children.length > 0" :key="`${child.id}-sub`"
+                                :index="child.path">
                                 <template #title>
                                     <span>{{ child.remark }}</span>
                                 </template>
@@ -77,26 +79,16 @@
                 </div>
 
                 <div class="header-right">
-                    <el-select
-                        v-model="searchModulePath"
-                        class="search-select"
-                        filterable
-                        clearable
-                        :filter-method="filterModuleOptions"
-                        placeholder="搜索菜单模块并跳转"
-                        @change="handleModuleSearchChange"
-                    >
-                        <el-option
-                            v-for="item in filteredModuleOptions"
-                            :key="item.value"
-                            :label="item.label"
-                            :value="item.value"
-                        />
+                    <el-select v-model="searchModulePath" class="search-select" filterable clearable
+                        :filter-method="filterModuleOptions" placeholder="搜索菜单模块并跳转" @change="handleModuleSearchChange">
+                        <el-option v-for="item in filteredModuleOptions" :key="item.value" :label="item.label"
+                            :value="item.value" />
                     </el-select>
 
                     <el-popover placement="bottom-end" :width="380" trigger="click" @show="handleMessagePopoverShow">
                         <template #reference>
-                            <el-badge :value="unreadMessageCount" :hidden="unreadMessageCount === 0" class="notice-badge">
+                            <el-badge :value="unreadMessageCount" :hidden="unreadMessageCount === 0"
+                                class="notice-badge">
                                 <el-icon class="notice-icon">
                                     <Bell />
                                 </el-icon>
@@ -110,13 +102,8 @@
                             </div>
 
                             <el-scrollbar max-height="280px">
-                                <div
-                                    v-for="item in messageList"
-                                    :key="item.key"
-                                    class="message-popover-item"
-                                    :class="{ unread: item.unread }"
-                                    @click="openMessage(item)"
-                                >
+                                <div v-for="item in messageList" :key="item.key" class="message-popover-item"
+                                    :class="{ unread: item.unread }" @click="openMessage(item)">
                                     <div class="message-popover-title">{{ item.title }}</div>
                                     <div class="message-popover-desc">{{ item.desc }}</div>
                                     <div class="message-popover-time">{{ item.timeText }}</div>
@@ -189,7 +176,7 @@ import {
     SwitchButton,
     House
 } from '@element-plus/icons-vue'
-import { get, messageApi } from "@/net";
+import { get, post } from "@/net";
 import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from '@/stores/user'
 import { useMenuStore } from '@/stores/menu'
@@ -207,7 +194,7 @@ const searchKeyword = ref('')
 const messageList = ref<any[]>([])
 let messageTimer: number | undefined
 
-const unreadMessageCount = computed(() => messageList.value.filter(item => item.unread).length)
+const unreadMessageCount = computed(() => messageList.value.filter((item: any) => item.unread).length)
 
 
 const isMenuVisible = (menu: any) => (menu?.menuVisible ?? 1) === 1
@@ -225,16 +212,16 @@ const visibleMenuList = computed(() => buildVisibleMenus(menuStore.menuList as a
 
 const flattenMenus = (menus: any[], parent = ''): Array<{ label: string; value: string }> => {
     const result: Array<{ label: string; value: string }> = []
-    ;(menus || []).forEach((item: any) => {
-        const title = item.remark || item.name || item.path
-        const label = parent ? `${parent} / ${title}` : title
-        if (item.path) {
-            result.push({ label, value: item.path })
-        }
-        if (item.children && item.children.length > 0) {
-            result.push(...flattenMenus(item.children, label))
-        }
-    })
+        ; (menus || []).forEach((item: any) => {
+            const title = item.remark || item.name || item.path
+            const label = parent ? `${parent} / ${title}` : title
+            if (item.path) {
+                result.push({ label, value: item.path })
+            }
+            if (item.children && item.children.length > 0) {
+                result.push(...flattenMenus(item.children, label))
+            }
+        })
     return result
 }
 
@@ -246,7 +233,7 @@ const moduleOptions = computed(() => {
 const filteredModuleOptions = computed(() => {
     if (!searchKeyword.value) return moduleOptions.value
     const keyword = searchKeyword.value.toLowerCase()
-    return moduleOptions.value.filter(item => item.label.toLowerCase().includes(keyword) || item.value.toLowerCase().includes(keyword))
+    return moduleOptions.value.filter((item: { label: string; value: string }) => item.label.toLowerCase().includes(keyword) || item.value.toLowerCase().includes(keyword))
 })
 
 const filterModuleOptions = (keyword: string) => {
@@ -275,21 +262,21 @@ const formatTime = (value: any) => {
 }
 
 const loadMessages = async () => {
-    messageApi.userList(12, (list: any[]) => {
+    get('/api/message/user/list?limit=12', (_message: string, list: any[]) => {
         messageList.value = (list || []).map((item: any) => ({
             ...item,
             key: item.id,
             desc: item.content,
             timeText: formatTime(item.createTime),
             unread: Number(item.unread) === 1,
-            target: '/index/messages'
+            target: '/sys/MessageCenter'
         }))
     })
 }
 
 const markMessagesRead = () => {
-    messageApi.readAll(() => {
-        messageList.value = messageList.value.map(item => ({ ...item, unread: false }))
+    post('/api/message/user/readAll', {}, () => {
+        messageList.value = messageList.value.map((item: any) => ({ ...item, unread: false }))
     })
 }
 
@@ -299,7 +286,7 @@ const handleMessagePopoverShow = () => {
 
 const openMessage = (item: any) => {
     if (!item?.id) return
-    messageApi.read(item.id, () => {
+    post(`/api/message/user/read?messageId=${encodeURIComponent(item.id)}`, {}, () => {
         loadMessages()
         if (item?.target) {
             router.push(item.target)
@@ -309,15 +296,15 @@ const openMessage = (item: any) => {
 
 const goMessages = () => {
     markMessagesRead()
-    router.push('/index/messages')
+    router.push('/sys/MessageCenter')
 }
 
 const goPersonalInfo = () => {
-    router.push('/index/personal-info')
+    router.push('/sys/PersonalInfo')
 }
 
 const logout = () => {
-    get('/api/auth/logout', (message) => {
+    get('/api/auth/logout', (message: string) => {
         ElMessage.success(message)
         userStore.auth.user = null
         resetRoutes() // 退出登录时，清空动态路由及菜单

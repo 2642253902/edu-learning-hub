@@ -4,12 +4,14 @@
     <div class="page-banner">
       <div class="banner-content">
         <h2 class="banner-title">
-          <el-icon class="mr-2"><Platform /></el-icon> 课程备课中心
+          <el-icon class="mr-2">
+            <Platform />
+          </el-icon> 课程备课中心
         </h2>
         <p class="banner-subtitle">管理您的课程资源、视频讲义，构建高质量的学习内容。</p>
       </div>
       <div class="banner-actions">
-           <el-button type="primary" :icon="Plus" size="large" @click="handleAdd">新建课程备课</el-button>
+        <el-button type="primary" :icon="Plus" size="large" @click="handleAdd">新建课程备课</el-button>
       </div>
     </div>
 
@@ -17,15 +19,18 @@
       <!-- 搜索筛选 -->
       <div class="toolbar-box">
         <div class="btn-group">
-            <el-radio-group v-model="queryParam.status" @change="loadData" size="default">
-              <el-radio-button :value="''">全部</el-radio-button>
-              <el-radio-button :value="1">启用</el-radio-button>
-              <el-radio-button :value="0">禁用</el-radio-button>
-            </el-radio-group>
+          <el-radio-group v-model="queryParam.status" @change="loadData" size="default">
+            <el-radio-button :value="''">全部</el-radio-button>
+            <el-radio-button :value="1">启用</el-radio-button>
+            <el-radio-button :value="0">禁用</el-radio-button>
+          </el-radio-group>
         </div>
         <div class="search-group">
-          <el-input v-model="queryParam.courseName" placeholder="🔍 快速定位课程名称" clearable @change="loadData" class="search-input">
-            <template #prefix><el-icon><Search /></el-icon></template>
+          <el-input v-model="queryParam.courseName" placeholder="🔍 快速定位课程名称" clearable @change="loadData"
+            class="search-input">
+            <template #prefix><el-icon>
+                <Search />
+              </el-icon></template>
           </el-input>
           <el-button :icon="Refresh" circle @click="loadData" class="ml-2" />
         </div>
@@ -37,7 +42,9 @@
           <template #default="{ row }">
             <div class="course-name-cell" @click="handleDetail(row)">
               <div class="icon-wrapper">
-                <el-icon><Reading /></el-icon>
+                <el-icon>
+                  <Reading />
+                </el-icon>
               </div>
               <div class="text-info">
                 <span class="name-link">{{ row.courseName }}</span>
@@ -46,7 +53,7 @@
             </div>
           </template>
         </el-table-column>
-        
+
         <el-table-column label="分类" width="140" align="center">
           <template #default="{ row }">
             <el-tag type="info" plain>{{ getCourseTypeText(row) }}</el-tag>
@@ -57,28 +64,36 @@
           <template #default="{ row }">
             <div class="res-mini-stats">
               <el-tooltip content="课程视频">
-                <span class="stat-tag blue"><el-icon><VideoPlay /></el-icon> {{ row.videoCount || 0 }}</span>
+                <span class="stat-tag blue"><el-icon>
+                    <VideoPlay />
+                  </el-icon> {{ row.videoCount || 0 }}</span>
               </el-tooltip>
               <el-tooltip content="讲义文档">
-                <span class="stat-tag red"><el-icon><Document /></el-icon> {{ row.lectureCount || 0 }}</span>
+                <span class="stat-tag red"><el-icon>
+                    <Document />
+                  </el-icon> {{ row.lectureCount || 0 }}</span>
               </el-tooltip>
               <el-tooltip content="辅助资料">
-                <span class="stat-tag gray"><el-icon><FolderOpened /></el-icon> {{ row.resourceCount || 0 }}</span>
+                <span class="stat-tag gray"><el-icon>
+                    <FolderOpened />
+                  </el-icon> {{ row.resourceCount || 0 }}</span>
               </el-tooltip>
             </div>
           </template>
         </el-table-column>
 
         <el-table-column label="最后修改日期" width="180" align="center">
-            <template #default="{ row }">
-                <span class="time-text">{{ row.updateTime || '刚刚' }}</span>
-            </template>
+          <template #default="{ row }">
+            <span class="time-text">{{ row.updateTime || '刚刚' }}</span>
+          </template>
         </el-table-column>
 
         <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleEdit(row)">
-               <el-icon class="mr-1"><Edit /></el-icon> 编辑资源
+              <el-icon class="mr-1">
+                <Edit />
+              </el-icon> 编辑资源
             </el-button>
             <el-divider direction="vertical" />
             <el-dropdown trigger="click">
@@ -104,38 +119,43 @@
     <!-- 详情侧边栏 -->
     <el-drawer v-model="drawerVisible" :title="'备课详情: ' + selectedCourse?.courseName" size="520px" destroy-on-close>
       <div v-if="selectedCourse" class="drawer-container">
-         <div class="info-section">
-            <div class="section-label">基础信息</div>
-            <div class="info-card">
-               <div class="info-row"><span class="label">课程名称:</span> <span class="val">{{ selectedCourse.courseName }}</span></div>
-               <div class="info-row"><span class="label">标签:</span> <el-tag size="small">{{ selectedCourse.courseTag }}</el-tag></div>
-               <div class="info-row"><span class="label">所属教师:</span> <span>{{ selectedCourse.teacherName || '管理员' }}</span></div>
-               <div class="info-row"><span class="label">建议学时:</span> <span>{{ selectedCourse.courseHours }}h</span></div>
+        <div class="info-section">
+          <div class="section-label">基础信息</div>
+          <div class="info-card">
+            <div class="info-row"><span class="label">课程名称:</span> <span class="val">{{ selectedCourse.courseName
+                }}</span>
             </div>
-         </div>
-
-         <div class="info-section mt-6">
-            <div class="section-label">上传资源分解</div>
-            <div class="resource-grid">
-               <div class="res-box vid">
-                  <div class="num">{{ selectedCourse.videoCount || 0 }}</div>
-                  <div class="lab">视频课件</div>
-               </div>
-               <div class="res-box doc">
-                  <div class="num">{{ selectedCourse.lectureCount || 0 }}</div>
-                  <div class="lab">文档讲义</div>
-               </div>
-               <div class="res-box oth">
-                  <div class="num">{{ selectedCourse.resourceCount || 0 }}</div>
-                  <div class="lab">教学辅助</div>
-               </div>
+            <div class="info-row"><span class="label">标签:</span> <el-tag size="small">{{ selectedCourse.courseTag
+                }}</el-tag></div>
+            <div class="info-row"><span class="label">所属教师:</span> <span>{{ selectedCourse.teacherName || '管理员'
+                }}</span>
             </div>
-         </div>
+            <div class="info-row"><span class="label">建议学时:</span> <span>{{ selectedCourse.courseHours }}h</span></div>
+          </div>
+        </div>
 
-         <div class="drawer-footer">
-            <el-button @click="drawerVisible = false">关闭</el-button>
-            <el-button type="primary" @click="handleEdit(selectedCourse)">去编辑中心</el-button>
-         </div>
+        <div class="info-section mt-6">
+          <div class="section-label">上传资源分解</div>
+          <div class="resource-grid">
+            <div class="res-box vid">
+              <div class="num">{{ selectedCourse.videoCount || 0 }}</div>
+              <div class="lab">视频课件</div>
+            </div>
+            <div class="res-box doc">
+              <div class="num">{{ selectedCourse.lectureCount || 0 }}</div>
+              <div class="lab">文档讲义</div>
+            </div>
+            <div class="res-box oth">
+              <div class="num">{{ selectedCourse.resourceCount || 0 }}</div>
+              <div class="lab">教学辅助</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="drawer-footer">
+          <el-button @click="drawerVisible = false">关闭</el-button>
+          <el-button type="primary" @click="handleEdit(selectedCourse)">去编辑中心</el-button>
+        </div>
       </div>
     </el-drawer>
 
@@ -312,7 +332,7 @@ watch(() => route.query.refresh, () => {
   margin: -20px 24px 24px;
   border-radius: 8px;
   border: none;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .toolbar-box {
@@ -379,9 +399,20 @@ watch(() => route.query.refresh, () => {
   gap: 4px;
 }
 
-.stat-tag.blue { background: #e6f7ff; color: #1890ff; }
-.stat-tag.red { background: #fff1f0; color: #f5222d; }
-.stat-tag.gray { background: #f5f5f5; color: #595959; }
+.stat-tag.blue {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.stat-tag.red {
+  background: #fff1f0;
+  color: #f5222d;
+}
+
+.stat-tag.gray {
+  background: #f5f5f5;
+  color: #595959;
+}
 
 .time-text {
   color: #8c8c8c;
@@ -439,12 +470,30 @@ watch(() => route.query.refresh, () => {
   border-radius: 8px;
 }
 
-.res-box.vid { background-color: #e6f7ff; color: #1890ff; }
-.res-box.doc { background-color: #fff1f0; color: #f5222d; }
-.res-box.oth { background-color: #f5f5f5; color: #595959; }
+.res-box.vid {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
 
-.res-box .num { font-size: 24px; font-weight: bold; }
-.res-box .lab { font-size: 12px; opacity: 0.8; }
+.res-box.doc {
+  background-color: #fff1f0;
+  color: #f5222d;
+}
+
+.res-box.oth {
+  background-color: #f5f5f5;
+  color: #595959;
+}
+
+.res-box .num {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.res-box .lab {
+  font-size: 12px;
+  opacity: 0.8;
+}
 
 .drawer-footer {
   margin-top: 40px;
@@ -453,8 +502,19 @@ watch(() => route.query.refresh, () => {
   gap: 12px;
 }
 
-.danger-text { color: #f5222d !important; }
-.mr-2 { margin-right: 8px; }
-.ml-2 { margin-left: 8px; }
-.mt-6 { margin-top: 24px; }
+.danger-text {
+  color: #f5222d !important;
+}
+
+.mr-2 {
+  margin-right: 8px;
+}
+
+.ml-2 {
+  margin-left: 8px;
+}
+
+.mt-6 {
+  margin-top: 24px;
+}
 </style>

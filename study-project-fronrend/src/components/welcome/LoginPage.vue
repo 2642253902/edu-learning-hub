@@ -41,7 +41,7 @@
 </template>
 
 <script setup>
-import { post, get, postForm } from '@/net';
+import { get, postForm } from '@/net';
 import { User, Lock } from '@element-plus/icons-vue'
 import { reactive } from "vue";
 import router from "@/router";
@@ -53,6 +53,7 @@ const userStore = useUserStore()
 const form = reactive({
     username: '',
     password: '',
+    // 登录态可选记住本次会话，由后端决定持久化策略。
     remember: false
 })
 
@@ -61,18 +62,28 @@ const login = () => {
         ElMessage.error("请输入用户名和密码")
         return
     } else {
+        // 先拿到登录结果，再拉取当前用户信息，保证 store 中状态完整。
         postForm('/api/auth/login', {
             username: form.username,
             password: form.password,
             remember: form.remember
-        }, (message) => {
+        }, (message, data) => {
             ElMessage.success(message)
+            const loginUser = data ?? null
+            if (loginUser !== null) {
+                userStore.auth.user = loginUser
+            }
             get('/api/user/me', (message, data) => {
                 userStore.auth.user = data
                 router.push({ name: 'index' })
             }, (message) => {
+                // 如果 /me 临时失败，优先保留登录接口返回的用户信息，避免把会话状态直接打空。
                 ElMessage.warning(message)
-                userStore.auth.user = null
+                if (loginUser !== null) {
+                    ElMessage.info('已使用登录响应中的用户信息进入系统')
+                    userStore.auth.user = loginUser
+                    router.push({ name: 'index' })
+                }
             })
         })
     }

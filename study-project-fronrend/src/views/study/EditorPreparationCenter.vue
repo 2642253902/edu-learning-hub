@@ -53,13 +53,10 @@
 
               <el-col :xl="8" :lg="8" :md="12" :sm="24">
                 <el-form-item label="负责教师" prop="teacherId">
-                  <el-select v-model="form.teacherId" placeholder="请选择负责教师" class="w-full" :disabled="isTeacherSelectDisabled">
-                    <el-option
-                      v-for="teacher in teacherList"
-                      :key="teacher.id"
-                      :label="getTeacherLabel(teacher)"
-                      :value="String(teacher.id)"
-                    />
+                  <el-select v-model="form.teacherId" placeholder="请选择负责教师" class="w-full"
+                    :disabled="isTeacherSelectDisabled">
+                    <el-option v-for="teacher in teacherList" :key="teacher.id" :label="getTeacherLabel(teacher)"
+                      :value="String(teacher.id)" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -75,7 +72,7 @@
           <div v-show="!isAddMode" class="mt-8">
             <el-tabs v-model="activeTab" type="border-card">
               <!-- 视频 -->
-                <el-tab-pane label="视频" name="video">
+              <el-tab-pane label="视频" name="video">
                 <div class="flex justify-between items-center mb-4">
                   <el-button v-if="!disabled" type="primary" :icon="Plus" @click="showModal(1)">添加视频</el-button>
                   <span class="text-gray-500">已上传：{{ videoFiles.length }} 个视频</span>
@@ -169,11 +166,49 @@
 
               <!-- 评价 -->
               <el-tab-pane label="评价" name="review">
-                <div class="mt-4">
-                  <resource-review-form v-if="form.id" :resourceId="form.id" @saved="handleReviewSaved" />
-                  <div class="mt-4">
-                    <resource-review-list ref="reviewListRef" v-if="form.id" :resourceId="form.id" />
+                <div class="review-section">
+                  <div class="review-section-head">
+                    <div>
+                      <div class="section-kicker">课程评价管理</div>
+                      <h3 class="section-title">当前课程的评价与反馈</h3>
+                    </div>
+
                   </div>
+
+                  <div class="review-toolbar">
+                    <el-button v-if="!disabled" type="primary" @click="openReviewDialog()">新增评价</el-button>
+                  </div>
+
+                  <el-alert type="info" show-icon :closable="false" title="这里用于课程备课阶段查看和管理本课程的评价记录，不提供学生发表入口。"
+                    class="mb-4" />
+
+                  <el-table :data="reviewList" v-loading="reviewLoading" border stripe>
+                    <el-table-column type="index" label="#" width="60" align="center" />
+                    <el-table-column label="评价人" prop="username" width="140" align="center" />
+                    <el-table-column label="评分" width="100" align="center">
+                      <template #default="{ row }">
+                        <el-rate :model-value="Number(row.rating || 0)" disabled />
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="评价内容" prop="content" min-width="260" show-overflow-tooltip />
+                    <el-table-column label="点赞" prop="likes" width="90" align="center" />
+                    <el-table-column label="发布时间" width="180" align="center">
+                      <template #default="{ row }">
+                        {{ row.createTime || '-' }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="120" align="center">
+                      <template #default="{ row }">
+                        <el-button v-if="!disabled" link type="primary" @click="openReviewDialog(row)">编辑</el-button>
+                        <el-popconfirm title="确定删除此评价吗？" @confirm="handleDeleteReview(row)">
+                          <template #reference>
+                            <el-button link type="danger">删除</el-button>
+                          </template>
+                        </el-popconfirm>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                  <el-empty v-if="!reviewList || reviewList.length === 0" description="暂无评价记录" />
                 </div>
               </el-tab-pane>
             </el-tabs>
@@ -183,18 +218,39 @@
     </el-card>
 
     <CourseResourceModal ref="resourceModalRef" @ok="handleResourceModalOk" />
+
+    <el-dialog v-model="reviewDialogVisible" :title="reviewDialogMode === 'add' ? '新增评价' : '编辑评价'" width="680px">
+      <el-form ref="reviewFormRef" :model="reviewForm" :rules="reviewRules" label-width="90px">
+        <el-form-item label="所属资源">
+          <el-input :model-value="getReviewResourceLabel(form.id)" disabled />
+        </el-form-item>
+        <el-form-item label="评价人" prop="username">
+          <el-input v-model="reviewForm.username" placeholder="当前登录用户" disabled />
+        </el-form-item>
+        <el-form-item label="评分" prop="rating">
+          <el-rate v-model="reviewForm.rating" />
+        </el-form-item>
+        <el-form-item label="内容" prop="content">
+          <el-input v-model="reviewForm.content" type="textarea" :rows="5" placeholder="请输入评价内容" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="reviewDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="reviewSaving" @click="submitReview">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watchEffect, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { deleteMapping, get, post } from '@/net'
+import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { Plus, VideoCamera, Document, Files } from '@element-plus/icons-vue'
-import CourseResourceModal from './modules/CourseResourceModal.vue'
-import ResourceReviewForm from './components/ResourceReviewForm.vue'
-import ResourceReviewList from './components/ResourceReviewList.vue'
+
+const CourseResourceModal = defineAsyncComponent(() => import('./modules/CourseResourceModal.vue'))
 
 interface TeacherItem {
   id: string | number
@@ -206,6 +262,12 @@ interface TeacherItem {
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
+// 评价作者默认取当前登录用户，保证新增/编辑评价时用户名来源统一
+const currentUsername = computed(() => {
+  const user = userStore.auth.user || {}
+  return user.realname || user.username || user.name || ''
+})
 
 // 状态
 const title = ref('课程信息')
@@ -231,11 +293,33 @@ const teacherList = ref<TeacherItem[]>([])
 const videoFiles = ref<any[]>([])
 const lectureFiles = ref<any[]>([])
 const experimentFiles = ref<any[]>([])
+const reviewList = ref<any[]>([])
+const reviewLoading = ref(false)
+// reviews are bound to the current course (form.id)
+const reviewDialogVisible = ref(false)
+const reviewDialogMode = ref<'add' | 'edit'>('add')
+const reviewSaving = ref(false)
+const reviewFormRef = ref()
+const reviewForm = reactive({
+  id: '',
+  resourceId: '',
+  username: '',
+  rating: 5,
+  content: ''
+})
+const reviewRules = {
+  username: [{ required: true, message: '请输入评价人', trigger: 'blur' }],
+  rating: [{ required: true, message: '请选择评分', trigger: 'change' }],
+  content: [{ required: true, message: '请输入评价内容', trigger: 'blur' }]
+}
 
 const resourceModalRef = ref()
-const reviewListRef = ref()
 
-// 初始化
+const getReviewResourceLabel = (resourceId: string) => {
+  return '课程 ' + (form.courseName || form.id || '')
+}
+
+// 初始化：根据路由 mode 决定页面是新增、编辑还是只读
 const init = async () => {
   const { id, mode } = route.query
 
@@ -249,7 +333,7 @@ const init = async () => {
   await loadCourseTypes()
   loadTeachers()
 
-  // 尝试从 sessionStorage 获取 PreparationCenter 传过来的数据
+  // 优先读取列表页缓存，减少重复请求并保留用户在列表页的上下文
   const cachedData = sessionStorage.getItem('currentCourseEdit')
   if (id && cachedData) {
     const record = JSON.parse(cachedData)
@@ -268,7 +352,7 @@ const init = async () => {
 
 const loadCourseTypes = () => {
   return new Promise((resolve) => {
-    get('/study/cloudComputingCourseType/list?pageNo=1&pageSize=1000', (msg, data) => {
+    get('/study/cloudComputingCourseType/list?pageNo=1&pageSize=1000', (_message: string, data: any) => {
       courseTypeList.value = data?.records || []
       resolve(true)
     })
@@ -276,15 +360,15 @@ const loadCourseTypes = () => {
 }
 
 const loadTeachers = () => {
-  get('/api/user/list/teachers', (msg, data) => {
+  get('/api/user/list/teachers', (_message: string, data: any) => {
     teacherList.value = data?.data || data?.records || data || []
   })
 }
 
 const loadCourseDetail = (id: string) => {
   confirmLoading.value = true
-  get(`/study/cloudComputingCourse/list?id=${id}`, (msg, data) => {
-    // 兼容 records 或 data 本身
+  get(`/study/cloudComputingCourse/list?id=${id}`, (_message: string, data: any) => {
+    // 兼容后端不同返回结构：可能是 { records: [] }，也可能直接返回数组
     const record = data?.records?.[0] || data?.[0]
     if (record) {
       Object.assign(form, record)
@@ -293,22 +377,24 @@ const loadCourseDetail = (id: string) => {
       }
     }
     confirmLoading.value = false
-  }, (err) => {
+  }, (_err: any) => {
     confirmLoading.value = false
   })
 }
 
 const loadResources = (id: string) => {
-  get(`/study/cloudComputingCourseResource/list?courseId=${id}&pageSize=100`, (msg, data) => {
+  get(`/study/cloudComputingCourseResource/list?courseId=${id}&pageSize=100`, (_message: string, data: any) => {
     const resources = data?.records || []
+    // resourceType: 1-视频 2-讲义 3-资料
     videoFiles.value = resources.filter((r: any) => String(r.resourceType) === '1')
     lectureFiles.value = resources.filter((r: any) => String(r.resourceType) === '2')
     experimentFiles.value = resources.filter((r: any) => String(r.resourceType) === '3')
+    // no-op for reviewResourceId: reviews are by course id
   })
 }
 
 const handleCourseTypeChange = (val: string) => {
-  const selected = courseTypeList.value.find(item => String(item.id) === String(val))
+  const selected = courseTypeList.value.find((item: any) => String(item.id) === String(val))
   if (selected) {
     form.courseName = selected.courseTypeName
   }
@@ -325,11 +411,12 @@ const handleSubmit = () => {
   }
 
   confirmLoading.value = true
+  // 通过 isAddMode 复用同一套表单提交逻辑，降低维护成本
   const url = isAddMode.value ? '/study/cloudComputingCourse/add' : '/study/cloudComputingCourse/edit'
-  post(url, form, (msg) => {
+  post(url, form, (_message: string) => {
     ElMessage.success('操作成功')
     handleCancel()
-  }, (err) => {
+  }, (_err: any) => {
     confirmLoading.value = false
   })
 }
@@ -358,13 +445,71 @@ const handleResourceModalOk = () => {
   if (form.id) loadResources(form.id)
 }
 
-const handleReviewSaved = (d: any) => {
-  // 如果组件返回了新建的数据，直接插入到列表里
-  if (reviewListRef.value && typeof reviewListRef.value.addReview === 'function') {
-    reviewListRef.value.addReview(d)
-  }
-  // 同步资源计数或其它数据
-  if (form.id) loadResources(form.id)
+const loadReviews = () => {
+  if (!form.id) return
+  reviewLoading.value = true
+  // 该页面按“课程维度”管理评价，因此 resourceId 固定使用课程 id
+  get(`/api/community/reviews?resourceId=${encodeURIComponent(form.id)}`, (_message: string, data: any[]) => {
+    reviewList.value = data || []
+    reviewLoading.value = false
+  }, () => {
+    reviewLoading.value = false
+  })
+}
+
+const openReviewDialog = (record?: any) => {
+  reviewDialogMode.value = record ? 'edit' : 'add'
+  reviewForm.id = record?.id || ''
+  reviewForm.resourceId = form.id
+  // 新增时优先使用当前登录用户，编辑时回填已有作者信息
+  reviewForm.username = currentUsername.value || record?.username || ''
+  reviewForm.rating = Number(record?.rating || 5)
+  reviewForm.content = record?.content || ''
+  reviewDialogVisible.value = true
+}
+
+const submitReview = async () => {
+  if (!reviewFormRef.value) return
+  await reviewFormRef.value.validate((valid: boolean) => {
+    if (!valid) return
+    reviewSaving.value = true
+    const payload = {
+      courseId: form.id,
+      // 社区评价接口沿用 resourceId 字段，这里约定写入课程 id
+      resourceId: form.id,
+      username: currentUsername.value || reviewForm.username,
+      rating: reviewForm.rating,
+      content: reviewForm.content
+    }
+
+    const stopLoading = () => {
+      reviewSaving.value = false
+    }
+
+    if (reviewDialogMode.value === 'add') {
+      post('/api/community/reviews', payload, (_message: string) => {
+        ElMessage.success(_message)
+        reviewDialogVisible.value = false
+        loadReviews()
+        stopLoading()
+      }, () => stopLoading())
+      return
+    }
+
+    post(`/api/community/reviews/${reviewForm.id}`, { ...payload, id: reviewForm.id }, (_message: string) => {
+      ElMessage.success(_message)
+      reviewDialogVisible.value = false
+      loadReviews()
+      stopLoading()
+    }, () => stopLoading())
+  })
+}
+
+const handleDeleteReview = (record: any) => {
+  deleteMapping(`/api/community/reviews/${record.id}`, { id: record.id }, () => {
+    ElMessage.success('删除成功')
+    loadReviews()
+  })
 }
 
 const handleDeleteResource = (record: any) => {
@@ -373,16 +518,21 @@ const handleDeleteResource = (record: any) => {
   //   if (form.id) loadResources(form.id)
   // })
 
-  deleteMapping('/study/cloudComputingCourseResource/delete', { id: record.id }, (msg) => {
-    ElMessage.success(msg)
+  deleteMapping('/study/cloudComputingCourseResource/delete', { id: record.id }, (_message: string) => {
+    ElMessage.success(_message)
     if (form.id) loadResources(form.id)
-  }, (failMsg) => {
-    ElMessage.warning(failMsg)
+  }, (_failMsg: string) => {
+    ElMessage.warning(_failMsg)
   })
 }
 
 onMounted(() => {
   init()
+})
+
+watchEffect(() => {
+  // 当编辑对象切换后自动刷新评价列表，保持 tab 内容和课程一致
+  if (form.id) loadReviews()
 })
 </script>
 
@@ -398,6 +548,27 @@ onMounted(() => {
   margin-bottom: 16px;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.review-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+.review-resource-select {
+  min-width: 280px;
+  flex: 1;
+  max-width: 520px;
+}
+
+.review-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 16px 0;
 }
 
 .add-btn {

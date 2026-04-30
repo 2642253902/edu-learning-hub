@@ -80,9 +80,9 @@
 <script setup>
 import { EditPen, Lock, Message, User } from "@element-plus/icons-vue";
 import router from "@/router";
-import { reactive, ref, computed } from "vue";
+import { reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
-import { post, postForm, get } from "@/net";
+import { postForm } from "@/net";
 
 const form = reactive({
     username: '',
@@ -93,7 +93,9 @@ const form = reactive({
 })
 
 const formRef = ref()
+// 发送验证码后进入倒计时，避免同一邮箱在短时间内重复请求。
 const coldTime = ref(0)
+// 只有邮箱格式校验通过后，才允许点击“获取验证码”。
 const isEmailValid = ref(false)
 
 const validateUsername = (rule, value, callback) => {
@@ -117,6 +119,7 @@ const validatePassword = (rule, value, callback) => {
 }
 
 const rules = {
+    // 用户名、密码和邮箱格式都要和后端注册接口的约束保持一致。
     username: [
         { validator: validateUsername, trigger: ['blur', 'change'] },
         { min: 2, max: 8, message: '用户名的长度必须在2-8个字符之间', trigger: ['blur', 'change'] },
@@ -143,6 +146,7 @@ function onValidate(prop, isValid) {
 }
 
 function register() {
+    // 先统一走表单校验，再提交注册请求，减少无效接口调用。
     formRef.value.validate((isValid) => {
         if (isValid) {
             postForm('/api/auth/register', {
@@ -162,8 +166,9 @@ function register() {
 
 //2642253902@qq.com
 function validateEmail() {
+    // 验证码请求成功后才启动倒计时；失败时立即恢复按钮可点状态。
     coldTime.value = 60
-    postForm(`/api/auth/validate-register-email`, {email: form.email}, (message) => {
+    postForm(`/api/auth/validate-register-email`, { email: form.email }, (message) => {
         ElMessage.success(message)
         const handle = setInterval(() => {
             coldTime.value--

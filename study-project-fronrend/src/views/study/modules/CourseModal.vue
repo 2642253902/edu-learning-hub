@@ -1,13 +1,13 @@
 <template>
-<div>
+  <div>
     <el-dialog v-model="visible" :title="title" :width="800" @close="handleCancel" destroy-on-close>
-    <CourseForm ref="realForm" :disabled="disableSubmit" @ok="submitCallback" />
-    <template #footer>
-      <el-button @click="handleCancel">取消</el-button>
-      <el-button v-if="!disableSubmit" type="primary" @click="handleOk" :loading="confirmLoading">确定</el-button>
-    </template>
-  </el-dialog>
-</div>
+      <CourseForm ref="realForm" :disabled="disableSubmit" @ok="submitCallback" />
+      <template #footer>
+        <el-button @click="handleCancel">取消</el-button>
+        <el-button v-if="!disableSubmit" type="primary" @click="handleOk" :loading="confirmLoading">确定</el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup lang="ts">

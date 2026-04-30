@@ -1,6 +1,7 @@
 <template>
   <div>
-    <el-form ref="formRef" :model="model" :rules="validatorRules" label-width="120px" class="p-4" :disabled="props.disabled">
+    <el-form ref="formRef" :model="model" :rules="validatorRules" label-width="120px" class="p-4"
+      :disabled="props.disabled">
       <el-row>
         <el-col :span="24">
           <el-form-item label="分类名称" prop="courseTypeName">

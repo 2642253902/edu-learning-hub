@@ -13,5 +13,4 @@ import org.springframework.stereotype.Controller;
 @RequestMapping("/api/roleRoute")
 public class RoleRouteController {
 
-
 }

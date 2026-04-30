@@ -1,0 +1,42 @@
+# 生产环境配置文件
+spring:
+  # 数据源配置（生产环境需要修改为实际的生产数据库配置）
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://111.228.53.34:3306/数据库名?useUnicode=true&characterEncoding=UTF-8&useSSL=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456Ok!
+
+  # 邮件服务配置（生产环境建议使用企业邮箱）
+  mail:
+    host: smtp.163.com
+    username: 18897793826@163.com
+    password: BSX8mPRLBC3RZ6vs
+    properties:
+      from: 18897793826@163.com
+
+  # Redis缓存配置（生产环境需要修改为实际的Redis服务器配置）
+  data:
+    redis:
+      database: 0
+      port: 6379
+      host: 111.228.53.34
+      password: '123456Ok!'
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      # 单个文件最大大小
+      max-file-size: 500MB
+      # 整个请求最大大小
+      max-request-size: 500MB
+      # 临时文件存储路径（生产环境建议使用Linux路径）
+      location: /opt/upFiles
+
+# MyBatis配置
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+
+# MyBatis-Plus配置
+mybatis-plus:
+  mapper-locations: classpath:mapper/**/*.xml

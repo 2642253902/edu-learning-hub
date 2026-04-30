@@ -1,18 +1,20 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  // 前端应用配置：继承公共基础项，只补充浏览器/应用侧差异。
+  "extends": "./tsconfig.base.json",
+  // 参与类型检查的文件范围：Vue 单文件组件 + src 下源码 + 环境声明。
   "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
+  // 测试目录按需排除，避免业务构建流程被测试类型约束干扰。
   "exclude": ["src/**/__tests__/*"],
   "compilerOptions": {
-    // Extra safety for array and object lookups, but may have false positives.
+    // 作为被引用项目参与 solution build。
+    "composite": true,
+    // 仅做类型检查，不输出编译产物。
+    "noEmit": true,
+    // 浏览器运行时可用的库声明。
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    // 提高索引访问安全性（数组/对象下标访问需显式判空）。
     "noUncheckedIndexedAccess": true,
-
-    // Path mapping for cleaner imports.
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-
-    // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
-    // Specified here to keep it out of the root directory.
+    // 增量检查缓存文件，放到临时目录避免污染仓库根目录。
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
   }
 }

@@ -94,13 +94,16 @@
 <script setup>
 import { reactive, ref } from "vue";
 import { EditPen, Lock, Message } from "@element-plus/icons-vue";
-import { post, postForm } from "@/net";
+import { postForm } from "@/net";
 import { ElMessage } from "element-plus";
 import router from "@/router";
 
+// 0：先验证邮箱和验证码；1：再输入新密码完成重置。
 const active = ref(0)
 const formRef = ref()
+// 邮箱验证码同样需要倒计时，防止重复发送干扰用户体验。
 const coldTime = ref(0)
+// 只有邮箱通过格式校验后，才允许发起验证码请求。
 const isEmailValid = ref(false)
 
 const form = reactive({
@@ -121,6 +124,7 @@ const validatePassword = (rule, value, callback) => {
 }
 
 const rules = {
+    // 两个步骤共用同一份表单实例，所以这里只保留当前步骤需要的校验规则。
     email: [
         { required: true, message: '请输入邮件地址', trigger: 'blur' },
         { type: 'email', message: '请输入合法的电子邮件地址', trigger: ['blur', 'change'] }
@@ -143,8 +147,9 @@ function onValidate(prop, isValid) {
 }
 
 function validateEmail() {
+    // 只有在邮箱可用时才进入冷却，成功后才真正开始倒计时。
     coldTime.value = 60
-    postForm(`/api/auth/validate-reset-email`, {email: form.email, type: 'reset'}, (message) => {
+    postForm(`/api/auth/validate-reset-email`, { email: form.email, type: 'reset' }, (message) => {
         ElMessage.success(message)
         const handle = setInterval(() => {
             coldTime.value--
@@ -159,6 +164,7 @@ function validateEmail() {
 }
 
 function startReset() {
+    // 第一阶段只确认身份，不提前暴露新密码输入入口。
     formRef.value.validate((isValid) => {
         if (isValid) {
             postForm('/api/auth/start-reset', {
@@ -170,6 +176,7 @@ function startReset() {
 }
 
 function doReset() {
+    // 第二阶段提交新密码时，沿用同一邮箱与验证码，确保重置链路闭环。
     formRef.value.validate((isValid) => {
         if (isValid) {
             postForm('/api/auth/do-reset', {

@@ -63,13 +63,13 @@ const formRef = ref()
 const courses = ref<any[]>([])
 const fileList = ref<any[]>([])
 
-// 拼接上传路径
+// 拼接上传路径：沿用 axios 全局 baseURL，避免硬编码环境域名
 const uploadUrl = computed(() => {
   return `${axios.defaults.baseURL}/upload/file`
 })
 
 const allowedFileTypes = computed(() => {
-  // 1-视频 2-讲义 3-资料
+  // 1-视频 2-讲义 3-资料；资料放开为 * 以兼容多格式参考文件
   const type = String(model.resourceType)
   if (type === '1') return '.mp4'
   if (type === '2') return '.pdf,.doc,.docx'
@@ -100,6 +100,7 @@ const fetchCourses = () => {
   })
 }
 
+// 新增模式：可接受父组件透传的默认 courseId/resourceType，减少重复选择
 const add = (defaults?: any) => {
   title.value = '添加资源'
   disabled.value = false
@@ -121,7 +122,7 @@ const edit = (record: any) => {
   disabled.value = false
   courseLocked.value = false
   Object.assign(model, record)
-  // 获取文件名，如果没有则显示默认名称
+  // 编辑态回填上传列表，保证用户能看到当前已绑定文件
   const fileName = record.resourceUrl ? record.resourceUrl.split('/').pop() : '已上传文件'
   fileList.value = record.resourceUrl ? [{ name: fileName, url: record.resourceUrl }] : []
   visible.value = true
@@ -153,7 +154,7 @@ const handleUploadSuccess = (response: any) => {
   if (response.data) {
     url = response.data
   }
-  // 2. 如果 data 为空，尝试从 message 中通过正则提取文件名
+  // 2. 兼容历史返回：如果 data 为空，尝试从 message 中提取文件名
   // 匹配格式: "上传成功: xxx.mp4"
   else if (response.message && response.message.includes('上传成功:')) {
     url = response.message.split('上传成功:')[1].trim()
@@ -165,7 +166,7 @@ const handleUploadSuccess = (response: any) => {
     fileList.value = [{ name: url.split('/').pop() || '新上传文件', url: url }]
     ElMessage.success('上传成功')
 
-    // 如果是编辑模式（存在 id），上传完成后立即自动保存一次数据库，实现“想换就换”
+    // 编辑态上传成功后立即同步数据库，避免“上传成功但未保存”造成脏数据
     if (model.id) {
       console.log('检测到编辑模式，正在自动同步数据库...')
       const syncUrl = '/study/cloudComputingCourseResource/edit'
@@ -190,7 +191,7 @@ const handleRemove = (file: any) => {
 
   // 适配 RequestParam 接口: /upload/delete?fileName=xxx
   const deleteUrl = `${axios.defaults.baseURL}/upload/delete`
-  // 注意：因为是 @RequestParam，所以使用 params 传参
+  // 注意：后端使用 @RequestParam，因此 fileName 必须走 params
   axios.delete(deleteUrl, {
     params: { fileName: fileName },
     withCredentials: true
@@ -201,7 +202,7 @@ const handleRemove = (file: any) => {
       ElMessage.success('文件已从服务器删除')
       model.resourceUrl = ''
       fileList.value = []
-      // 如果是编辑模式，同步更新数据库
+      // 删除物理文件后，同步清空数据库中的 resourceUrl 字段
       if (model.id) {
         post('/study/cloudComputingCourseResource/edit', model, () => {
           emit('ok')
@@ -233,6 +234,7 @@ const handleSubmit = async () => {
   await formRef.value.validate((valid: boolean) => {
     if (valid) {
       loading.value = true
+      // 根据是否存在 id 自动切换新增/编辑接口
       const url = model.id ? '/study/cloudComputingCourseResource/edit' : '/study/cloudComputingCourseResource/add'
       post(url, model, (msg) => {
         ElMessage.success(msg)

@@ -13,14 +13,8 @@
         <el-rate v-model="form.rating" :allow-half="false" :max="5" />
       </el-form-item>
       <el-form-item label="评价内容">
-        <el-input
-          v-model="form.content"
-          type="textarea"
-          :rows="4"
-          maxlength="200"
-          show-word-limit
-          placeholder="分享你的学习体验、建议或想补充的内容"
-        />
+        <el-input v-model="form.content" type="textarea" :rows="4" maxlength="200" show-word-limit
+          placeholder="分享你的学习体验、建议或想补充的内容" />
       </el-form-item>
       <div class="review-form-actions">
         <el-button @click="resetForm">清空</el-button>
@@ -33,7 +27,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { communityApi } from '@/net'
+import { post } from '@/net'
 import { useUserStore } from '@/stores/user'
 
 const props = defineProps<{ resourceId: string }>()
@@ -61,9 +55,10 @@ const submit = () => {
   const userStore = useUserStore()
   const payload = { resourceId: props.resourceId, rating: form.value.rating, content: form.value.content.trim() }
   submitting.value = true
-  communityApi.createReview(
+  post(
+    '/api/community/reviews',
     payload,
-    (d) => {
+    (_message: string, d: any) => {
       const review = (d && d.id)
         ? d
         : {

@@ -2,7 +2,9 @@
   <div class="welcome-container">
     <div class="left-side">
       <div class="logo-box">
-        <el-icon class="logo-icon"><Reading /></el-icon>
+        <el-icon class="logo-icon">
+          <Reading />
+        </el-icon>
         <span class="logo-text">EduLearn Hub</span>
       </div>
       <div class="welcome-info">
@@ -10,15 +12,21 @@
         <p class="welcome-desc">在这里，您可以随时随地观看高质量课程视频、查阅课件，与同学们共同进步。</p>
         <div class="feature-list">
           <div class="feature-item">
-            <el-icon><VideoPlay /></el-icon>
+            <el-icon>
+              <VideoPlay />
+            </el-icon>
             <span>海量视频课程资源</span>
           </div>
           <div class="feature-item">
-            <el-icon><Fold /></el-icon>
+            <el-icon>
+              <Fold />
+            </el-icon>
             <span>实时进度同步追踪</span>
           </div>
           <div class="feature-item">
-            <el-icon><Files /></el-icon>
+            <el-icon>
+              <Files />
+            </el-icon>
             <span>专业课件讲义预览</span>
           </div>
         </div>
@@ -120,7 +128,10 @@ import { Reading, VideoPlay, Fold, Files } from '@element-plus/icons-vue'
 .left-side::after {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-image: url('https://gw.alipayobjects.com/zos/rmsportal/TVirScCBeYINnyiNGitT.svg');
   background-repeat: no-repeat;
   background-position: center 110px;

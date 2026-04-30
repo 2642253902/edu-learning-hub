@@ -1,0 +1,42 @@
+# 开发环境配置文件
+spring:
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/study?useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password: root
+  
+  # 邮件服务配置
+  mail:
+    host: smtp.163.com
+    username: 18897793826@163.com
+    password: BSX8mPRLBC3RZ6vs
+    properties:
+      from: 18897793826@163.com
+  
+  # Redis缓存配置
+  data:
+    redis:
+      database: 0
+      port: 6379
+      host: localhost
+      password: ""
+  
+  # 文件上传配置
+  servlet:
+    multipart:
+      # 单个文件最大大小
+      max-file-size: 500MB
+      # 整个请求最大大小
+      max-request-size: 500MB
+      # 临时文件存储路径 (Windows 路径示例)
+      location: D:/Desktop/opt
+
+# MyBatis配置
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+
+# MyBatis-Plus配置
+mybatis-plus:
+  mapper-locations: classpath:mapper/**/*.xml

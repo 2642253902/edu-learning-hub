@@ -1,32 +1,34 @@
 import axios from "axios";
 import { ElMessage } from "element-plus";
 
+// 默认失败处理只负责给出业务提示，避免每个调用方重复写相同的兜底代码。
 const defaultFailure = (message: string) => ElMessage.warning(message)
-const defaultError = (err: any) => ElMessage.error("网络异常，请稍后再试")
+// 网络异常通常意味着请求没有进入业务逻辑，这里统一提示用户稍后重试。
+const defaultError = (_err: any) => ElMessage.error("网络异常，请稍后再试")
 
 export function getApiBaseURL() {
     return axios.defaults.baseURL ?? ''
 }
 
 const handleAuthError = () => {
-    // 检查是否已经在处理退出流程，避免循环
+    // 只允许触发一次退出流程，避免 401/403 连续命中时重复弹窗和重复跳转。
     if ((window as any)._isExiting) return
 
-    // 如果已经在登录页，不要再触发报错和跳转
-    if (window.location.pathname === '/' || window.location.pathname === '/index') {
+    // 登录页已经是恢复入口；/index 也要正常走失效处理，避免用户掉线后仍停留在首页。
+    if (window.location.pathname === '/') {
         return
     }
 
     (window as any)._isExiting = true
 
-    // 会话失效或无权限，清空本地用户数据并重定向
+    // 会话失效或权限不足时，清空本地缓存，避免旧状态继续影响路由守卫和页面展示。
     const storage = typeof window !== 'undefined' ? window.localStorage : null
     storage?.removeItem('user')
     storage?.removeItem('menuList')
 
     ElMessage.error('会话已过期，请重新登录')
 
-    // 延迟导航，确保消息显示
+    // 先给提示消息一点展示时间，再跳回登录页。
     setTimeout(() => {
         if (typeof window !== 'undefined') {
             window.location.href = '/'
@@ -34,7 +36,7 @@ const handleAuthError = () => {
     }, 1500)
 }
 
-// 全局响应拦截器：处理 Http Status 为 401/403 的情况
+// 全局响应拦截器负责兜底认证失败场景，避免每个 API 调用都单独处理 401/403。
 axios.interceptors.response.use(
     response => response,
     error => {
@@ -53,6 +55,7 @@ export function postForm(
     failure: (message: string, data: any) => void = defaultFailure,
     error: (err: any) => void = defaultError
 ) {
+    // 统一把对象转成 x-www-form-urlencoded，匹配后端常见的表单型接口。
     const formData = new URLSearchParams()
     Object.entries(data || {}).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -114,7 +117,7 @@ export function get(
         withCredentials: true
     }).then(response => {
         const resData = response.data;
-        // 处理 Spring Security 可能返回的 200 状态码但包含 401 错误的情况
+        // 有些接口会返回 200 但把失败状态放在业务字段里，这里再补一层判断。
         if (resData.status === 401 || resData.status === 403) {
             handleAuthError()
             return
@@ -171,69 +174,3 @@ export function deleteMapping(
     });
 }
 
-type ApiSuccess<T = any> = (data: T) => void
-type ApiFailure = (message: string, data?: any) => void
-
-export const communityApi = {
-    listGroups(success: ApiSuccess<any[]>, failure: ApiFailure = defaultFailure) {
-        return get('/api/community/groups', (_, data) => success(data || []), failure)
-    },
-    createGroup(payload: any, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
-        return post('/api/community/groups', payload, (_, data) => success(data), failure)
-    },
-    joinGroup(groupId: string, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
-        return post(`/api/community/groups/${groupId}/join`, {}, (_, data) => success(data), failure)
-    },
-    listPosts(groupId: string | undefined, success: ApiSuccess<any[]>, failure: ApiFailure = defaultFailure) {
-        const query = groupId ? `?groupId=${encodeURIComponent(groupId)}` : ''
-        return get(`/api/community/posts${query}`, (_, data) => success(data || []), failure)
-    },
-    createPost(payload: any, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
-        return post('/api/community/posts', payload, (_, data) => success(data), failure)
-    },
-    listComments(postId: string, success: ApiSuccess<any[]>, failure: ApiFailure = defaultFailure) {
-        return get(`/api/community/posts/${postId}/comments`, (_, data) => success(data || []), failure)
-    },
-    createComment(postId: string, payload: any, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
-        return post(`/api/community/posts/${postId}/comments`, payload, (_, data) => success(data), failure)
-    },
-    listReviews(resourceId: string, success: ApiSuccess<any[]>, failure: ApiFailure = defaultFailure) {
-        return get(`/api/community/reviews?resourceId=${encodeURIComponent(resourceId)}`, (_, data) => success(data || []), failure)
-    },
-    createReview(payload: any, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
-        return post('/api/community/reviews', payload, (_, data) => success(data), failure)
-    },
-    likeReview(reviewId: string, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
-        return post(`/api/community/reviews/${reviewId}/like`, {}, (_, data) => success(data), failure)
-    }
-}
-
-export const messageApi = {
-    manageList(params: { pageNo?: number; pageSize?: number; title?: string; level?: string | number; enabled?: string | number }, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
-        const search = new URLSearchParams()
-        search.append('pageNo', String(params.pageNo ?? 1))
-        search.append('pageSize', String(params.pageSize ?? 10))
-        if (params.title) search.append('title', params.title)
-        if (params.level !== undefined && params.level !== '') search.append('level', String(params.level))
-        if (params.enabled !== undefined && params.enabled !== '') search.append('enabled', String(params.enabled))
-        return get(`/api/message/manage/list?${search.toString()}`, (_, data) => success(data), failure)
-    },
-    add(payload: any, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
-        return post('/api/message/manage/add', payload, (_, data) => success(data), failure)
-    },
-    edit(payload: any, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
-        return post('/api/message/manage/edit', payload, (_, data) => success(data), failure)
-    },
-    delete(id: string, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
-        return deleteMapping('/api/message/manage/delete', { id }, (_, data) => success(data), failure)
-    },
-    userList(limit = 20, success: ApiSuccess<any[]>, failure: ApiFailure = defaultFailure) {
-        return get(`/api/message/user/list?limit=${limit}`, (_, data) => success(data || []), failure)
-    },
-    read(messageId: string, success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
-        return post(`/api/message/user/read?messageId=${encodeURIComponent(messageId)}`, {}, (_, data) => success(data), failure)
-    },
-    readAll(success: ApiSuccess<any>, failure: ApiFailure = defaultFailure) {
-        return post('/api/message/user/readAll', {}, (_, data) => success(data), failure)
-    }
-}

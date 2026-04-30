@@ -103,8 +103,6 @@ import { deleteMapping, get, post } from '@/net'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
-import { useUserStore } from '@/stores/user'
-import { useRouter } from 'vue-router'
 
 
 const loading = ref(false)
@@ -159,6 +157,7 @@ const formRules = {
 }
 
 const getRoleTagType = (role: number) => {
+  // 标签颜色仅用于视觉区分角色，不参与权限判断。
   const types: Record<number, string> = {
     1: 'danger',
     2: 'success',
@@ -170,8 +169,13 @@ const getRoleTagType = (role: number) => {
 
 const loadUsers = () => {
   loading.value = true
+  // 列表接口同时承载分页与关键字搜索，保持参数来源统一，便于后续扩展筛选项。
+  const search = new URLSearchParams()
+  search.append('pageNo', String(pageNo.value))
+  search.append('pageSize', String(pageSize.value))
+  search.append('keyword', searchKeyword.value)
   get(
-    `/api/user/manage/list?pageNo=${pageNo.value}&pageSize=${pageSize.value}&keyword=${searchKeyword.value}`,
+    `/api/user/manage/list?${search.toString()}`,
     (_msg, data) => {
       users.value = data?.records || []
       total.value = data?.total || 0
@@ -190,6 +194,7 @@ const loadRoles = () => {
 }
 
 const handleSearch = () => {
+  // 关键字变更后回到第一页，避免保留旧页码导致“有数据但当前页为空”。
   pageNo.value = 1
   loadUsers()
 }
@@ -231,21 +236,20 @@ const handleSubmitUser = async () => {
   if (!valid) return
 
   const url = userDialog.mode === 'add' ? '/api/user/manage/add' : '/api/user/manage/edit'
-  const requestData =
-    userDialog.mode === 'add'
-      ? userDialog.form
-      : {
-        username: userDialog.form.username,
-        email: userDialog.form.email,
-        password: userDialog.form.password,
-        role: userDialog.form.role
-      }
+  // 编辑时不默认提交空密码，只有用户主动输入新密码时才携带该字段。
+  const editPayload: any = {
+    id: userDialog.form.id,
+    username: userDialog.form.username,
+    email: userDialog.form.email,
+    role: userDialog.form.role
+  }
+  if (userDialog.form.password?.trim()) {
+    editPayload.password = userDialog.form.password
+  }
 
   post(
     url,
-    userDialog.mode === 'add'
-      ? requestData
-      : { id: userDialog.form.id, ...requestData },
+    userDialog.mode === 'add' ? userDialog.form : editPayload,
     (msg) => {
       ElMessage.success(msg)
       userDialog.visible = false
@@ -255,6 +259,7 @@ const handleSubmitUser = async () => {
 }
 
 const handleSubmitRole = () => {
+  // 使用轻量接口只修改角色，避免走全量编辑接口带来字段冲突。
   post(`/api/user/manage/changeRole?id=${roleDialog.userId}&role=${roleDialog.newRole}`, {}, (msg) => {
     ElMessage.success(msg)
     roleDialog.visible = false
@@ -282,6 +287,7 @@ const handleResetPassword = (row: any) => {
 const handleDelete = (row: any) => {
   deleteMapping('/api/user/manage/delete', { id: row.id }, (msg) => {
     ElMessage.success(msg || '删除成功')
+    // 删除用户后同步刷新角色和列表，保证“角色人数/用户列表”相关视图一致。
     loadRoles()
     loadUsers()
   })

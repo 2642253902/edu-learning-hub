@@ -1,0 +1,40 @@
+{
+  // 基础配置：只放“前端与 Node 都通用”的选项，避免在子配置重复维护。
+  "compilerOptions": {
+    // 编译目标：兼顾现代语法能力与浏览器兼容性。
+    "target": "ES2020",
+    // 交给 Vite/构建工具处理模块打包，不由 tsc 直接输出可运行包。
+    "module": "ESNext",
+    // 与 Vite 生态匹配，支持 package.json exports 与更现代的解析策略。
+    "moduleResolution": "bundler",
+    // 与 Vue 3 class fields 行为对齐，减少运行时差异。
+    "useDefineForClassFields": true,
+
+    // 严格模式：尽早暴露潜在类型问题。
+    "strict": true,
+    // 仅用于调试映射，实际产物仍由 Vite 决定。
+    "sourceMap": true,
+    // 允许直接 import json。
+    "resolveJsonModule": true,
+    // 每个文件可独立转译，适配 Vite/esbuild 的工作方式。
+    "isolatedModules": true,
+    // 兼容常见 CJS 模块默认导入写法。
+    "esModuleInterop": true,
+
+    // 代码质量相关：未使用变量/参数、隐式返回缺失都直接提示。
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    // 跳过第三方声明文件检查，提升类型检查速度。
+    "skipLibCheck": true,
+
+    // 当前 TypeScript 版本下抑制已知弃用提示噪音。
+    "ignoreDeprecations": "6.0",
+
+    // 路径别名：统一用 @/ 指向 src，减少相对路径层级。
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  }
+}

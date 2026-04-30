@@ -45,12 +45,14 @@
       <el-form :model="form" label-width="90px">
         <el-form-item label="课程">
           <el-select v-model="form.courseId" filterable clearable placeholder="请选择课程" style="width: 100%">
-            <el-option v-for="item in courseOptions" :key="item.id" :label="item.courseName || '-'" :value="String(item.id)" />
+            <el-option v-for="item in courseOptions" :key="item.id" :label="item.courseName || '-'"
+              :value="String(item.id)" />
           </el-select>
         </el-form-item>
         <el-form-item label="资源">
           <el-select v-model="form.resourceId" filterable clearable placeholder="请选择资源" style="width: 100%">
-            <el-option v-for="item in resourceOptions" :key="item.id" :label="getResourceLabel(item)" :value="String(item.id)" />
+            <el-option v-for="item in resourceOptions" :key="item.id" :label="getResourceLabel(item)"
+              :value="String(item.id)" />
           </el-select>
         </el-form-item>
         <el-form-item label="评分">

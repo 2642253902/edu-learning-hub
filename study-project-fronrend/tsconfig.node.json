@@ -1,6 +1,7 @@
-// TSConfig for modules that run in Node.js environment via either transpilation or type-stripping.
 {
-  "extends": "@tsconfig/node24/tsconfig.json",
+  // Node 侧配置：用于构建工具与测试工具配置文件的类型检查。
+  "extends": "./tsconfig.base.json",
+  // 仅覆盖运行在 Node 环境中的配置脚本，不纳入前端业务源码。
   "include": [
     "vite.config.*",
     "vitest.config.*",
@@ -9,19 +10,15 @@
     "eslint.config.*"
   ],
   "compilerOptions": {
-    // Most tools use transpilation instead of Node.js's native type-stripping.
-    // Bundler mode provides a smoother developer experience.
+    // 作为被引用项目参与 solution build。
+    "composite": true,
+    // 保留模块语义，让工具链按自身规则处理。
     "module": "preserve",
-    "moduleResolution": "bundler",
-
-    // Include Node.js types and avoid accidentally including other `@types/*` packages.
+    // 显式使用 Node 类型，避免环境类型混入。
     "types": ["node"],
-
-    // Disable emitting output during `vue-tsc --build`, which is used for type-checking only.
+    // 仅类型检查，不生成 JS。
     "noEmit": true,
-
-    // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
-    // Specified here to keep it out of the root directory.
+    // Node 侧增量检查缓存位置。
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo"
   }
 }

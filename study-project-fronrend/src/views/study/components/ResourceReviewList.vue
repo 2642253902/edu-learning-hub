@@ -24,7 +24,8 @@
             </div>
           </div>
 
-          <el-button text type="primary" class="like-btn" @click="like(r)" :disabled="String(r.userId) === String(userStore.auth.user?.id) || r.liked">
+          <el-button text type="primary" class="like-btn" @click="like(r)"
+            :disabled="String(r.userId) === String(userStore.auth.user?.id) || r.liked">
             <template v-if="r.liked">已点赞 {{ r.likes || 0 }}</template>
             <template v-else-if="String(r.userId) === String(userStore.auth.user?.id)">不能点赞自己</template>
             <template v-else>点赞 {{ r.likes || 0 }}</template>
@@ -39,7 +40,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { communityApi } from '@/net'
+import { get, post } from '@/net'
 import { useUserStore } from '@/stores/user'
 
 const props = defineProps<{ resourceId: string }>()
@@ -47,7 +48,7 @@ const reviews = ref<any[]>([])
 const userStore = useUserStore()
 
 const load = () => {
-  communityApi.listReviews(props.resourceId, (d) => {
+  get(`/api/community/reviews?resourceId=${encodeURIComponent(props.resourceId)}`, (_message: string, d: any) => {
     reviews.value = (d || []).map((it: any) => ({ ...it, liked: !!it.liked }))
   })
 }
@@ -67,10 +68,10 @@ const addReview = (r: any) => {
   reviews.value.unshift(item)
 }
 
-const like = (r:any) => {
+const like = (r: any) => {
   if (String(r.userId) === String(userStore.auth.user?.id)) return
   if (r.liked) return
-  communityApi.likeReview(r.id, () => {
+  post(`/api/community/reviews/${r.id}/like`, {}, () => {
     r.likes = (r.likes || 0) + 1
     r.liked = true
   })
@@ -81,8 +82,8 @@ const getInitial = (name: any) => {
   return text ? text.slice(0, 1).toUpperCase() : 'A'
 }
 
-const formatDate = (s:any) => {
-  try { return new Date(s).toLocaleString() } catch(e) { return '' }
+const formatDate = (s: any) => {
+  try { return new Date(s).toLocaleString() } catch (e) { return '' }
 }
 
 onMounted(load)
@@ -186,6 +187,7 @@ defineExpose({ load, addReview })
 }
 
 @media (max-width: 640px) {
+
   .review-list-head,
   .review-item-top {
     flex-direction: column;

@@ -5,17 +5,20 @@
         <el-form :inline="true" :model="queryParam">
           <el-form-item label="学生">
             <el-select v-model="queryParam.userId" filterable clearable placeholder="请选择学生" style="width: 220px">
-              <el-option v-for="item in studentOptions" :key="item.id" :label="getUserLabel(item)" :value="String(item.id)" />
+              <el-option v-for="item in studentOptions" :key="item.id" :label="getUserLabel(item)"
+                :value="String(item.id)" />
             </el-select>
           </el-form-item>
           <el-form-item label="所属课程">
             <el-select v-model="queryParam.courseId" filterable clearable placeholder="请选择课程" style="width: 220px">
-              <el-option v-for="item in courseOptions" :key="item.id" :label="item.courseName || '-'" :value="String(item.id)" />
+              <el-option v-for="item in courseOptions" :key="item.id" :label="item.courseName || '-'"
+                :value="String(item.id)" />
             </el-select>
           </el-form-item>
           <el-form-item label="学习资源">
             <el-select v-model="queryParam.contentId" filterable clearable placeholder="请选择资源" style="width: 240px">
-              <el-option v-for="item in resourceOptions" :key="item.id" :label="getResourceLabel(item)" :value="String(item.id)" />
+              <el-option v-for="item in resourceOptions" :key="item.id" :label="getResourceLabel(item)"
+                :value="String(item.id)" />
             </el-select>
           </el-form-item>
           <el-form-item label="状态">
@@ -74,8 +77,8 @@
       </el-table>
 
       <div class="flex justify-end mt-4">
-        <el-pagination :current-page="ipagination.current" :page-size="ipagination.pageSize"
-          :total="ipagination.total" :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
+        <el-pagination :current-page="ipagination.current" :page-size="ipagination.pageSize" :total="ipagination.total"
+          :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
           @update:current-page="handleCurrentChange" @update:page-size="handleSizeChange"
           @size-change="handleSizeChange" @current-change="handleCurrentChange" />
       </div>
@@ -107,6 +110,7 @@ const ipagination = reactive({
   total: 0
 })
 
+// 兼容后端多种列表返回格式，避免每个接口重复写分支
 const unwrapListData = (payload: any): any[] => {
   if (Array.isArray(payload)) return payload
   if (Array.isArray(payload?.records)) return payload.records
@@ -136,11 +140,13 @@ const getResourceLabelById = (id: any, fallback?: string) => {
 }
 
 const getProgress = (row: any) => {
+  // 兼容不同历史字段命名：watchProgress/learningProgress/progress
   const value = Number(row.watchProgress ?? row.learningProgress ?? row.progress ?? 0)
   return Number.isNaN(value) ? 0 : Math.max(0, Math.min(100, value))
 }
 
 const getStatusText = (value: any) => {
+  // 当前页面按 0/1/2 展示状态文案，和后端枚举保持一致
   if (String(value) === '2') return '已完成'
   if (String(value) === '1') return '学习中'
   return '未开始'
@@ -168,6 +174,7 @@ const loadData = (arg = 1) => {
   if (arg === 1) ipagination.current = 1
   loading.value = true
 
+  // 使用 URLSearchParams 统一拼接查询参数，避免手写字符串遗漏编码
   const params = new URLSearchParams()
   params.append('pageNo', String(ipagination.current))
   params.append('pageSize', String(ipagination.pageSize))
@@ -189,6 +196,7 @@ const loadData = (arg = 1) => {
 }
 
 const resetQuery = () => {
+  // 重置后回到第一页，和筛选查询行为保持一致
   queryParam.userId = ''
   queryParam.courseId = ''
   queryParam.contentId = ''

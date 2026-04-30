@@ -1,6 +1,6 @@
 <template>
     <div class="welcome-container">
-        <!-- 欢迎头部 -->
+        <!-- 顶部欢迎区：展示当前登录用户的问候语与核心概览指标 -->
         <el-card shadow="never" class="welcome-header">
             <div class="header-flex">
                 <div class="user-info">
@@ -24,7 +24,7 @@
             </div>
         </el-card>
 
-        <!-- 数据统计区域 -->
+        <!-- 中部统计区：管理员查看平台趋势与分类占比，学生仅看趋势图 -->
         <el-row :gutter="20" class="mt-4">
             <el-col :span="isAdmin ? 16 : 24">
                 <el-card shadow="hover" header="学习/活跃趋势统计">
@@ -38,7 +38,7 @@
             </el-col>
         </el-row>
 
-        <!-- 快捷入口/任务 -->
+        <!-- 底部信息区：左侧是待办提醒，右侧是按角色动态生成的快捷入口 -->
         <el-row :gutter="20" class="mt-4">
             <el-col :span="12">
                 <el-card shadow="hover" header="我的待办/系统消息">
@@ -93,9 +93,10 @@ const pieRef = ref<HTMLElement | null>(null)
 let mainChart: echarts.ECharts | null = null
 let pieChart: echarts.ECharts | null = null
 
-// 判断角色：1通常是管理员
+// 角色值 1 表示管理员，其他角色按学生视图渲染。
 const isAdmin = computed(() => userStore.auth.user?.role === 1)
 
+// 根据当前时间返回问候语，让首页顶部信息更具场景感。
 const getTimeState = () => {
     const hour = new Date().getHours()
     if (hour >= 6 && hour < 12) return '早上好'
@@ -103,28 +104,27 @@ const getTimeState = () => {
     return '晚上好'
 }
 
+// 快捷入口按角色分组，管理员看到管理入口，学生看到个人常用入口。
 const quickLinks = computed(() => {
     if (isAdmin.value) {
         return [
             { name: '用户管理', path: '/sys/user', icon: User },
             { name: '角色分配', path: '/sys/role', icon: Setting },
             { name: '课程管理', path: '/study/course-list', icon: Monitor },
-                    { name: '学习小组管理', path: '/index/community/group-manage', icon: FolderChecked },
-                    { name: '讨论管理', path: '/index/community/post-manage', icon: Collection },
-                    { name: '评价管理', path: '/index/community/review-manage', icon: VideoCamera },
-                    { name: '消息中心', path: '/index/messages', icon: Monitor }
+            { name: '学习小组管理', path: '/index/community/group-manage', icon: FolderChecked },
+            { name: '讨论管理', path: '/index/community/post-manage', icon: Collection },
+            { name: '评价管理', path: '/index/community/review-manage', icon: VideoCamera },
+            { name: '消息中心', path: '/sys/messages', icon: Monitor }
         ]
     }
     return [
-        { name: '我的课程', path: '/study/course-list', icon: VideoCamera },
-        { name: '学习记录', path: '/study/learning-record', icon: Collection },
-            { name: '个人信息', path: '/index/personal-info', icon: User },
-            { name: '消息中心', path: '/index/messages', icon: Monitor }
+        { name: '个人信息', path: '/sys/PersonalInfo', icon: User },
+        { name: '消息中心', path: '/sys/messages', icon: Monitor }
     ]
 })
 
 onMounted(() => {
-    // 趋势图 (折线图)
+    // 初始化趋势折线图；管理员和学生共用同一图表容器，但数据口径不同。
     if (chartRef.value) {
         mainChart = echarts.init(chartRef.value)
         mainChart.setOption({
@@ -148,7 +148,7 @@ onMounted(() => {
         })
     }
 
-    // 管理员饼图
+    // 仅管理员渲染课程分类饼图，避免学生视图出现无关信息。
     if (pieRef.value && isAdmin.value) {
         pieChart = echarts.init(pieRef.value)
         pieChart.setOption({
@@ -171,15 +171,18 @@ onMounted(() => {
         })
     }
 
+    // 页面尺寸变化时同步刷新图表，防止容器缩放后图形错位。
     window.addEventListener('resize', handleResize)
 })
 
+// 统一处理所有已挂载图表的 resize，避免分别绑定多个监听器。
 const handleResize = () => {
     mainChart?.resize()
     pieChart?.resize()
 }
 
 onUnmounted(() => {
+    // 组件销毁时移除监听并释放图表实例，避免内存泄漏。
     window.removeEventListener('resize', handleResize)
     mainChart?.dispose()
     pieChart?.dispose()

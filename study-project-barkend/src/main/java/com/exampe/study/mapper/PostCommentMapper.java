@@ -7,7 +7,17 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
+/**
+ * 帖子评论Mapper接口
+ * 提供帖子评论相关的数据库操作
+ */
 @Mapper
 public interface PostCommentMapper extends BaseMapper<PostComment> {
+    
+    /**
+     * 根据帖子ID查询评论列表
+     * @param postId 帖子ID
+     * @return 评论列表
+     */
     List<PostComment> listByPostId(@Param("postId") String postId);
 }

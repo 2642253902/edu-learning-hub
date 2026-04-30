@@ -1,31 +1,14 @@
 {
-  "compilerOptions": {
-    "composite": true,
-    "noEmit": false, 
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "moduleResolution": "bundler", 
-    "strict": true,
-    "sourceMap": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "skipLibCheck": true,
-    "types": ["vite/client", "node"],
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
-  },
+  // 让编辑器在根 tsconfig 层也能读取公共别名与基础编译选项。
+  "extends": "./tsconfig.base.json",
+  // 解决方案级 tsconfig：
+  // 1) 自身不参与编译（files 为空）
+  // 2) 通过 references 串联子项目，便于分层类型检查与增量缓存
   "files": [],
   "references": [
+    // Node 侧配置（Vite/Vitest/脚本配置文件）
     { "path": "./tsconfig.node.json" },
-    { "path": "./tsconfig.app.json" } // 通常 Vue 项目还会有这个引用
+    // 前端应用配置（Vue + 浏览器环境）
+    { "path": "./tsconfig.app.json" }
   ]
 }

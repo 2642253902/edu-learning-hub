@@ -1,30 +1,6 @@
+# Spring Boot主配置文件
 spring:
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/study?useUnicode=true&characterEncoding=UTF-8
-    username: root
-    password: root
-  mail:
-    host: smtp.163.com
-    username: 18897793826@163.com
-    password: BSX8mPRLBC3RZ6vs
-    properties:
-      from: 18897793826@163.com
-  data:
-    redis:
-      database: 0
-      port: 6379
-      host: localhost
-      password: ""
-  servlet:
-    multipart:
-      # 单个文件最大大小
-      max-file-size: 500MB
-      # 整个请求最大大小
-      max-request-size: 500MB
-      # 临时文件存储路径 (Windows 路径示例)
-      location: D:/Desktop/opt
-mybatis:
-  mapper-locations: classpath:mapper/**/*.xml
-mybatis-plus:
-  mapper-locations: classpath:mapper/**/*.xml
+  profiles:
+    # 激活的环境配置，通过Maven的${environment}变量动态指定
+    # 开发环境使用dev，生产环境使用prod
+    active: '@environment@'

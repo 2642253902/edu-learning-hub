@@ -2,27 +2,27 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.exampe.study.mapper.CloudComputingStudentLearningRecordMapper">
 
+    <!-- 获取指定用户的总学习时长（小时） -->
     <select id="getSumstudytime" resultType="int">
         SELECT ROUND(SUM(learning_time) / 3600.0) AS total_learning_hours
         FROM cloud_computing_student_learning_record cslr
-        LEFT JOIN sys_user u ON u.id = cslr.user_id
+                 LEFT JOIN sys_account u ON u.id = cslr.user_id
         WHERE u.username = #{UserName}
           AND learning_time > 0
     </select>
 
+    <!-- 获取指定用户有学习记录的不同天数 -->
     <select id="getSumstudyday" resultType="int">
         SELECT COUNT(*)
-        FROM (
-            SELECT DATE(csld.create_time) AS d
-            FROM cloud_computing_student_learning_record csld
-            LEFT JOIN sys_user u ON u.id = csld.user_id
-            WHERE u.username = #{UserName}
-            UNION
-            SELECT DATE(csld.last_learn_time) AS d
-            FROM cloud_computing_student_learning_record csld
-            LEFT JOIN sys_user u ON u.id = csld.user_id
-            WHERE u.username = #{UserName}
-        ) AS unique_days
+        FROM (SELECT DATE(csld.create_time) AS d
+              FROM cloud_computing_student_learning_record csld
+                       LEFT JOIN sys_account u ON u.id = csld.user_id
+              WHERE u.username = #{UserName}
+              UNION
+              SELECT DATE(csld.last_learn_time) AS d
+              FROM cloud_computing_student_learning_record csld
+                       LEFT JOIN sys_account u ON u.id = csld.user_id
+              WHERE u.username = #{UserName}) AS unique_days
     </select>
 
 </mapper>
