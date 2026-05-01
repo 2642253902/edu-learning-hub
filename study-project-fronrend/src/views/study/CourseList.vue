@@ -148,6 +148,7 @@ const ipagination = reactive<PaginationState>({
 })
 
 const unwrapListData = (payload: any): any[] => {
+  // 兼容后端不同返回格式，优先返回数组或 records/list 字段
   if (Array.isArray(payload)) return payload
   if (Array.isArray(payload?.records)) return payload.records
   if (Array.isArray(payload?.list)) return payload.list
@@ -158,6 +159,7 @@ const buildQueryParams = () => {
   const params = new URLSearchParams()
   params.append('pageNo', String(ipagination.current))
   params.append('pageSize', String(ipagination.pageSize))
+  // 只在有值时追加查询参数，避免发送空字段
   if (queryParam.courseName) params.append('courseName', queryParam.courseName)
   if (queryParam.courseTypeId) params.append('courseTypeId', queryParam.courseTypeId)
   return params.toString()
@@ -167,7 +169,9 @@ const loadData = (arg = 1) => {
   if (arg === 1) ipagination.current = 1
   loading.value = true
   get('/study/cloudComputingCourse/list?' + buildQueryParams(), (msg, data) => {
+    // 将服务端返回规范化为数组放入表格数据
     dataSource.value = unwrapListData(data)
+    // 总数用于分页组件展示
     ipagination.total = data?.total || 0
     loading.value = false
   }, () => loading.value = false)
@@ -175,18 +179,21 @@ const loadData = (arg = 1) => {
 
 const loadDictData = () => {
   get('/study/cloudComputingCourseType/list?pageSize=1000', (msg, data) => {
+    // 课程分类字典，供筛选下拉使用
     courseTypeDict.value = unwrapListData(data)
   })
 }
 
 const getCourseTypeText = (row: CourseRecord) => {
   // if (row.courseTypeName) return row.courseTypeName
+  // 从字典中匹配分类名称，兜底为 '-'
   const match = courseTypeDict.value.find(item => String(item.id) === String(row.courseTypeId))
   return match ? match.courseTypeName : '-'
 }
 
 const getTeacherText = (row: CourseRecord) => {
   // if (row.teacherName) return row.teacherName
+  // 尝试从教师字典中取显式名称，最后兜底显示后端返回的映射字段
   const match = teacherDict.value.find(item => String(item.id) === String(row.teacherId))
   if (match) return match.realname || match.username || match.name || '-'
   return row.teacherId_dictText || '-'
@@ -205,6 +212,7 @@ const handleDetail = (row: CourseRecord) => modalRef.value?.detail(row)
 
 const handleDelete = (row: CourseRecord) => {
   deleteMapping('/study/cloudComputingCourse/delete', { id: row.id }, (msg) => {
+    // 删除成功后刷新当前列表
     ElMessage.success(msg || '删除成功')
     loadData()
   })
@@ -222,12 +230,14 @@ const handleCurrentChange = (val: number) => {
 
 const loadTeachers = () => {
   get('/api/user/list/teachers', (msg, data) => {
+    // 教师列表供负责教师筛选/展示使用
     teacherDict.value = unwrapListData(data)
   }, () => { }, () => {
   })
 }
 
 onMounted(() => {
+  // 页面初始化：加载列表、分类字典及教师数据
   loadData()
   loadDictData()
   loadTeachers()

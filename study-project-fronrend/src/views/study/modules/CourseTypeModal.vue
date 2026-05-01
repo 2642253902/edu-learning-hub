@@ -55,6 +55,7 @@ const rules = {
 }
 
 const add = () => {
+  // 新增分类时先清空模型，避免残留旧数据
   title.value = '新增课程分类'
   disabled.value = false
   Object.assign(model, { id: '', courseTypeName: '', courseCount: 0, createTime: '' })
@@ -62,6 +63,7 @@ const add = () => {
 }
 
 const edit = (record: any) => {
+  // 编辑模式下直接回填现有分类数据
   title.value = '编辑课程分类'
   disabled.value = false
   Object.assign(model, record)
@@ -69,6 +71,7 @@ const edit = (record: any) => {
 }
 
 const detail = (record: any) => {
+  // 详情模式只展示数据，不允许提交修改
   title.value = '分类详情'
   disabled.value = true
   Object.assign(model, record)
@@ -76,21 +79,25 @@ const detail = (record: any) => {
 }
 
 const handleCancel = () => {
+  // 关闭弹窗即可，表单状态由当前 model 决定
   visible.value = false
 }
 
 const handleSubmit = async () => {
   if (!formRef.value) return
+  // 先通过前端校验再发送请求，避免无效提交
   await formRef.value.validate((valid: boolean) => {
     if (valid) {
       loading.value = true
       const url = model.id ? '/study/cloudComputingCourseType/edit' : '/study/cloudComputingCourseType/add'
       post(url, model, (msg) => {
+        // 成功后关闭弹窗并通知父组件刷新列表
         ElMessage.success(msg)
         visible.value = false
         emit('ok')
         loading.value = false
       }, (fail) => {
+        // 失败时释放 loading，避免按钮卡住
         ElMessage.warning(fail)
         loading.value = false
       })

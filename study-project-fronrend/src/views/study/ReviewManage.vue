@@ -85,6 +85,7 @@ const dialogMode = ref<'add' | 'edit'>('add')
 const form = reactive({ id: '', courseId: '', resourceId: '', rating: 5, content: '' })
 
 const unwrapList = (payload: any) => {
+  // 兼容不同接口返回格式，统一为数组
   if (Array.isArray(payload)) return payload
   if (Array.isArray(payload?.records)) return payload.records
   return []
@@ -92,12 +93,14 @@ const unwrapList = (payload: any) => {
 
 const loadCourses = () => {
   get('/study/cloudComputingCourse/list?pageNo=1&pageSize=1000', (_msg, data) => {
+    // 加载课程下拉选项用于评价关联选择
     courseOptions.value = unwrapList(data)
   })
 }
 
 const loadResources = () => {
   get('/study/cloudComputingCourseResource/list?pageNo=1&pageSize=1000', (_msg, data) => {
+    // 加载资源下拉用于评价关联选择
     resourceOptions.value = unwrapList(data)
   })
 }
@@ -105,6 +108,7 @@ const loadResources = () => {
 const loadData = () => {
   loading.value = true
   get('/api/community/reviews/all', (_msg, data) => {
+    // 管理端直接拉取全部评价用于表格展示
     reviews.value = unwrapList(data)
     loading.value = false
   }, () => {
@@ -114,6 +118,7 @@ const loadData = () => {
 
 const getCourseLabel = (courseId: any) => {
   const match = courseOptions.value.find(item => String(item.id) === String(courseId))
+  // 根据 id 查找展示名称，兜底显示 id
   return match ? match.courseName || '-' : String(courseId || '-')
 }
 
@@ -121,6 +126,7 @@ const getResourceLabel = (item: any) => item?.resourceName || item?.fileName || 
 
 const getResourceLabelById = (resourceId: any) => {
   const match = resourceOptions.value.find(item => String(item.id) === String(resourceId))
+  // 将资源对象解析为展示文本，未命中则显示 id
   return match ? getResourceLabel(match) : String(resourceId || '-')
 }
 
@@ -153,6 +159,7 @@ const submit = () => {
   }
   const url = dialogMode.value === 'add' ? '/api/community/reviews' : `/api/community/reviews/${form.id}`
   post(url, dialogMode.value === 'add' ? payload : { ...payload, id: form.id }, (msg) => {
+    // 新增/编辑后刷新列表并关闭对话框
     ElMessage.success(msg)
     dialogVisible.value = false
     loadData()
@@ -161,12 +168,14 @@ const submit = () => {
 
 const handleDelete = (row: any) => {
   deleteMapping(`/api/community/reviews/${row.id}`, { id: row.id }, (msg) => {
+    // 删除后重新加载列表
     ElMessage.success(msg)
     loadData()
   })
 }
 
 onMounted(() => {
+  // 页面初始化：准备课程/资源字典并加载评价数据
   loadCourses()
   loadResources()
   loadData()

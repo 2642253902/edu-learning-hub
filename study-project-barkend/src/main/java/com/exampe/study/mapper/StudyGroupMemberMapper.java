@@ -21,4 +21,7 @@ public interface StudyGroupMemberMapper extends BaseMapper<StudyGroupMember> {
      */
     @Select("SELECT COUNT(1) FROM study_group_member WHERE group_id = #{groupId} AND user_id = #{userId}")
     Integer countMembership(@Param("groupId") String groupId, @Param("userId") String userId);
+
+    @Select("SELECT COUNT(DISTINCT group_id) FROM study_group_member WHERE user_id = #{userId}")
+    Long countGroupsByUserId(@Param("userId") String userId);
 }

@@ -7,9 +7,9 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * Web MVC 配置类
+ * Web MVC 配置类。
  * <p>
- * 配置拦截器、静态资源等 Web 相关功能
+ * 负责注册 MVC 拦截器，让权限校验只作用在需要登录的业务请求上。
  *
  * @author admin
  */
@@ -27,11 +27,11 @@ public class WebConfiguration implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry
-                // 添加权限拦截器
+                // 统一注册权限拦截器
                 .addInterceptor(authorizelnterceptor)
-                // 拦截所有请求
+                // 默认拦截全部接口请求
                 .addPathPatterns("/**")
-                // 排除不需要拦截的路径
+                // 登录相关接口必须放行，否则无法进入认证流程
                 .excludePathPatterns("/", "/api/auth/**");
     }
 }

@@ -200,6 +200,7 @@ const courseTypeList = ref<any[]>([])
 
 const loadCourseTypes = () => {
   get('/study/cloudComputingCourseType/list?pageNo=1&pageSize=1000', (msg, data) => {
+    // 课程分类用于表格中显示分类标签与筛选
     courseTypeList.value = data?.records || []
   })
 }
@@ -228,10 +229,11 @@ const loadData = (arg = 1) => {
     records.forEach((row: any) => {
       get(`/study/cloudComputingCourseResource/counts?id=${row.id}`, (m, countData) => {
         if (countData) {
-          row.videoCount = countData['1'] ?? 0
-          row.lectureCount = countData['2'] ?? 0
-          row.resourceCount = countData['3'] ?? 0
-          dataSource.value = [...dataSource.value]
+              // 异步填充每门课程的资源统计，避免阻塞主列表返回
+              row.videoCount = countData['1'] ?? 0
+              row.lectureCount = countData['2'] ?? 0
+              row.resourceCount = countData['3'] ?? 0
+              dataSource.value = [...dataSource.value]
         }
       })
     })
@@ -249,6 +251,7 @@ const handleCurrentChange = (val: number) => {
 }
 
 const handleAdd = () => {
+  // 打开新建备课弹窗并触发表单组件进入新增模式
   formTitle.value = '新建备课'
   formVisible.value = true
   setTimeout(() => { courseFormRef.value?.add() }, 0)
@@ -265,6 +268,7 @@ const handleEdit = (row: any) => {
     path: '/study/EditorPreparationCenter',
     query: { id: row.id, from: `/study/PreparationCenter?refresh=${Date.now()}` }
   })
+  // 跳转到编辑中心并在 sessionStorage 中缓存选中课程（供目标页读取）
   sessionStorage.setItem('currentCourseEdit', JSON.stringify(row))
 }
 watch(() => route?.query?.refresh, () => {
@@ -283,6 +287,7 @@ const handleDelete = (row: any) => {
     confirmButtonClass: 'el-button--danger'
   }).then(() => {
     deleteMapping('/study/cloudComputingCourse/deleteCourse', { courseId: row.id }, (msg) => {
+      // 成功删除后刷新列表
       ElMessage.success('已移除该课程')
       loadData()
     })
@@ -290,6 +295,7 @@ const handleDelete = (row: any) => {
 }
 
 onMounted(() => {
+  // 初始化：加载分类与列表数据
   loadCourseTypes()
   loadData()
 })

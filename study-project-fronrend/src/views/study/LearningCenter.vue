@@ -117,16 +117,19 @@ const hasNoCourseData = computed(() => {
 // --- 方法 ---
 const handleSearch = () => {
   isSearching.value = !!searchValue.value.trim()
+  // 根据搜索条件重新加载所有分类的数据
   loadAllCategoryData()
 }
 
 const getGlobalIndex = (lessonIndex: number, categoryId: string) => {
   const pagination = categoryPagination[categoryId]
+  // 计算分类内的全局序号，配合分页展示
   return (pagination.pageNo - 1) * pagination.pageSize + lessonIndex + 1
 }
 
 const hasResources = (lesson: any, resourceType: string) => {
   const typeConfig = resourceTypes.find(type => type.key === resourceType)
+  // 根据资源统计字段判断是否存在对应类型资源
   return typeConfig ? (lesson[typeConfig.field] || 0) > 0 : false
 }
 
@@ -136,6 +139,7 @@ const getResourceCount = (lesson: any, resourceType: string) => {
 }
 
 const handleCourseNameClick = (lesson: any) => {
+  // 进入课程详情页，默认展示视频资源
   router.push({ path: '/study/CourseDetail', query: { courseId: lesson.id, resourceType: 'video' } })
 }
 
@@ -144,6 +148,7 @@ const handleResourceClick = (lesson: any, resourceType: string) => {
     ElMessage.info('暂无相关资源')
     return
   }
+  // 跳转到课程详情并指定资源类型（video/lecture/data）
   router.push({ path: '/study/CourseDetail', query: { courseId: lesson.id, resourceType } })
 }
 
@@ -158,6 +163,7 @@ const loadCourseTypes = async () => {
 
       courseTypes.value.forEach(type => {
         if (!categoryPagination[type.id]) {
+          // 每个分类维护独立分页信息
           categoryPagination[type.id] = { pageNo: 1, pageSize: 12, total: 0 }
         }
         if (!categoryData[type.id]) {
@@ -190,6 +196,7 @@ const loadCourseListByCategory = async (categoryId: string) => {
       }))
 
         // 为每个课程异步加载真实的统计数据
+        // 异步调用资源统计接口以补全计数字段，不阻塞主列表
         ; (categoryData[categoryId] || []).forEach(item => {
           get(`/study/cloudComputingCourseResource/counts?id=${item.id}`, (m, countData) => {
             if (countData) {
@@ -229,6 +236,7 @@ let searchTimer: any = null
 watch(searchValue, (newVal) => {
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
+    // 防抖：输入停止 500ms 后触发搜索与刷新
     handleSearch()
   }, 500)
 })

@@ -5,8 +5,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 统一响应结果封装类
+ * 统一响应结果封装类。
  * <p>标准响应结构：status、success、message、data</p>
+ *
+ * <p>所有控制器尽量复用该结构，保证前端对成功、失败和业务数据的解析方式一致。</p>
  *
  * @param <T> 数据类型
  */
@@ -87,6 +89,7 @@ public class RestBean<T> {
      * @return 响应对象
      */
     public static <T> RestBean<T> failure(int status) {
+        // 默认错误文案，适合异常栈不需要暴露给前端的场景
         return new RestBean<>(status, false, "操作失败", null);
     }
 

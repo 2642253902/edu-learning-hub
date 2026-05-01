@@ -38,6 +38,7 @@ const model = reactive<CategoryFormModel>({
 
 const validatorRules: FormRules = {
   courseTypeName: [
+    // 分类名称是新增/编辑的唯一核心字段
     { required: true, message: '分类名称不能为空', trigger: 'blur' },
     { min: 2, max: 50, message: '长度应在 2 到 50 个字符之间', trigger: 'blur' }
   ]
@@ -45,25 +46,30 @@ const validatorRules: FormRules = {
 
 // 新增时重置表单数据。
 const add = () => {
+  // 保证新增态不会复用上一次编辑残留的数据
   Object.assign(model, { id: '', courseTypeName: '' })
 }
 
 const edit = (record: Partial<CategoryFormModel>) => {
+  // 编辑态直接把当前记录灌入表单，减少额外转换逻辑
   Object.assign(model, record)
 }
 
 const submitForm = async () => {
   if (!formRef.value) return
+  // 先做前端校验，再决定走新增还是编辑接口
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
   confirmLoading.value = true
   const url = model.id ? '/study/cloudComputingCourseType/edit' : '/study/cloudComputingCourseType/add'
   post(url, model, (msg) => {
+    // 成功后通知父组件刷新列表
     ElMessage.success(msg)
     emit('ok')
     confirmLoading.value = false
   }, (failMsg) => {
+    // 失败时也要释放 loading，避免按钮一直转圈
     ElMessage.warning(failMsg)
     confirmLoading.value = false
   })

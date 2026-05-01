@@ -34,4 +34,13 @@ public interface ResourceReviewMapper extends BaseMapper<ResourceReview> {
      */
     @Update("UPDATE resource_review SET likes = IFNULL(likes, 0) + 1 WHERE id = #{id}")
     int incrementLike(@Param("id") String id);
+
+    @Select("SELECT COUNT(*) FROM resource_review WHERE user_id = #{userId}")
+    Long countReviewsByUserId(@Param("userId") String userId);
+
+    @Select("SELECT COUNT(*) " +
+            "FROM resource_review rr " +
+            "INNER JOIN cloud_computing_course c ON c.id = rr.course_id " +
+            "WHERE c.teacher_id = #{teacherId}")
+    Long countReviewsByTeacherId(@Param("teacherId") String teacherId);
 }

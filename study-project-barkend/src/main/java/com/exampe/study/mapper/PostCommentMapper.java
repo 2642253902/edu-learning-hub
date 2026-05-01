@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.exampe.study.entity.PostComment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -20,4 +21,7 @@ public interface PostCommentMapper extends BaseMapper<PostComment> {
      * @return 评论列表
      */
     List<PostComment> listByPostId(@Param("postId") String postId);
+
+    @Select("SELECT COUNT(*) FROM post_comment WHERE user_id = #{userId}")
+    Long countCommentsByUserId(@Param("userId") String userId);
 }

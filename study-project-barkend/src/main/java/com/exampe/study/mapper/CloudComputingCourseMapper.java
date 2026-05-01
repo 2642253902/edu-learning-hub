@@ -93,6 +93,15 @@ public interface CloudComputingCourseMapper extends BaseMapper<CloudComputingCou
      */
     int getTeachersum(@Param("UserId") String UserId, @Param("CourseId") String CourseId);
 
+        @Select("SELECT COUNT(*) FROM cloud_computing_course WHERE teacher_id = #{teacherId}")
+        Long countCoursesByTeacherId(@Param("teacherId") String teacherId);
+
+        @Select("SELECT COUNT(*) FROM cloud_computing_course WHERE teacher_id = #{teacherId} AND course_status = 1")
+        Long countPublishedCoursesByTeacherId(@Param("teacherId") String teacherId);
+
+        @Select("SELECT course_status AS status, COUNT(*) AS value FROM cloud_computing_course WHERE teacher_id = #{teacherId} GROUP BY course_status ORDER BY course_status")
+        List<Map<String, Object>> countCourseStatusByTeacherId(@Param("teacherId") String teacherId);
+
     /**
      * 获取教师在指定课程中完成的资源列表
      * 

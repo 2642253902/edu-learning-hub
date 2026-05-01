@@ -31,6 +31,19 @@ public interface CloudComputingCourseResourceMapper extends BaseMapper<CloudComp
             "GROUP BY resource_type")
     List<Map<String, Object>> countByCourseIdGroupByType(@Param("courseId") String courseId);
 
+        @Select("SELECT COUNT(*) " +
+            "FROM cloud_computing_course_resource r " +
+            "INNER JOIN cloud_computing_course c ON c.id = r.course_id " +
+            "WHERE c.teacher_id = #{teacherId}")
+        Long countResourcesByTeacherId(@Param("teacherId") String teacherId);
+
+        @Select("SELECT r.resource_type AS type, COUNT(*) AS value " +
+            "FROM cloud_computing_course_resource r " +
+            "INNER JOIN cloud_computing_course c ON c.id = r.course_id " +
+            "WHERE c.teacher_id = #{teacherId} " +
+            "GROUP BY r.resource_type ORDER BY r.resource_type")
+        List<Map<String, Object>> countResourceTypesByTeacherId(@Param("teacherId") String teacherId);
+
     /**
      * 查询课程资源列表（含学生学习状态）
      * 

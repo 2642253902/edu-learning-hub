@@ -23,6 +23,7 @@ const realForm = ref()
 const emit = defineEmits(['ok'])
 
 const add = () => {
+  // 新增模式：打开可编辑弹窗并让子表单重置为新增态
   title.value = '新增课程'
   visible.value = true
   disableSubmit.value = false
@@ -30,6 +31,7 @@ const add = () => {
 }
 
 const edit = (record: any) => {
+  // 编辑模式：把选中记录交给表单组件回填
   title.value = '编辑课程'
   visible.value = true
   disableSubmit.value = false
@@ -37,6 +39,7 @@ const edit = (record: any) => {
 }
 
 const detail = (record: any) => {
+  // 详情模式：复用同一弹窗，但禁止提交，只读展示数据
   title.value = '课程详情'
   visible.value = true
   disableSubmit.value = true
@@ -44,14 +47,17 @@ const detail = (record: any) => {
 }
 
 const handleOk = () => {
+  // 由子表单负责校验和提交，弹窗只负责触发
   realForm.value.submitForm()
 }
 
 const handleCancel = () => {
+  // 关闭弹窗即可，具体表单状态由子组件管理
   visible.value = false
 }
 
 const submitCallback = () => {
+  // 子表单提交成功后关闭弹窗并通知外层刷新
   visible.value = false
   emit('ok')
 }

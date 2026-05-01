@@ -78,14 +78,17 @@ const ipagination = reactive({
 })
 
 const handleAdd = () => {
+  // 打开资源新增弹窗（modal 内复用新增/编辑逻辑）
   resourceModalRef.value.add()
 }
 
 const handleEdit = (row: any) => {
+  // 将当前行数据传入 modal 以进入编辑模式
   resourceModalRef.value.edit(row)
 }
 
 const getCourseText = (row: any) => {
+  // 优先使用后端返回的映射文本，未命中时从本地课程字典匹配
   if (row.courseId_dictText) return row.courseId_dictText
   const match = courseDict.value.find(item => String(item.id) === String(row.courseId))
   return match ? match.courseName : '未知课程'
@@ -101,6 +104,7 @@ const loadData = (arg = 1) => {
   if (queryParam.resourceType) params.append('resourceType', queryParam.resourceType)
 
   get(`/study/cloudComputingCourseResource/list?${params.toString()}`, (msg, data) => {
+    // 服务端返回 records 放入表格，并更新分页总数
     dataSource.value = data?.records || []
     ipagination.total = data?.total || 0
     loading.value = false
@@ -122,12 +126,14 @@ const handleCurrentChange = (val: number) => {
 
 const loadCourseDict = () => {
   get('/study/cloudComputingCourse/list?pageNo=1&pageSize=1000', (msg, data) => {
+    // 载入课程字典以在表格中显示课程名称
     courseDict.value = data?.records || []
   })
 }
 
 const handleDelete = (row: any) => {
   deleteMapping('/study/cloudComputingCourseResource/delete', { id: row.id }, (msg) => {
+    // 删除后刷新当前页数据
     ElMessage.success(msg)
     loadData()
   }, (failMsg) => {
@@ -137,6 +143,7 @@ const handleDelete = (row: any) => {
 
 
 onMounted(() => {
+  // 页面加载时初始化列表与字典
   loadData()
   loadCourseDict()
 })

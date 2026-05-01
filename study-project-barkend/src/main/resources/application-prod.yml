@@ -3,17 +3,25 @@ spring:
   # 数据源配置（生产环境需要修改为实际的生产数据库配置）
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://111.228.53.34:3306/数据库名?useUnicode=true&characterEncoding=UTF-8&useSSL=true&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://111.228.53.34:3306/study?useUnicode=true&characterEncoding=UTF-8
     username: root
     password: 123456Ok!
 
   # 邮件服务配置（生产环境建议使用企业邮箱）
   mail:
     host: smtp.163.com
+    port: 465
     username: 18897793826@163.com
     password: BSX8mPRLBC3RZ6vs
     properties:
-      from: 18897793826@163.com
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          connectiontimeout: 10000   # 毫秒，建立连接超时 10s
+          timeout: 10000             # 毫秒，读取响应超时 10s
+          writetimeout: 10000        # 毫秒，写数据超时 10s
 
   # Redis缓存配置（生产环境需要修改为实际的Redis服务器配置）
   data:

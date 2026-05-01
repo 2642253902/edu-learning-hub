@@ -1,0 +1,20 @@
+先建网络
+docker network create study-net
+
+docker run -d \
+  --name study-backend \
+  -p 8080:8080 \  # 映射容器端口到宿主机端口（根据你的应用修改）
+  -v /root/jar/study-project-barkend.jar:/app.jar \  # 映射JAR文件
+  -v /root/study:/opt/upFiles \  # 映射文件上传目录
+  openjdk:17 \
+  java -jar /app.jar
+
+docker run -d --name study-backend --network study-net -p 8080:8080 -v /root/jar/study-project-barkend.jar:/app.jar -v /root/study:/opt/upFiles openjdk:17 java -jar /app.jar
+
+docker run -itd --name web \
+  -v /root/vue3/dist:/usr/share/nginx/web \  # 映射Vue编译后的静态资源
+  -v /root/vue3/nginx.conf:/etc/nginx/conf.d/default.conf \  # 映射Nginx配置
+  -p 80:80 \
+  nginx:latest
+
+docker run -itd --name web --network study-net -v /root/vue3/dist:/usr/share/nginx/web -v /root/vue3/nginx.conf:/etc/nginx/nginx.conf:ro -p 80:80 nginx:latest

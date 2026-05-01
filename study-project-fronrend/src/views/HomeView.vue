@@ -1,71 +1,41 @@
 <template>
-    <div class="welcome-container">
-        <!-- 顶部欢迎区：展示当前登录用户的问候语与核心概览指标 -->
-        <el-card shadow="never" class="welcome-header">
-            <div class="header-flex">
-                <div class="user-info">
-                    <el-avatar :size="64" src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png" />
-                    <div class="welcome-text">
-                        <h3>{{ getTimeState() }}，{{ userStore.auth.user?.username }}！</h3>
-                        <p>{{ isAdmin ? '系统管理员，今天有 5 项安全待处理。' : '学生，加油学习，今天已累计在线 2.5 小时。' }}</p>
-                    </div>
+    <div class="home-shell">
+        <el-card shadow="never" class="hero-card">
+            <div class="hero-content">
+                <div class="hero-copy">
+                    <div class="hero-tag">首页入口</div>
+                    <h2>学习社区控制台</h2>
+                    <p>{{ roleTip }}</p>
                 </div>
-                <div class="header-stat">
-                    <div class="stat-item">
-                        <div class="label">{{ isAdmin ? '用户总数' : '已修课程' }}</div>
-                        <div class="value">{{ isAdmin ? '1,280' : '12' }}</div>
-                    </div>
-                    <el-divider direction="vertical" />
-                    <div class="stat-item">
-                        <div class="label">{{ isAdmin ? '在线人数' : '本周排名' }}</div>
-                        <div class="value">{{ isAdmin ? '156' : '15' }}</div>
-                    </div>
+
+                <div class="hero-actions">
+                    <el-button type="primary" @click="router.push(defaultPath)">{{ defaultAction }}</el-button>
+                    <el-button plain @click="router.push('/index/student-dashboard')">学生统计</el-button>
+                    <el-button plain @click="router.push('/index/teacher-dashboard')">教师统计</el-button>
                 </div>
             </div>
         </el-card>
 
-        <!-- 中部统计区：管理员查看平台趋势与分类占比，学生仅看趋势图 -->
-        <el-row :gutter="20" class="mt-4">
-            <el-col :span="isAdmin ? 16 : 24">
-                <el-card shadow="hover" header="学习/活跃趋势统计">
-                    <div ref="chartRef" style="height: 350px; width: 100%;"></div>
+        <el-row :gutter="16" class="feature-row">
+            <el-col :xs="24" :md="8">
+                <el-card shadow="hover" class="feature-card feature-card-student">
+                    <div class="feature-head">学生统计</div>
+                    <p>查看课程学习、资源使用、小组互动和消息提醒。</p>
+                    <el-button type="primary" plain @click="router.push('/index/student-dashboard')">进入学生页</el-button>
                 </el-card>
             </el-col>
-            <el-col :span="8" v-if="isAdmin">
-                <el-card shadow="hover" header="课程分类占比">
-                    <div ref="pieRef" style="height: 350px; width: 100%;"></div>
+            <el-col :xs="24" :md="8">
+                <el-card shadow="hover" class="feature-card feature-card-teacher">
+                    <div class="feature-head">教师统计</div>
+                    <p>查看课程建设、资源分布、学生学习和评价反馈。</p>
+                    <el-button type="primary" plain @click="router.push('/index/teacher-dashboard')">进入教师页</el-button>
                 </el-card>
             </el-col>
-        </el-row>
-
-        <!-- 底部信息区：左侧是待办提醒，右侧是按角色动态生成的快捷入口 -->
-        <el-row :gutter="20" class="mt-4">
-            <el-col :span="12">
-                <el-card shadow="hover" header="我的待办/系统消息">
-                    <el-timeline>
-                        <el-timeline-item timestamp="2024-03-28" type="primary">
-                            {{ isAdmin ? '系统备份计划已成功完成' : '《云计算概论》课程由教师发布了新作业' }}
-                        </el-timeline-item>
-                        <el-timeline-item timestamp="2024-03-27" type="success">
-                            {{ isAdmin ? '新增 12 名学生用户注册申请通过' : '获得“勤奋之星”勋章' }}
-                        </el-timeline-item>
-                        <el-timeline-item timestamp="2024-03-25" type="warning">
-                            {{ isAdmin ? '服务器磁盘空间占用超过 80%' : '本月课程学时达标提醒' }}
-                        </el-timeline-item>
-                    </el-timeline>
-                </el-card>
-            </el-col>
-            <el-col :span="12">
-                <el-card shadow="hover" header="快捷入口">
-                    <div class="quick-links">
-                        <el-button v-for="link in quickLinks" :key="link.name" type="primary" plain class="link-btn"
-                            @click="router.push(link.path)">
-                            <el-icon class="mr-1">
-                                <component :is="link.icon" />
-                            </el-icon>
-                            {{ link.name }}
-                        </el-button>
-                    </div>
+            <el-col :xs="24" :md="8">
+                <el-card shadow="hover" class="feature-card feature-card-system">
+                    <div class="feature-head">系统入口</div>
+                    <p>消息中心、个人信息和动态菜单都可以从顶部继续进入。</p>
+                    <el-button type="primary" plain @click="router.push('/sys/MessageCenter')">查看消息中心</el-button>
                 </el-card>
             </el-col>
         </el-row>
@@ -73,197 +43,137 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted } from 'vue'
-import { useUserStore } from '@/stores/user'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import * as echarts from 'echarts'
-import {
-    Collection,
-    User,
-    Setting,
-    Monitor,
-    VideoCamera,
-    FolderChecked
-} from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
 
-const userStore = useUserStore()
 const router = useRouter()
-const chartRef = ref<HTMLElement | null>(null)
-const pieRef = ref<HTMLElement | null>(null)
-let mainChart: echarts.ECharts | null = null
-let pieChart: echarts.ECharts | null = null
+const userStore = useUserStore()
 
-// 角色值 1 表示管理员，其他角色按学生视图渲染。
-const isAdmin = computed(() => userStore.auth.user?.role === 1)
+const role = computed(() => String(userStore.auth.user?.role ?? ''))
 
-// 根据当前时间返回问候语，让首页顶部信息更具场景感。
-const getTimeState = () => {
-    const hour = new Date().getHours()
-    if (hour >= 6 && hour < 12) return '早上好'
-    if (hour >= 12 && hour < 18) return '下午好'
-    return '晚上好'
-}
-
-// 快捷入口按角色分组，管理员看到管理入口，学生看到个人常用入口。
-const quickLinks = computed(() => {
-    if (isAdmin.value) {
-        return [
-            { name: '用户管理', path: '/sys/user', icon: User },
-            { name: '角色分配', path: '/sys/role', icon: Setting },
-            { name: '课程管理', path: '/study/course-list', icon: Monitor },
-            { name: '学习小组管理', path: '/index/community/group-manage', icon: FolderChecked },
-            { name: '讨论管理', path: '/index/community/post-manage', icon: Collection },
-            { name: '评价管理', path: '/index/community/review-manage', icon: VideoCamera },
-            { name: '消息中心', path: '/sys/messages', icon: Monitor }
-        ]
+const roleTip = computed(() => {
+    if (role.value === '2') {
+        return '当前账号是教师，建议先查看教师数据统计，快速了解课程、资源和学生学习情况。'
     }
-    return [
-        { name: '个人信息', path: '/sys/PersonalInfo', icon: User },
-        { name: '消息中心', path: '/sys/messages', icon: Monitor }
-    ]
+    if (role.value === '3') {
+        return '当前账号是学生，建议先查看学生数据统计，集中了解课程进度和学习行为。'
+    }
+    return '当前账号可进入学生或教师统计页，先从控制台总入口开始浏览。'
 })
 
-onMounted(() => {
-    // 初始化趋势折线图；管理员和学生共用同一图表容器，但数据口径不同。
-    if (chartRef.value) {
-        mainChart = echarts.init(chartRef.value)
-        mainChart.setOption({
-            tooltip: { trigger: 'axis' },
-            grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-            xAxis: { type: 'category', data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] },
-            yAxis: { type: 'value' },
-            series: [{
-                name: isAdmin.value ? '活跃人数' : '学习时长(min)',
-                type: 'line',
-                smooth: true,
-                data: isAdmin.value ? [120, 132, 101, 134, 90, 230, 210] : [30, 45, 120, 60, 40, 150, 180],
-                itemStyle: { color: '#409EFF' },
-                areaStyle: {
-                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                        { offset: 0, color: 'rgba(64,158,255,0.3)' },
-                        { offset: 1, color: 'rgba(64,158,255,0)' }
-                    ])
-                }
-            }]
-        })
+const defaultPath = computed(() => {
+    if (role.value === '2') {
+        return '/index/teacher-dashboard'
     }
-
-    // 仅管理员渲染课程分类饼图，避免学生视图出现无关信息。
-    if (pieRef.value && isAdmin.value) {
-        pieChart = echarts.init(pieRef.value)
-        pieChart.setOption({
-            tooltip: { trigger: 'item' },
-            legend: { bottom: '0%', left: 'center' },
-            series: [{
-                name: '课程占比',
-                type: 'pie',
-                radius: ['40%', '70%'],
-                avoidLabelOverlap: false,
-                itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
-                label: { show: false, position: 'center' },
-                data: [
-                    { value: 1048, name: '编程开发' },
-                    { value: 735, name: '人工智能' },
-                    { value: 580, name: '网络安全' },
-                    { value: 484, name: '云计算' }
-                ]
-            }]
-        })
+    if (role.value === '3') {
+        return '/index/student-dashboard'
     }
-
-    // 页面尺寸变化时同步刷新图表，防止容器缩放后图形错位。
-    window.addEventListener('resize', handleResize)
+    return '/index/student-dashboard'
 })
 
-// 统一处理所有已挂载图表的 resize，避免分别绑定多个监听器。
-const handleResize = () => {
-    mainChart?.resize()
-    pieChart?.resize()
-}
-
-onUnmounted(() => {
-    // 组件销毁时移除监听并释放图表实例，避免内存泄漏。
-    window.removeEventListener('resize', handleResize)
-    mainChart?.dispose()
-    pieChart?.dispose()
+const defaultAction = computed(() => {
+    if (role.value === '2') {
+        return '进入教师统计'
+    }
+    if (role.value === '3') {
+        return '进入学生统计'
+    }
+    return '开始查看统计'
 })
 </script>
 
 <style scoped>
-.welcome-container {
-    padding: 0;
-}
-
-.welcome-header {
-    border: none;
-    background: linear-gradient(to right, #ffffff, #f0f7ff);
-}
-
-.header-flex {
+.home-shell {
     display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.hero-card {
+    border: 1px solid #e5eefc;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fbff 45%, #eef6ff 100%);
+}
+
+.hero-content {
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
+    gap: 16px;
 }
 
-.user-info {
-    display: flex;
+.hero-tag {
+    display: inline-flex;
     align-items: center;
-    gap: 20px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 600;
 }
 
-.welcome-text h3 {
+.hero-copy h2 {
+    margin: 10px 0 8px;
+    font-size: 30px;
+    color: #0f172a;
+}
+
+.hero-copy p {
     margin: 0;
-    font-size: 20px;
-    color: #303133;
+    color: #64748b;
+    line-height: 1.7;
+    max-width: 720px;
 }
 
-.welcome-text p {
-    margin: 8px 0 0;
-    color: #909399;
-    font-size: 14px;
-}
-
-.header-stat {
-    display: flex;
-    align-items: center;
-    gap: 30px;
-}
-
-.stat-item {
-    text-align: center;
-}
-
-.stat-item .label {
-    font-size: 13px;
-    color: #909399;
-    margin-bottom: 4px;
-}
-
-.stat-item .value {
-    font-size: 24px;
-    font-weight: bold;
-    color: #303133;
-}
-
-.mt-4 {
-    margin-top: 20px;
-}
-
-.quick-links {
+.hero-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
 }
 
-.link-btn {
-    width: calc(50% - 6px);
-    margin-left: 0 !important;
-    margin-bottom: 4px;
-    justify-content: flex-start;
-    height: 40px;
+.feature-row {
+    width: 100%;
 }
 
-.mr-1 {
-    margin-right: 4px;
+.feature-card {
+    min-height: 220px;
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.feature-head {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.feature-card p {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.7;
+}
+
+.feature-card-student {
+    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+}
+
+.feature-card-teacher {
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf4 100%);
+}
+
+.feature-card-system {
+    background: linear-gradient(180deg, #ffffff 0%, #f7fff8 100%);
+}
+
+@media (max-width: 768px) {
+    .hero-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 </style>
+const handleResize = () => {

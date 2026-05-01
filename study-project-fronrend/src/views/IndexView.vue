@@ -19,6 +19,27 @@
                     <template #title>工作台首页</template>
                 </el-menu-item>
 
+                <el-sub-menu index="/index/dashboard">
+                    <template #title>
+                        <el-icon>
+                            <DataBoard />
+                        </el-icon>
+                        <span>数据统计</span>
+                    </template>
+                    <el-menu-item index="/index/student-dashboard">
+                        <el-icon>
+                            <Reading />
+                        </el-icon>
+                        <template #title>学生统计</template>
+                    </el-menu-item>
+                    <el-menu-item index="/index/teacher-dashboard">
+                        <el-icon>
+                            <Monitor />
+                        </el-icon>
+                        <template #title>教师统计</template>
+                    </el-menu-item>
+                </el-sub-menu>
+
                 <template v-for="menu in visibleMenuList">
                     <!-- 如果有子级 -->
                     <el-sub-menu v-if="menu.children && menu.children.length > 0" :key="`${menu.id}-sub`"
@@ -74,7 +95,7 @@
                     </el-icon>
                     <el-breadcrumb separator="/" class="breadcrumb">
                         <el-breadcrumb-item :to="{ path: '/index/home' }">首页</el-breadcrumb-item>
-                        <el-breadcrumb-item>学习社区控制台</el-breadcrumb-item>
+                        <el-breadcrumb-item>{{ currentPageTitle }}</el-breadcrumb-item>
                     </el-breadcrumb>
                 </div>
 
@@ -162,14 +183,10 @@ import { ElMessage } from "element-plus";
 import {
     Menu,
     Monitor,
-    Setting,
     Reading,
-    VideoCamera,
     DataBoard,
-    ChatDotRound,
     Fold,
     Expand,
-    Search,
     Bell,
     CaretBottom,
     User,
@@ -195,6 +212,8 @@ const messageList = ref<any[]>([])
 let messageTimer: number | undefined
 
 const unreadMessageCount = computed(() => messageList.value.filter((item: any) => item.unread).length)
+
+const currentPageTitle = computed(() => String(route.meta.title || '学习社区控制台'))
 
 
 const isMenuVisible = (menu: any) => (menu?.menuVisible ?? 1) === 1
@@ -227,7 +246,12 @@ const flattenMenus = (menus: any[], parent = ''): Array<{ label: string; value: 
 
 const moduleOptions = computed(() => {
     const dynamicOptions = flattenMenus(visibleMenuList.value || [])
-    return [{ label: '首页 / 工作台首页', value: '/index/home' }, ...dynamicOptions]
+    return [
+        { label: '首页 / 工作台首页', value: '/index/home' },
+        { label: '数据统计 / 学生统计', value: '/index/student-dashboard' },
+        { label: '数据统计 / 教师统计', value: '/index/teacher-dashboard' },
+        ...dynamicOptions,
+    ]
 })
 
 const filteredModuleOptions = computed(() => {
@@ -244,13 +268,6 @@ const handleModuleSearchChange = (path: string) => {
     if (!path) return
     router.push(path)
     searchModulePath.value = ''
-}
-
-const unwrapListData = (payload: any): any[] => {
-    if (Array.isArray(payload)) return payload
-    if (Array.isArray(payload?.records)) return payload.records
-    if (Array.isArray(payload?.list)) return payload.list
-    return []
 }
 
 const formatTime = (value: any) => {

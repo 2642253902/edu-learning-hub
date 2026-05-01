@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.exampe.study.entity.GroupPost;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
@@ -31,4 +32,7 @@ public interface GroupPostMapper extends BaseMapper<GroupPost> {
      */
     @Update("UPDATE group_post SET comment_count = IFNULL(comment_count, 0) + 1 WHERE id = #{postId}")
     int increaseCommentCount(@Param("postId") String postId);
+
+    @Select("SELECT COUNT(*) FROM group_post WHERE user_id = #{userId}")
+    Long countPostsByUserId(@Param("userId") String userId);
 }

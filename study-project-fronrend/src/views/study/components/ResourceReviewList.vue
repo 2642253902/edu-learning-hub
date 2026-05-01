@@ -49,12 +49,14 @@ const userStore = useUserStore()
 
 const load = () => {
   get(`/api/community/reviews?resourceId=${encodeURIComponent(props.resourceId)}`, (_message: string, d: any) => {
+    // 后端返回后统一补一个 liked 字段，方便前端直接控制点赞状态
     reviews.value = (d || []).map((it: any) => ({ ...it, liked: !!it.liked }))
   })
 }
 
 const addReview = (r: any) => {
   if (!r) return
+  // 新评价插到最前面，保证提交后立刻可见
   const item = {
     id: r.id || `local-${Date.now()}`,
     username: r.username || userStore.auth.user?.username || '我',
@@ -71,6 +73,7 @@ const addReview = (r: any) => {
 const like = (r: any) => {
   if (String(r.userId) === String(userStore.auth.user?.id)) return
   if (r.liked) return
+  // 点赞接口只负责服务端累加，成功后本地同步 likes 和 liked
   post(`/api/community/reviews/${r.id}/like`, {}, () => {
     r.likes = (r.likes || 0) + 1
     r.liked = true
@@ -78,16 +81,20 @@ const like = (r: any) => {
 }
 
 const getInitial = (name: any) => {
+  // 头像首字母兜底，避免匿名或空用户名时显示异常
   const text = String(name || 'A').trim()
   return text ? text.slice(0, 1).toUpperCase() : 'A'
 }
 
 const formatDate = (s: any) => {
+  // 统一将时间格式化为本地可读字符串
   try { return new Date(s).toLocaleString() } catch (e) { return '' }
 }
 
+// 组件挂载后先拉取当前资源的评价列表
 onMounted(load)
 
+// 暴露刷新与新增接口，供父组件在提交评价后调用
 defineExpose({ load, addReview })
 </script>
 

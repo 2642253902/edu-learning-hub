@@ -27,9 +27,9 @@ import javax.sql.DataSource;
 import java.io.IOException;
 
 /**
- * Spring Security 安全配置类
+ * Spring Security 安全配置类。
  * <p>
- * 配置认证、授权、CORS、记住我等安全相关功能
+ * 统一定义接口放行规则、登录与注销处理、CORS、记住我和异常响应，避免安全行为散落在各处。
  *
  * @author admin
  */
@@ -54,40 +54,40 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
-                // 配置请求授权规则
+            // 先明确白名单，再要求其余请求必须经过认证
                 .authorizeHttpRequests(auth -> {
-                    // 允许访问根路径和认证相关接口
+                // 首页和认证接口直接放行，避免登录前就被拦截
                     auth.requestMatchers("/", "/api/auth/**").permitAll();
-                    // 其他请求需要认证
+                // 业务接口默认都需要登录态
                     auth.anyRequest().authenticated();
                 })
-                // 配置表单登录
+            // 认证成功/失败都改为 JSON 输出，前后端分离场景更容易处理
                 .formLogin(form -> form
-                        // 指定登录处理 URL
+                // 登录请求由后端统一处理
                         .loginProcessingUrl("/api/auth/login")
-                        // 认证成功处理器
+                // 登录成功时返回统一响应体
                         .successHandler(this::onAuthenticationSuccess)
-                        // 认证失败处理器
+                // 登录失败时返回统一错误响应
                         .failureHandler(this::onAuthenticationFailure))
-                // 配置注销
+            // 注销也复用同一套成功响应，保持接口返回风格一致
                 .logout(logout -> logout
-                        // 指定注销 URL
+                // 注销请求路径
                         .logoutUrl("/api/auth/logout")
-                        // 注销成功处理器
+                // 注销后仍返回 JSON，便于前端直接提示并清理状态
                         .logoutSuccessHandler(this::onAuthenticationSuccess))
-                // 配置记住我功能
+            // 记住我功能用于延长登录态，适合教学平台这类长时间浏览场景
                 .rememberMe(remember -> remember
-                        // 指定 remember-me 参数名称
+                // 前端提交的勾选参数名
                         .rememberMeParameter("remember")
-                        // 设置 token 有效期（3天）
+                // 记住我 token 有效期：3 天
                         .tokenValiditySeconds(3 * 24 * 60 * 60)
                         .tokenRepository(this.tokenRepository()))
-                // 禁用 CSRF 保护（后端 API 通常不需要）
+            // 当前接口以 JSON API 为主，先关闭 CSRF，减少前后端联调阻力
                 .csrf(AbstractHttpConfigurer::disable)
-                // 配置 CORS 跨域规则
+            // 允许前端跨域访问登录态接口
                 .cors(cors -> cors
                         .configurationSource(this.corsConfigurationSource()))
-                // 配置异常处理
+            // 未认证访问时也返回统一 JSON，而不是默认跳转页面
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(this::onAuthenticationFailure))
                 .build();
@@ -102,7 +102,7 @@ public class SecurityConfiguration {
     public PersistentTokenRepository tokenRepository() {
         JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
         tokenRepository.setDataSource(dataSource);
-        // 生产环境建议手动创建表，设置为 false
+        // 生产环境建议提前建表，避免应用启动时自动改库结构
         tokenRepository.setCreateTableOnStartup(false);
         return tokenRepository;
     }
@@ -114,13 +114,13 @@ public class SecurityConfiguration {
      */
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // 允许所有来源（生产环境建议指定具体域名）
+        // 这里保持宽松配置，便于本地开发；上线时应收紧到具体前端域名
         config.addAllowedOriginPattern("*");
-        // 允许所有 HTTP 方法
+        // 开发阶段直接放开常见方法，避免因为预检请求影响联调
         config.addAllowedMethod("*");
-        // 允许所有请求头
+        // 允许携带自定义请求头和认证相关头部
         config.addAllowedHeader("*");
-        // 允许携带凭证（Cookies）
+        // 需要携带 Cookie 才能支持登录态和 remember-me
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -139,6 +139,7 @@ public class SecurityConfiguration {
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity httpSecurity) throws Exception {
         AuthenticationManagerBuilder builder = httpSecurity.getSharedObject(AuthenticationManagerBuilder.class);
+        // 将自定义用户查询服务注册到认证管理器中，登录时会走这里校验账号密码
         builder.userDetailsService(authorizeService);
         return builder.build();
     }
@@ -151,6 +152,7 @@ public class SecurityConfiguration {
      */
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
+        // 使用 BCrypt 存储密码摘要，避免明文或弱散列
         return new BCryptPasswordEncoder();
     }
 
@@ -164,6 +166,7 @@ public class SecurityConfiguration {
      */
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         response.setCharacterEncoding("UTF-8");
+        // 登录和注销共用同一个成功处理器，通过请求路径区分响应文案
         if (request.getRequestURI().equals("/api/auth/logout")) {
             response.getWriter().write(JSONObject.toJSONString(RestBean.success("注销成功")));
         } else {
@@ -181,6 +184,7 @@ public class SecurityConfiguration {
      */
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException {
         response.setCharacterEncoding("UTF-8");
+        // 统一返回 401，前端可直接据此判断为未登录或认证失败
         response.getWriter().write(JSONObject.toJSONString(RestBean.failure(401, exception.getMessage())));
     }
 

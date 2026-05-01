@@ -43,11 +43,13 @@ const resetForm = () => {
 
 const submit = () => {
   if (!props.resourceId) {
+    // 需要 resourceId 才能提交评价
     ElMessage.warning('课程信息未加载完成')
     return
   }
 
   if (!form.value.content.trim()) {
+    // 简单表单校验：评价内容不能为空
     ElMessage.warning('请输入评价内容')
     return
   }
@@ -59,6 +61,7 @@ const submit = () => {
     '/api/community/reviews',
     payload,
     (_message: string, d: any) => {
+      // 如果后端返回了对象则使用后端结果，否则构造本地临时对象并触发 saved 事件
       const review = (d && d.id)
         ? d
         : {

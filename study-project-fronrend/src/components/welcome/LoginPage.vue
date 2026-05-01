@@ -70,6 +70,7 @@ const login = () => {
         }, (message, data) => {
             ElMessage.success(message)
             const loginUser = data ?? null
+            console.log('登录响应中的用户信息：', loginUser)
             if (loginUser !== null) {
                 userStore.auth.user = loginUser
             }
@@ -79,6 +80,7 @@ const login = () => {
             }, (message) => {
                 // 如果 /me 临时失败，优先保留登录接口返回的用户信息，避免把会话状态直接打空。
                 ElMessage.warning(message)
+                  console.log('获取当前用户信息失败，保留登录接口返回的用户信息进入系统：', userStore.auth.user)
                 if (loginUser !== null) {
                     ElMessage.info('已使用登录响应中的用户信息进入系统')
                     userStore.auth.user = loginUser
