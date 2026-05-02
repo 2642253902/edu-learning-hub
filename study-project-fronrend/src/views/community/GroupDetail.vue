@@ -1,25 +1,37 @@
 <template>
-  <div class="p-4">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-bold">{{ group?.name || '小组' }}</h3>
-      <div>{{ group?.description }}</div>
-    </div>
+  <div class="detail-page">
+    <el-card shadow="never" class="hero-card">
+      <div class="hero-wrap">
+        <div>
+          <h3 class="hero-title">{{ group?.name || '学习小组' }}</h3>
+          <p class="hero-subtitle">{{ group?.description || '在这里发帖、讨论、沉淀学习记录。' }}</p>
+        </div>
+        <div class="summary-chip">帖子 {{ posts.length }}</div>
+      </div>
+    </el-card>
 
-    <el-card class="mb-4">
+    <el-card shadow="never" class="composer-card">
+      <div class="section-title">发布新帖</div>
       <!-- 发帖表单直接把 groupId 透传给子组件，确保后端创建帖子时能正确挂到当前小组 -->
       <post-form :groupId="groupId" @created="loadPosts" />
     </el-card>
 
-    <!-- 小组内帖子列表：仅展示后端返回的基础信息，详情通过弹窗按需拉取/回填 -->
-    <el-table :data="posts" stripe>
-      <el-table-column prop="title" label="标题" />
-      <el-table-column prop="username" label="作者" width="140" />
-      <el-table-column label="操作">
-        <template #default="{ row }">
-          <el-button link @click="openPost(row.id)">查看</el-button>
+    <el-card shadow="never" class="posts-card">
+      <div class="section-title">小组帖子</div>
+      <!-- 小组内帖子列表：仅展示后端返回的基础信息，详情通过弹窗按需拉取/回填 -->
+      <el-table :data="posts" stripe class="posts-table">
+        <el-table-column prop="title" label="标题" min-width="240" />
+        <el-table-column prop="username" label="作者" width="160" />
+        <el-table-column label="操作" width="120" align="center">
+          <template #default="{ row }">
+            <el-button link @click="openPost(row.id)">查看</el-button>
+          </template>
+        </el-table-column>
+        <template #empty>
+          <div class="table-empty">还没有帖子，发一条开启讨论吧</div>
         </template>
-      </el-table-column>
-    </el-table>
+      </el-table>
+    </el-card>
 
     <el-dialog v-model="showPost" width="60%" :before-close="() => { showPost = false }">
       <template #header>帖子</template>
@@ -78,7 +90,84 @@ onMounted(() => { loadGroup(); loadPosts() })
 </script>
 
 <style scoped>
-.p-4 {
-  padding: 16px
+.detail-page {
+  padding: 20px;
+  background:
+    radial-gradient(circle at top left, rgba(34, 197, 94, 0.1), transparent 34%),
+    linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  min-height: 100%;
+}
+
+.hero-card,
+.composer-card,
+.posts-card {
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+}
+
+.hero-card,
+.composer-card {
+  margin-bottom: 16px;
+}
+
+.hero-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hero-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.hero-subtitle {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.summary-chip {
+  height: 34px;
+  border-radius: 999px;
+  padding: 0 13px;
+  background: #ecfdf3;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.section-title {
+  margin-bottom: 12px;
+  color: #1f2937;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.posts-card {
+  overflow: hidden;
+}
+
+.posts-table {
+  width: 100%;
+}
+
+.table-empty {
+  color: #94a3b8;
+  padding: 22px 0;
+}
+
+@media (max-width: 768px) {
+  .detail-page {
+    padding: 12px;
+  }
 }
 </style>

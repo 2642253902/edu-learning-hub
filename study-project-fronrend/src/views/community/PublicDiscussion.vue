@@ -5,6 +5,10 @@
         <h3 class="page-title">公共讨论区</h3>
         <p class="page-subtitle">在这里发布问题、交流经验、查看别人的回复。</p>
       </div>
+      <div class="hero-stats">
+        <div class="stat-pill">帖子 {{ posts.length }}</div>
+        <div class="stat-pill muted">实时讨论</div>
+      </div>
     </div>
 
     <el-card class="section-card composer-card">
@@ -23,6 +27,9 @@
             <el-button link type="primary" @click="openPost(row)">查看</el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <div class="table-empty">暂无讨论内容，发布第一条帖子吧</div>
+        </template>
       </el-table>
     </el-card>
 
@@ -89,9 +96,10 @@ onMounted(loadPosts)
 .page-hero {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   gap: 16px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .page-title {
@@ -105,6 +113,30 @@ onMounted(loadPosts)
   margin: 6px 0 0;
   color: #6b7280;
   font-size: 14px;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 10px;
+}
+
+.stat-pill {
+  height: 34px;
+  border-radius: 999px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+}
+
+.stat-pill.muted {
+  color: #0f766e;
+  background: #ecfeff;
+  border-color: #a5f3fc;
 }
 
 .section-card {
@@ -124,6 +156,11 @@ onMounted(loadPosts)
 
 .discussion-table {
   width: 100%;
+}
+
+.table-empty {
+  color: #94a3b8;
+  padding: 22px 0;
 }
 
 .post-dialog :deep(.el-dialog__body) {
@@ -169,5 +206,11 @@ onMounted(loadPosts)
 
 .comment-block {
   padding-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .discussion-page {
+    padding: 12px;
+  }
 }
 </style>
