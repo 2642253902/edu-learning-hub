@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 学习小组成员实体类
+ * 学习小组成员实体类，供前后端字段对齐和后端持久化共用。
  * 对应数据库表：study_group_member
  */
 @Data

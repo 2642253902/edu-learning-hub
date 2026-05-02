@@ -9,14 +9,13 @@ import org.apache.ibatis.annotations.Select;
 import java.util.List;
 
 /**
- * 帖子评论Mapper接口
- * 提供帖子评论相关的数据库操作
+ * 帖子评论Mapper 接口，供前端查询需求与后端持久层共用，支撑前端评论区和后端评论查询的统一数据访问。
  */
 @Mapper
 public interface PostCommentMapper extends BaseMapper<PostComment> {
     
     /**
-     * 根据帖子ID查询评论列表
+     * 根据帖子ID查询评论列表，供前端帖子详情页按时间线展示。
      * @param postId 帖子ID
      * @return 评论列表
      */

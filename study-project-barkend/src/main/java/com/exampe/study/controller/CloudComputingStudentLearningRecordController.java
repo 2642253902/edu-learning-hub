@@ -17,7 +17,7 @@ import java.util.Arrays;
 import java.util.Date;
 
 /**
- * 学生学习记录管理控制器
+ * 学生学习记录管理控制器，负责对接前端页面请求和后端业务逻辑。
  * <p>提供学生学习记录的增删改查、学习统计等接口</p>
  *
  * @author admin

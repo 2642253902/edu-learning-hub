@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
- * 消息通知Mapper接口
+ * 消息通知Mapper 接口，供前端查询需求与后端持久层共用。
  * 提供消息通知相关的数据库操作
  */
 @Mapper

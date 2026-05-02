@@ -1,9 +1,9 @@
 import axios from "axios";
 import { ElMessage } from "element-plus";
 
-// 默认失败处理只负责给出业务提示，避免每个调用方重复写相同的兜底代码。
+// 默认失败处理统一提示业务消息，避免前端每个调用点重复写同一段兜底逻辑。
 const defaultFailure = (message: string) => ElMessage.warning(message)
-// 网络异常通常意味着请求没有进入业务逻辑，这里统一提示用户稍后重试。
+// 网络异常通常意味着前后端链路中断，这里统一提示用户稍后重试。
 const defaultError = (_err: any) => ElMessage.error("网络异常，请稍后再试")
 
 export function getApiBaseURL() {
@@ -11,24 +11,24 @@ export function getApiBaseURL() {
 }
 
 const handleAuthError = () => {
-    // 只允许触发一次退出流程，避免 401/403 连续命中时重复弹窗和重复跳转。
+    // 只允许触发一次退出流程，避免前后端连续返回 401/403 时重复弹窗和跳转。
     if ((window as any)._isExiting) return
 
-    // 登录页已经是恢复入口；/index 也要正常走失效处理，避免用户掉线后仍停留在首页。
+    // 登录页已经是恢复入口；/index 也要正常走失效处理，避免前端继续停留在失效态。
     if (window.location.pathname === '/') {
         return
     }
 
     (window as any)._isExiting = true
 
-    // 会话失效或权限不足时，清空本地缓存，避免旧状态继续影响路由守卫和页面展示。
+    // 会话失效或权限不足时，清空本地缓存，避免旧状态继续影响路由守卫和后端接口判断。
     const storage = typeof window !== 'undefined' ? window.localStorage : null
     storage?.removeItem('user')
     storage?.removeItem('menuList')
 
     ElMessage.error('会话已过期，请重新登录')
 
-    // 先给提示消息一点展示时间，再跳回登录页。
+    // 先给提示消息一点展示时间，再跳回登录页重新建立前后端会话。
     setTimeout(() => {
         if (typeof window !== 'undefined') {
             window.location.href = '/'
@@ -36,7 +36,7 @@ const handleAuthError = () => {
     }, 1500)
 }
 
-// 全局响应拦截器负责兜底认证失败场景，避免每个 API 调用都单独处理 401/403。
+// 全局响应拦截器负责兜底认证失败场景，避免每个前端 API 调用都单独处理 401/403。
 axios.interceptors.response.use(
     response => response,
     error => {
@@ -55,7 +55,7 @@ export function postForm(
     failure: (message: string, data: any) => void = defaultFailure,
     error: (err: any) => void = defaultError
 ) {
-    // 统一把对象转成 x-www-form-urlencoded，匹配后端常见的表单型接口。
+    // 统一把对象转成 x-www-form-urlencoded，匹配后端表单型接口和登录类请求。
     const formData = new URLSearchParams()
     Object.entries(data || {}).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -117,7 +117,7 @@ export function get(
         withCredentials: true
     }).then(response => {
         const resData = response.data;
-        // 有些接口会返回 200 但把失败状态放在业务字段里，这里再补一层判断。
+        // 有些接口会返回 200 但把失败状态放在业务字段里，这里再补一层前后端协商判断。
         if (resData.status === 401 || resData.status === 403) {
             handleAuthError()
             return

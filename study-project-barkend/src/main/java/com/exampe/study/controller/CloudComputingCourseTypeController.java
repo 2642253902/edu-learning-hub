@@ -17,7 +17,7 @@ import java.util.Arrays;
 import java.util.Date;
 
 /**
- * 云计算课程分类管理控制器
+ * 云计算课程分类管理控制器，负责对接前端页面请求和后端业务逻辑。
  * <p>提供课程分类的增删改查接口，支持模糊查询</p>
  *
  * @author admin

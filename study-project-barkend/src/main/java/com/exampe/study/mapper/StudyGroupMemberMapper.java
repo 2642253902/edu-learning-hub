@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 /**
- * 学习小组成员Mapper接口
+ * 学习小组成员Mapper 接口，供前端查询需求与后端持久层共用。
  * 提供学习小组成员相关的数据库操作
  */
 @Mapper

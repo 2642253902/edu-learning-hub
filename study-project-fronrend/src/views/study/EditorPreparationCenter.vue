@@ -250,6 +250,14 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { Plus, VideoCamera, Document, Files } from '@element-plus/icons-vue'
 
+/**
+ * 前后端协同注释（课程备课编辑中心）
+ * - 这是课程备课的核心编辑页，负责把课程主信息、资源列表和评价管理串联到同一条编辑链路中。
+ * - 主要接口：课程详情回显、课程分类列表、教师列表、课程资源增删改、评价增删改查；页面根据 `mode` 决定新增/编辑/只读。
+ * - 数据约定：父页面可通过 `sessionStorage.currentCourseEdit` 传入缓存记录，若路由 `id` 匹配则直接回填，减少重复请求并保持前后端状态一致。
+ * - 交互约定：保存成功后应回到列表页或触发父组件刷新；只读模式仅展示后端回显结果，不允许修改。
+ */
+
 const CourseResourceModal = defineAsyncComponent(() => import('./modules/CourseResourceModal.vue'))
 
 interface TeacherItem {

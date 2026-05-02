@@ -95,6 +95,14 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Refresh, Download } from '@element-plus/icons-vue'
 import CourseModal from './modules/CourseModal.vue'
 
+/**
+ * 前后端协同注释（课程列表）
+ * - 列表接口：GET /study/cloudComputingCourse/list?pageNo=&pageSize=&...；返回约定 `{ records: [], total: number }`。
+ * - 导出/批量操作：后端应提供导出接口，前端仅触发并提示下载状态；
+ * - 删除接口：DELETE /study/cloudComputingCourse/delete，前端传 `{ id }` 并在成功后刷新列表；
+ * - 字典数据（分类/教师）可通过单独接口预加载并用于筛选/回显，避免在列表请求中重复携带大对象。
+ */
+
 interface CourseRecord {
   id: string
   courseName?: string

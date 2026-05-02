@@ -18,6 +18,13 @@ import { ref, reactive } from 'vue'
 import { post } from '@/net'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 
+/**
+ * 前后端协同注释（分类创建表单）
+ * - 目的：封装课程分类的新增/编辑表单，字段 `courseTypeName` 对应后端 DTO。
+ * - 提交接口：POST /study/cloudComputingCourseType/add 或 /edit，成功后父组件应刷新分类列表。
+ * - 校验：前端做最小长度/必填校验，后端仍需做完整校验与重复性检查。
+ */
+
 interface CategoryFormModel {
   id: string
   courseTypeName: string

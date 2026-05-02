@@ -10,7 +10,7 @@ import org.apache.ibatis.annotations.Update;
 import java.util.List;
 
 /**
- * 小组帖子Mapper接口
+ * 小组帖子Mapper 接口，供前端查询需求与后端持久层共用。
  * 提供小组帖子相关的数据库操作
  */
 @Mapper

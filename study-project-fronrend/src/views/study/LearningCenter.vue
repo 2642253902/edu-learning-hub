@@ -92,6 +92,13 @@ import { get } from '@/net'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
+/**
+ * 前后端协同注释（学习中心）
+ * - 目标：展示按分类聚合的课程卡片列表，支持按类目分页与快速跳转到课程详情；
+ * - 接口：GET /study/cloudComputingCourseType/list（分类），GET /study/cloudComputingCourse/list?pageNo=&pageSize=&courseTypeId=&courseName=*
+ * - 数据约定：分类内课程列表以后端分页结果为准，前端可异步补充每门课程的资源统计（/study/cloudComputingCourseResource/counts）。
+ */
+
 // --- 资源类型配置 ---
 const resourceTypes = [
   { key: 'video', name: '视频', field: 'videoCount' },

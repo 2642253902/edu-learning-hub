@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 学生学习记录 Mapper 接口
+ * 学生学习记录 Mapper 接口，供前端查询需求与后端持久层共用。
  * <p>提供学生学习记录的数据库操作及统计查询</p>
  *
  * @author admin

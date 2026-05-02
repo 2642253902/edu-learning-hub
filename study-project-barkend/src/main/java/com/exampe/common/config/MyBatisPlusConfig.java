@@ -6,9 +6,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * MyBatis-Plus 配置类
+ * MyBatis-Plus 配置类，供前端分页查询参数与后端持久层分页能力协同。
  * <p>
- * 配置分页插件等 MyBatis-Plus 相关功能
+ * 配置分页插件等 MyBatis-Plus 相关功能。
  *
  * @author admin
  */
@@ -16,9 +16,9 @@ import org.springframework.context.annotation.Configuration;
 public class MyBatisPlusConfig {
 
     /**
-     * 配置 MyBatis-Plus 拦截器
+        * 配置 MyBatis-Plus 拦截器，保证前端分页列表请求返回稳定分页结构。
      * <p>
-     * 添加分页拦截器，支持物理分页查询
+        * 添加分页拦截器，支持物理分页查询。
      *
      * @return MybatisPlusInterceptor 实例
      */

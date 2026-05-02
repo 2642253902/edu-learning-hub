@@ -26,6 +26,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * 数据看板控制器，向前端学生/教师统计页面提供统一图表数据。
+ * <p>
+ * 将后端多张业务表的聚合结果组织为前端可直接渲染的卡片、折线图和饼图结构。
+ */
 @RestController
 @RequestMapping("/api/dashboard")
 public class DashboardController {
@@ -56,11 +61,17 @@ public class DashboardController {
     @Resource
     private IMessageNoticeService messageNoticeService;
 
+    /**
+     * 学生看板接口，供前端学生首页加载学习与互动数据。
+     */
     @GetMapping("/student")
     public RestBean<Map<String, Object>> studentDashboard(@SessionAttribute("account") AccountUser accountUser) {
         return RestBean.success(buildStudentDashboard(accountUser));
     }
 
+    /**
+     * 教师看板接口，供前端教师首页加载课程与学生学习统计。
+     */
     @GetMapping("/teacher")
     public RestBean<Map<String, Object>> teacherDashboard(@SessionAttribute("account") AccountUser accountUser) {
         return RestBean.success(buildTeacherDashboard(accountUser));
@@ -166,6 +177,9 @@ public class DashboardController {
         return summary;
     }
 
+    /**
+     * 统一计算当前账号未读消息数量，供前端消息提醒角标展示。
+     */
     private long countUnreadMessages(String userId, String role) {
         List<MessageNoticeUserVO> list = messageNoticeService.listForUser(userId, role, 500);
         return list.stream().filter(item -> Number.class.isInstance(item.getUnread()) ? item.getUnread().intValue() == 1 : Objects.equals(item.getUnread(), 1)).count();

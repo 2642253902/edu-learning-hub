@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 /**
- * 消息通知已读记录Mapper接口
+ * 消息通知已读记录Mapper 接口，供前端查询需求与后端持久层共用。
  * 提供消息已读记录相关的数据库操作
  */
 @Mapper

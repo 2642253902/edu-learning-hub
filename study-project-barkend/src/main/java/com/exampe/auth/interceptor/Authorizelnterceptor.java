@@ -14,9 +14,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * 权限拦截器
+ * 权限拦截器，负责把后端认证主体转换为前端页面复用的会话用户信息。
  * <p>
- * 在请求处理前获取当前用户信息并保存到 Session 中
+ * 在请求处理前获取当前用户信息并保存到 Session 中。
  *
  * @author admin
  */
@@ -27,7 +27,7 @@ public class Authorizelnterceptor implements HandlerInterceptor {
     UserMapper userMapper;
 
     /**
-     * 请求预处理，获取用户信息并保存到 Session
+        * 请求预处理，获取用户信息并写入 Session，供后续控制器与前端接口复用。
      *
      * @param request  HTTP 请求
      * @param response HTTP 响应

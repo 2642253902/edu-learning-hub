@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * 路由树 DTO
+ * 路由树 DTO，供前端动态菜单渲染与后端路由树构建结果字段对齐。
  * <p>
- * 用于表示菜单路由的树形结构，支持父子层级关系
+ * 用于表示菜单路由的树形结构，支持父子层级关系。
  *
  * @author admin
  */
@@ -61,7 +61,7 @@ public class RouteTreeDTO {
     private Integer menuVisible;
 
     /**
-     * 子路由列表
+     * 子路由列表，供前端递归渲染菜单树。
      */
     private List<RouteTreeDTO> children;
 }

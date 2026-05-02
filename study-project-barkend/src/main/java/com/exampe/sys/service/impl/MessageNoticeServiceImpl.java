@@ -13,17 +13,26 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * 消息通知服务实现，负责前端消息中心与后端已读记录表之间的状态同步。
+ */
 @Service
 public class MessageNoticeServiceImpl extends ServiceImpl<MessageNoticeMapper, MessageNotice> implements IMessageNoticeService {
 
     @Resource
     private MessageNoticeReadMapper messageNoticeReadMapper;
 
+    /**
+     * 查询用户消息列表并附带未读状态，供前端列表展示与角标统计。
+     */
     @Override
     public List<MessageNoticeUserVO> listForUser(String userId, String role, Integer limit) {
         return baseMapper.listForUser(userId, role, limit);
     }
 
+    /**
+     * 标记单条消息已读，避免前端重复提交产生重复记录。
+     */
     @Override
     public boolean markRead(String messageId, String userId) {
         Integer count = messageNoticeReadMapper.countRead(messageId, userId);
@@ -37,6 +46,9 @@ public class MessageNoticeServiceImpl extends ServiceImpl<MessageNoticeMapper, M
         return messageNoticeReadMapper.insert(read) > 0;
     }
 
+    /**
+     * 批量标记当前用户全部未读消息为已读，供前端一键已读调用。
+     */
     @Override
     public int markAllRead(String userId, String role) {
         List<MessageNoticeUserVO> list = baseMapper.listForUser(userId, role, 500);

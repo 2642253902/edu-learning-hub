@@ -16,7 +16,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * 消息通知控制器
+ * 消息通知控制器，负责对接前端页面请求和后端业务逻辑。
  * 提供消息通知的管理和用户相关接口
  */
 @RestController

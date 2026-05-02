@@ -76,6 +76,14 @@ import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { deleteMapping, get, post } from '@/net'
 
+/**
+ * 前后端协同注释（评价管理）
+ * - 列表接口：GET /api/community/reviews/all 或管理员筛选接口，返回评价对象数组或分页结构；
+ * - 新增/编辑：POST /api/community/reviews（创建）或 /api/community/reviews/{id}（编辑）；
+ * - 删除：DELETE /api/community/reviews/{id}，管理端操作应记录日志并返回明确的成功消息。
+ * - 前端约定：评价对象包含 { id, courseId, resourceId, username, userId, rating, content, likes, createTime }，组件按此契约渲染。
+ */
+
 const loading = ref(false)
 const reviews = ref<any[]>([])
 const courseOptions = ref<any[]>([])

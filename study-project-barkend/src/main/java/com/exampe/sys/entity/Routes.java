@@ -9,7 +9,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 系统路由菜单实体类
+ * 系统路由菜单实体类，供前后端字段对齐和后端持久化共用。
  * <p>对应数据库表：sys_routes，存储系统菜单路由信息</p>
  *
  * @author admin

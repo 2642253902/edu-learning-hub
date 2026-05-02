@@ -12,4 +12,11 @@
 
 <script setup lang="ts">
 import RoleStatsDashboard from './components/RoleStatsDashboard.vue'
+
+/**
+ * 前后端协同注释（学生统计页壳）
+ * - 这个页面本身不计算统计数据，只负责把学生视角的标题、路径和 endpoint 传给通用统计面板。
+ * - endpoint 指向后端学生统计接口，统一由 RoleStatsDashboard 拉取并渲染卡片、趋势图和占比图。
+ * - 与教师统计页共享同一个渲染组件，保证前后端数据契约一致，减少重复维护。
+ */
 </script>

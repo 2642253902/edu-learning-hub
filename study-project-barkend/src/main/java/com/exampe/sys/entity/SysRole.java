@@ -8,7 +8,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 系统角色实体类
+ * 系统角色实体类，供前端权限页面和后端角色持久化共用。
  * <p>对应数据库表：sys_roles，存储系统角色信息</p>
  * <p>用于权限管理，定义不同用户角色的基本信息</p>
  *

@@ -204,6 +204,16 @@ import VueOfficePdf from '@vue-office/pdf'
 import ResourceReviewForm from './components/ResourceReviewForm.vue'
 import ResourceReviewList from './components/ResourceReviewList.vue'
 
+/**
+ * 前后端协同注释（课程详情/资源预览）
+ * - 主要接口：
+ *   - 课程详情: GET /study/cloudComputingCourse/{id} 或 /study/cloudComputingCourse/get?id=...
+ *   - 资源列表: GET /study/cloudComputingCourseResource/list?courseId=...
+ *   - 学习记录: GET/POST /study/learningRecord/**
+ * - 预览文件处理：前端通过 `getBlob` 或后端返回带鉴权的 URL 获取二进制，渲染组件应接收 blob URL（`renderedUrl`）。
+ * - 异步加载：建议后端保证资源列表与详情接口字段稳定（file url, resourceType），前端对 `records/total` 做兜底处理以兼容分页格式。
+ */
+
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()

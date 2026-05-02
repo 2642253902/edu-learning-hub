@@ -22,9 +22,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 认证服务实现类
+ * 认证服务实现类，负责前端登录/注册/找回密码流程与后端认证存储协同。
  * <p>
- * 实现用户认证、注册、邮箱验证、密码重置等功能
+ * 实现用户认证、注册、邮箱验证、密码重置等功能。
  *
  * @author admin
  */
@@ -70,7 +70,7 @@ public class AuthorizeServiceImpl implements AuthorizeService, UserDetailsServic
     BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     /**
-     * 发送验证邮件
+        * 发送验证邮件，供前端注册与找回密码页面的验证码步骤调用。
      * <p>
      * 流程：
      * 1. 生成6位随机验证码
@@ -120,7 +120,7 @@ public class AuthorizeServiceImpl implements AuthorizeService, UserDetailsServic
     }
 
     /**
-     * 验证并注册用户
+        * 验证并注册用户，完成前端注册表单到后端账户落库的闭环。
      *
      * @param username  用户名
      * @param password  密码
@@ -167,7 +167,7 @@ public class AuthorizeServiceImpl implements AuthorizeService, UserDetailsServic
     }
 
     /**
-     * 仅验证邮箱验证码（用于密码重置）
+        * 仅验证邮箱验证码（用于密码重置），供前端重置流程的验证码校验步骤使用。
      *
      * @param email     邮箱地址
      * @param code      验证码

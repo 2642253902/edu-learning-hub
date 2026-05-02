@@ -8,10 +8,12 @@
     </div>
 
     <el-card class="section-card composer-card">
+      <!-- 公共讨论发帖入口：groupId 为空，提交给后端时代表全局讨论而不是某个小组 -->
       <post-form groupId="" @created="loadPosts" />
     </el-card>
 
     <el-card class="section-card list-card" shadow="never">
+      <!-- 公共讨论列表：仅渲染帖子基础元数据，正文在弹窗中按需展开 -->
       <el-table :data="posts" stripe class="discussion-table">
         <el-table-column prop="title" label="标题" min-width="240" />
         <el-table-column prop="username" label="作者" width="140" />
@@ -36,6 +38,7 @@
         </div>
         <div class="post-content">{{ currentPost.content }}</div>
         <div class="comment-block">
+          <!-- 评论列表依赖 postId，与后端帖子评论接口一一对应 -->
           <comment-list v-if="currentPost?.id" :postId="String(currentPost.id)" />
         </div>
       </div>
@@ -48,6 +51,13 @@ import { ref, onMounted } from 'vue'
 import PostForm from './components/PostForm.vue'
 import CommentList from './components/CommentList.vue'
 import { get } from '@/net'
+
+/**
+ * 前后端协同注释（公共讨论区）
+ * - 接口：GET /api/community/posts 读取公共帖子；发帖使用同一接口但 `groupId` 为空；评论通过帖子详情页的 `postId` 继续串联。
+ * - 交互：发帖成功后立即重新拉取帖子列表，评论列表由子组件独立拉取，保持职责分离。
+ * - 页面职责：只做公共讨论的展示与打开详情，不在此页重复实现评论逻辑。
+ */
 
 const posts = ref<any[]>([])
 const showPost = ref(false)

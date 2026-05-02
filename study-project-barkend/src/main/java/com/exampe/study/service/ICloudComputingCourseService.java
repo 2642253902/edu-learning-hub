@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 云计算课程服务接口
+ * 云计算课程服务接口，供前端课程中心页面与后端课程业务流程共用。
  * <p>提供课程管理、教师信息查询、学习统计等业务逻辑</p>
  *
  * @author admin
@@ -17,7 +17,7 @@ import java.util.Map;
 public interface ICloudComputingCourseService extends IService<CloudComputingCourse> {
 
     /**
-     * 查询课程资源列表（含学生学习状态）
+        * 查询课程资源列表（含学生学习状态），供前端学习中心资源区直接渲染。
      *
      * @param courseId 课程ID
      * @param studentId 学生ID
@@ -26,14 +26,14 @@ public interface ICloudComputingCourseService extends IService<CloudComputingCou
     List<CloudComputingCourseResourceVO> listWithLearningStatus(String courseId, String studentId);
 
     /**
-     * 获取教师列表
+        * 获取教师列表，供前端课程编辑页教师下拉选择。
      *
      * @return 教师信息列表
      */
     List<Map> getTeacher();
 
     /**
-     * 删除课程及其关联数据
+        * 删除课程及其关联数据，供前端课程管理页删除操作调用。
      * <p>事务控制，同时删除课程相关的资源和学习记录</p>
      *
      * @param id 课程ID

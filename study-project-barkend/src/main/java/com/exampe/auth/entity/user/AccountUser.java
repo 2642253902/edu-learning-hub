@@ -8,12 +8,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 账户用户实体类
- * <p>
- * 对应数据库表 sys_account，用于在 Session 中存储登录用户信息
- * 不包含敏感字段（如密码）
- *
- * @author admin
+ * 登录用户实体类，供后端 Session 存储与前端登录态展示共用。
  */
 @Data
 @TableName("sys_account")
@@ -21,23 +16,23 @@ public class AccountUser implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 用户ID
+     * 用户ID。
      */
     @TableId(type = IdType.ASSIGN_ID)
     private String id;
 
     /**
-     * 用户名
+     * 用户名。
      */
     private String username;
 
     /**
-     * 邮箱地址
+     * 邮箱地址。
      */
     private String email;
 
     /**
-     * 角色ID
+     * 角色ID。
      */
     private String role;
 }

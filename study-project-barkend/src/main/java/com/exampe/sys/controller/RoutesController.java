@@ -10,10 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 路由菜单管理控制器
- * <p>提供路由菜单的增删改查、树形结构查询、角色授权等接口</p>
- *
- * @author admin
+ * 路由菜单管理控制器，统一为前端动态菜单和后端权限树提供接口。
  */
 @RestController
 @RequestMapping("/api/routes")
@@ -23,8 +20,7 @@ public class RoutesController {
     private RoutesService routesService;
 
     /**
-     * 获取指定角色的路由树
-     * <p>根据角色ID返回该角色可见的路由菜单树</p>
+     * 获取指定角色的路由树，供前端动态注入可访问菜单。
      *
      * @param role 角色ID
      * @return 路由树列表
@@ -36,8 +32,7 @@ public class RoutesController {
     }
 
     /**
-     * 获取所有路由树
-     * <p>返回完整的路由菜单树（用于后台管理）</p>
+     * 获取所有路由树，供前端管理页查看完整权限结构。
      *
      * @return 完整路由树列表
      */
@@ -47,7 +42,7 @@ public class RoutesController {
     }
 
     /**
-     * 查询所有路由列表
+     * 查询所有路由列表，供前端表格和树形编辑共用。
      *
      * @return 路由列表（扁平结构）
      */
@@ -57,7 +52,7 @@ public class RoutesController {
     }
 
     /**
-     * 新增路由菜单
+     * 新增路由菜单，供前端权限配置页提交。
      *
      * @param routes 路由信息
      * @return 操作结果
@@ -68,7 +63,7 @@ public class RoutesController {
     }
 
     /**
-     * 编辑路由菜单
+     * 编辑路由菜单，供前端权限配置页同步修改。
      *
      * @param routes 路由信息
      * @return 操作结果
@@ -79,7 +74,7 @@ public class RoutesController {
     }
 
     /**
-     * 删除路由菜单
+     * 删除路由菜单，供前端权限配置页同步删除。
      *
      * @param id 路由ID
      * @return 操作结果

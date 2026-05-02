@@ -13,7 +13,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 云计算课程分类实体类
+ * 云计算课程分类实体类，供前后端字段对齐和后端持久化共用。
  * <p>对应数据库表：cloud_computing_course_type</p>
  *
  * @author admin

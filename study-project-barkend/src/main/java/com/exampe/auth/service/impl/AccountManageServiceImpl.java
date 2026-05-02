@@ -13,9 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 用户管理服务实现类
+ * 用户管理服务实现类，负责对接前端用户管理页面与后端账户持久化逻辑。
  * <p>
- * 提供：用户增删改查、密码重置、角色分配等功能
+ * 提供：用户增删改查、密码重置、角色分配等功能。
  *
  * @author admin
  */

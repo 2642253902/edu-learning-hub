@@ -6,22 +6,17 @@ import com.exampe.sys.entity.Routes;
 import java.util.List;
 
 /**
- * <p>
- * 服务类
- * </p>
- *
- * @author 26422
- * @since 2026-04-26
+ * 路由服务接口，供前端动态菜单加载与后端权限数据组织共用。
  */
 public interface RoutesService {
 
     /**
-     * 查询 routes 表并返回树形结构。
+     * 按角色查询路由并返回树形结构，供前端动态注入菜单。
      */
     List<RouteTreeDTO> getRoutesTree(Integer role);
 
     /**
-     * 查询所有菜单并构建树（用于后台菜单管理/授权）。
+     * 查询所有菜单并构建树，供前端后台菜单管理和授权页面使用。
      */
     List<RouteTreeDTO> getAllRoutesTree();
 

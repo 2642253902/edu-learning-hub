@@ -13,7 +13,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 消息通知实体类
+ * 消息通知实体类，供前后端字段对齐和后端持久化共用。
  * 对应数据库表：message_notice
  * 用于存储系统消息通知信息
  */

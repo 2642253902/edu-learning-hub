@@ -12,11 +12,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import java.util.List;
 
 /**
- * 用户信息控制器
- * <p>
- * 提供当前登录用户信息查询及教师列表查询功能
- *
- * @author admin
+ * 用户信息控制器，供前端首页与业务页面获取当前登录态和教师列表。
  */
 @RestController
 @RequestMapping("/api/user")
@@ -26,7 +22,7 @@ public class UserController {
     AuthorizeService authorizeService;
 
     /**
-     * 获取当前登录用户信息
+     * 获取当前登录用户信息，供前端初始化登录态。
      *
      * @param accountUser 从Session中获取的当前登录用户对象
      * @return 当前用户信息
@@ -37,7 +33,7 @@ public class UserController {
     }
 
     /**
-     * 查询教师列表
+     * 查询教师列表，供前端课程管理页面选择授课教师。
      *
      * @return 所有教师用户列表
      */

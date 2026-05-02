@@ -17,8 +17,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * 社区控制器
- * 提供学习小组、帖子、评论和资源评价相关的API接口
+ * 社区控制器，统一为前端社区页提供学习小组、帖子、评论和资源评价接口。
  */
 @RestController
 @RequestMapping("/api/community")
@@ -37,7 +36,7 @@ public class CommunityController {
     private IResourceReviewService resourceReviewService;
 
     /**
-     * 获取所有学习小组列表
+     * 获取前端小组列表页需要的学习小组数据。
      * @return 学习小组列表
      */
     @GetMapping("/groups")
@@ -46,7 +45,7 @@ public class CommunityController {
     }
 
     /**
-     * 获取所有学习小组（包含详细信息）
+     * 获取前端管理页需要的完整学习小组数据。
      * @return 学习小组列表
      */
     @GetMapping("/groups/all")
@@ -55,7 +54,7 @@ public class CommunityController {
     }
 
     /**
-     * 创建新的学习小组
+     * 创建新的学习小组，供前端小组管理页和详情页使用。
      * @param group 学习小组信息
      * @param accountUser 当前用户账户信息
      * @return 创建的学习小组
@@ -67,13 +66,13 @@ public class CommunityController {
         group.setOwnerName(accountUser.getUsername());
         group.setCreateTime(new Date());
         studyGroupService.save(group);
-        // 创建者自动加入小组
+        // 创建者自动加入小组，保证前端进入详情页时立即具备成员身份。
         studyGroupService.joinGroup(group.getId(), accountUser.getId(), accountUser.getUsername());
         return RestBean.success(group);
     }
 
     /**
-     * 更新学习小组信息
+     * 更新学习小组信息，供前端管理页同步编辑结果。
      * @param id 小组ID
      * @param group 更新的小组信息
      * @param accountUser 当前用户账户信息
@@ -89,7 +88,7 @@ public class CommunityController {
     }
 
     /**
-     * 删除学习小组
+     * 删除学习小组，供前端管理页同步删除结果。
      * @param id 小组ID
      * @return 删除结果
      */
@@ -100,7 +99,7 @@ public class CommunityController {
     }
 
     /**
-     * 加入学习小组
+     * 加入学习小组，供前端详情页发起加入动作。
      * @param groupId 小组ID
      * @param accountUser 当前用户账户信息
      * @return 加入结果
@@ -113,7 +112,7 @@ public class CommunityController {
     }
 
     /**
-     * 创建新帖子
+     * 创建新帖子，供前端公共讨论区和小组详情页共用。
      * @param post 帖子信息
      * @param accountUser 当前用户账户信息
      * @return 创建的帖子
@@ -130,7 +129,7 @@ public class CommunityController {
     }
 
     /**
-     * 更新帖子信息
+     * 更新帖子信息，供前端帖子管理页同步编辑结果。
      * @param id 帖子ID
      * @param post 更新的帖子信息
      * @param accountUser 当前用户账户信息
@@ -146,7 +145,7 @@ public class CommunityController {
     }
 
     /**
-     * 删除帖子
+     * 删除帖子，供前端帖子管理页同步删除结果。
      * @param id 帖子ID
      * @return 删除结果
      */
@@ -157,7 +156,7 @@ public class CommunityController {
     }
 
     /**
-     * 获取帖子列表（可按小组筛选）
+     * 获取帖子列表（可按小组筛选），供前端公共讨论区和小组详情页使用。
      * @param groupId 小组ID（可选）
      * @return 帖子列表
      */
@@ -167,7 +166,7 @@ public class CommunityController {
     }
 
     /**
-     * 获取所有帖子列表
+     * 获取所有帖子列表，供前端管理页做全量管理展示。
      * @return 帖子列表
      */
     @GetMapping("/posts/all")
@@ -176,7 +175,7 @@ public class CommunityController {
     }
 
     /**
-     * 为帖子添加评论
+     * 为帖子添加评论，供前端评论面板提交后即时回显。
      * @param postId 帖子ID
      * @param comment 评论信息
      * @param accountUser 当前用户账户信息
@@ -196,7 +195,7 @@ public class CommunityController {
     }
 
     /**
-     * 获取帖子的评论列表
+     * 获取帖子的评论列表，供前端评论面板渲染。
      * @param postId 帖子ID
      * @return 评论列表
      */

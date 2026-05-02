@@ -1,12 +1,12 @@
 
-// 路由层只依赖 net 封装，不直接碰 axios，便于统一处理鉴权、消息和错误。
+// 路由层只依赖 net 封装，不直接碰 axios，便于统一处理前后端鉴权、消息和错误。
 import { postForm } from '@/net'
-// 路由守卫需要读取用户和菜单状态，判断当前访问权限。
+// 路由守卫需要读取用户和菜单状态，和后端返回的权限树一起判断当前访问权限。
 import { useUserStore } from '@/stores/user'
 import { useMenuStore } from '@/stores/menu'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
-// 静态路由只描述应用骨架：欢迎页和首页壳子先固定下来，动态页面后面再补。
+// 静态路由只描述应用骨架：欢迎页和首页壳子先固定下来，后端菜单注入后再补动态页面。
 const routes: Readonly<RouteRecordRaw[]> = [
   {
     path: '/', name: 'welcome', component: () => import('@/views/WelcomeView.vue'),
@@ -56,20 +56,20 @@ const routes: Readonly<RouteRecordRaw[]> = [
   }
 ]
 
-// 创建路由实例，后续统一在这里挂载守卫和动态路由。
+// 创建路由实例，后续统一在这里挂载守卫和从后端注入的动态路由。
 const router = createRouter({
   history: createWebHistory(),
   routes: routes,
 })
 
-// 记录动态路由是否已经注入，避免登录态变化或重复跳转时反复添加。
+// 记录动态路由是否已经注入，避免登录态变化或重复跳转时反复添加后端菜单。
 let hasAddedDynamicRoutes = false;
 
-// 全局前置守卫：负责把“登录态、动态路由、欢迎页跳转”这几件事串起来。
+// 全局前置守卫：负责把“登录态、动态路由、欢迎页跳转”这些前后端协作事项串起来。
 router.beforeEach(async (to, _from) => {
   const userStore = useUserStore()
 
-  // 已登录但动态菜单还没注入时，先拉后端菜单并把可访问页面补进路由表。
+  // 已登录但动态菜单还没注入时，先拉后端菜单并把可访问页面补进前端路由表。
   if (userStore.auth.user !== null && (!hasAddedDynamicRoutes || to.matched.length === 0)) {
     hasAddedDynamicRoutes = true // 先打标记，避免并发跳转时重复触发注入流程。
     await routers() // 等动态路由完成注入后，再继续本次跳转。

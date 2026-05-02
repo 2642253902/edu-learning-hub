@@ -13,11 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 认证控制器
- * <p>
- * 提供用户注册、邮箱验证、密码重置等认证相关功能
- *
- * @author admin
+ * 认证控制器，统一为前端登录、注册和找回密码页面提供接口。
  */
 @Validated
 @RestController
@@ -33,7 +29,7 @@ public class AuthorizeController {
 
 
     /**
-     * 发送注册邮箱验证码
+     * 发送注册邮箱验证码，供前端注册页使用。
      *
      * @param email   用户邮箱地址
      * @param session HTTP会话
@@ -51,7 +47,7 @@ public class AuthorizeController {
 
 
     /**
-     * 发送密码重置邮箱验证码
+     * 发送密码重置邮箱验证码，供前端找回密码页使用。
      *
      * @param email   用户邮箱地址
      * @param session HTTP会话
@@ -70,7 +66,7 @@ public class AuthorizeController {
 
 
     /**
-     * 用户注册
+     * 用户注册，供前端注册页提交账号信息。
      *
      * @param username 用户名（3-8位，支持字母、数字、中文）
      * @param password 密码（6-16位）
@@ -96,12 +92,7 @@ public class AuthorizeController {
     }
 
     /**
-     * 开始密码重置流程 - 验证邮箱验证码
-     * <p>
-     * 验证流程：
-     * 1. 用户输入邮箱，点击发送验证码
-     * 2. 验证码正确后在Session中设置标志，表示该邮箱已验证通过
-     * 3. 用户发起重置密码请求时，检查Session中的验证标志
+     * 开始密码重置流程，先校验邮箱验证码再允许前端进入重置步骤。
      *
      * @param email   用户邮箱地址
      * @param code    邮箱验证码（6位）
@@ -123,7 +114,7 @@ public class AuthorizeController {
     }
 
     /**
-     * 执行密码重置
+     * 执行密码重置，供前端找回密码页提交新密码。
      *
      * @param password 新密码（6-16位）
      * @param session  HTTP会话

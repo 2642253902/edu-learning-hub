@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
- * 系统路由菜单 Mapper 接口
+ * 系统路由菜单 Mapper 接口，供前端查询需求与后端持久层共用。
  * <p>继承 MyBatis-Plus 的 BaseMapper，提供基础的 CRUD 操作</p>
  * <p>用于操作 sys_routes 表，管理系统菜单路由信息</p>
  * <p>提供自定义查询方法以支持按角色查询和排序功能</p>

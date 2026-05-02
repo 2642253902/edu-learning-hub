@@ -68,6 +68,14 @@ import { Plus, Edit } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import CourseTypeModal from './modules/CourseTypeModal.vue'
 
+/**
+ * 前后端协同注释（课程分类管理）
+ * - 接口（示例）：GET /study/cloudComputingCourseType/list?pageNo=1&pageSize=10
+ *   - 返回结构优先约定为 `{ records: [], total: number }`，前端直接消费 `records/total`。
+ * - 新增/编辑：POST /study/cloudComputingCourseType/add 或 /edit，提交后父组件应调用 `loadData` 刷新列表。
+ * - 删除：DELETE /study/cloudComputingCourseType/delete，接口应返回成功消息或状态码。
+ * - 前端约定：表格数据以后端原子字段为主，前端仅负责渲染与局部组合（避免在前端重复计算业务规则）。
+ */
 const loading = ref(false)
 const dataSource = ref([])
 const modalRef = ref()
@@ -77,7 +85,7 @@ const pageSize = ref(10)
 
 const loadData = () => {
   loading.value = true
-  // 移除 tree 相关逻辑，直接请求列表
+  // 请求后端分页接口，返回的数据结构应包含 records 与 total
   get(`/study/cloudComputingCourseType/list?pageNo=${pageNo.value}&pageSize=${pageSize.value}`, (msg, data) => {
     dataSource.value = data?.records || []
     total.value = data?.total || 0

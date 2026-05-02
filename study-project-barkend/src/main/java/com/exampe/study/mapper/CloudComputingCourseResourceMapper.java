@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 云计算课程资源 Mapper 接口
+ * 云计算课程资源 Mapper 接口，供前端查询需求与后端持久层共用。
  * <p>提供课程资源的数据库操作及统计查询</p>
  *
  * @author admin

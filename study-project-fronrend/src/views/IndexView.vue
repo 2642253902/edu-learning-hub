@@ -175,6 +175,7 @@
             </el-main>
         </el-container>
     </el-container>
+    <AiChat  />
 </template>
 
 <script setup lang="ts">
@@ -198,6 +199,7 @@ import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from '@/stores/user'
 import { useMenuStore } from '@/stores/menu'
 import { resetRoutes } from '@/router'
+import AiChat from './sys/AiChat.vue'
 
 
 const userStore = useUserStore()

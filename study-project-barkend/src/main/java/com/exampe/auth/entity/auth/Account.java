@@ -8,12 +8,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 账户实体类
- * <p>
- * 对应数据库表 sys_account，用于认证和授权操作
- * 包含完整的账户信息（包括密码等敏感字段）
- *
- * @author admin
+ * 账户实体类，供后端认证持久化与前端管理页面字段对齐共用。
  */
 @Data
 @TableName("sys_account")
@@ -22,28 +17,28 @@ public class Account implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 用户ID
+     * 用户ID。
      */
     @TableId(type = IdType.ASSIGN_ID)
     private String id;
 
     /**
-     * 邮箱地址
+     * 邮箱地址。
      */
     private String email;
 
     /**
-     * 用户名
+     * 用户名。
      */
     private String username;
 
     /**
-     * 密码（加密存储）
+     * 密码（加密存储）。
      */
     private String password;
 
     /**
-     * 角色ID
+     * 角色ID。
      */
     private String role;
 }

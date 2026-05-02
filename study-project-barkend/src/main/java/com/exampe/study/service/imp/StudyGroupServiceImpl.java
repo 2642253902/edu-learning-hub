@@ -12,17 +12,26 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * 学习小组服务实现类，负责前端小组广场与后端小组成员关系维护协同。
+ */
 @Service
 public class StudyGroupServiceImpl extends ServiceImpl<StudyGroupMapper, StudyGroup> implements IStudyGroupService {
 
     @Resource
     private IStudyGroupMemberService studyGroupMemberService;
 
+    /**
+     * 查询全部学习小组，供前端小组列表页加载。
+     */
     @Override
     public List<StudyGroup> listGroups() {
         return baseMapper.listGroups();
     }
 
+    /**
+     * 用户加入学习小组，供前端加入操作写入成员关系。
+     */
     @Override
     public boolean joinGroup(String groupId, String userId, String username) {
         if (studyGroupMemberService.existsMembership(groupId, userId)) {

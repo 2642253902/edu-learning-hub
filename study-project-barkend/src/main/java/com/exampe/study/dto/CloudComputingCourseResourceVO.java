@@ -5,8 +5,8 @@ import lombok.Data;
 import java.util.Date;
 
 /**
- * 课程资源视图对象（VO）
- * <p>用于展示课程资源及其学生学习状态的组合信息</p>
+ * 课程资源视图对象（VO），供前端学习中心列表与后端查询结果字段对齐。
+ * <p>用于展示课程资源及其学生学习状态的组合信息。</p>
  * 
  * @author admin
  */
@@ -15,7 +15,7 @@ public class CloudComputingCourseResourceVO {
     
     // ==================== 资源表字段 ====================
     
-    /** 资源ID */
+    /** 资源ID，供前端资源项唯一标识。 */
     private String id;
     
     /** 创建人 */

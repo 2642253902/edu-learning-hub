@@ -18,6 +18,13 @@
 import { ref } from 'vue'
 import { post } from '@/net'
 
+/**
+ * 前后端协同注释（帖子发布表单）
+ * - 作用：复用在小组详情页和公共讨论页，唯一差别是 `groupId`，空值代表公共讨论，有值代表某个小组。
+ * - 接口：POST /api/community/posts，后端应返回创建后的帖子对象，父组件据此刷新列表或打开详情。
+ * - 事件：`created` 由父组件接收，通常用于重新拉取帖子列表，确保刚发布的内容立刻可见。
+ */
+
 const props = defineProps<{ groupId: string }>()
 const emit = defineEmits(['created'])
 

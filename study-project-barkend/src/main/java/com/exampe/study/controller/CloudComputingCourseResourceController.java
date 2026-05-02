@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 云计算课程资源管理控制器
+ * 云计算课程资源管理控制器，负责对接前端页面请求和后端业务逻辑。
  * <p>提供课程资源的增删改查、资源统计、学习状态查询等接口</p>
  *
  * @author admin

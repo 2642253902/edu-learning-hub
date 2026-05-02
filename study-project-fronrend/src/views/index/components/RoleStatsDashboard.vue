@@ -73,6 +73,14 @@
 </template>
 
 <script setup lang="ts">
+// 角色统计小组件：用于在主控台展示不同角色下的关键统计指标。
+// 与后端接口协作点：此组件接收父组件传入的 `endpoint`，调用后端统计接口以支持不同视图的数据回显。
+/**
+ * 前后端协同注释（角色统计）
+ * - 设计：父组件传入 `endpoint`（例如 `/sys/stats/teacher`）以复用该组件展示不同角色视图；
+ * - 接口约定：返回结构建议为 `{ summaryCards: [], lineChart: { labels:[], values:[] }, pieChart: { labels:[], values:[] }, highlights: [] }`，组件按该结构渲染卡片与图表；
+ * - 错误与空数据：返回空或错误时组件应展示空态并允许父组件决定重试策略。
+ */
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
@@ -199,7 +207,7 @@ const renderCharts = () => {
 }
 
 const loadDashboard = () => {
-    get(props.endpoint, (_message, data) => {
+    get(props.endpoint, (_message: string, data: any) => {
         dashboard.value = data || { summaryCards: [], lineChart: {}, pieChart: {}, highlights: [] }
         nextTick(renderCharts)
     }, () => {

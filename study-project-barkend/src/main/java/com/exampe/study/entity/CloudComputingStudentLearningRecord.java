@@ -13,7 +13,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 学生学习记录实体类
+ * 学生学习记录实体类，供前后端字段对齐和后端持久化共用。
  * <p>对应数据库表：cloud_computing_student_learning_record</p>
  *
  * @author admin

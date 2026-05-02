@@ -8,7 +8,7 @@ import org.apache.ibatis.annotations.Select;
 import java.util.List;
 
 /**
- * 学习小组Mapper接口
+ * 学习小组Mapper 接口，供前端查询需求与后端持久层共用。
  * 提供学习小组相关的数据库操作
  */
 @Mapper

@@ -14,6 +14,13 @@
 import { ref, nextTick } from 'vue'
 import CourseForm from './CourseForm.vue'
 
+/**
+ * 前后端协同注释（课程弹窗）
+ * - 责任：承载课程的新增/编辑/详情三态，表单交互由 `CourseForm`（子组件）完成；
+ * - 写接口举例：POST /study/cloudComputingCourse/add, POST /study/cloudComputingCourse/edit；
+ * - 读接口举例：GET /study/cloudComputingCourse/{id}（详情回显）；
+ * - 语义：新增/编辑成功后应由父组件刷新数据源以保持与后端一致，详情模式为只读展示。
+ */
 const visible = ref(false)
 const title = ref('')
 const disableSubmit = ref(false)

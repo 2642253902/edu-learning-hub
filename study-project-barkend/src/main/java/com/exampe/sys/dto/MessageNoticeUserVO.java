@@ -7,8 +7,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.util.Date;
 
 /**
- * 用户端消息通知视图对象（VO）
- * 用于向用户展示消息信息及已读状态
+ * 用户端消息通知视图对象（VO），供前端消息中心与后端消息查询结果字段对齐。
+ * 用于向用户展示消息信息及已读状态。
  */
 @Data
 public class MessageNoticeUserVO {

@@ -54,6 +54,13 @@ import { post, get } from '@/net'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
 
+/**
+ * 前后端协同注释（课程资源弹窗）
+ * - 文件上传：使用后端统一的上传服务（`/upload/file`），成功后后端应返回可直接访问或可用于后续下载的 `resourceUrl`。
+ * - 编辑态：若后端仅返回文件名或相对路径，前端需根据 `axios.defaults.baseURL` 拼接完整 URL 并回填 `fileList` 以便显示。
+ * - 提交接口：POST /study/cloudComputingCourseResource/add 或 /edit；删除文件需调用上传服务的删除接口并同步后端记录。
+ */
+
 const visible = ref(false)
 const title = ref('')
 const disabled = ref(false)

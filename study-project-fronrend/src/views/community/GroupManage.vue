@@ -11,6 +11,7 @@
     </el-card>
 
     <el-card shadow="never" class="mt-4 list-card">
+      <!-- 后台管理表格直接消费后端的分页/列表结构，重点展示创建者、时间和可编辑字段 -->
       <el-table :data="groups" v-loading="loading" border stripe>
         <el-table-column type="index" label="#" width="60" align="center" />
         <el-table-column prop="name" label="名称" min-width="180" />
@@ -32,6 +33,7 @@
     </el-card>
 
     <el-dialog v-model="dialogVisible" :title="dialogMode === 'add' ? '新建小组' : '编辑小组'" width="520px">
+      <!-- 弹窗表单与后端小组模型对齐，保存成功后刷新列表并关闭弹窗 -->
       <el-form :model="form" label-width="90px">
         <el-form-item label="名称">
           <el-input v-model="form.name" placeholder="请输入小组名称" />
@@ -53,6 +55,13 @@ import { onMounted, reactive, ref } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { deleteMapping, get, post } from '@/net'
+
+/**
+ * 前后端协同注释（学习小组管理）
+ * - 接口：GET /api/community/groups/all 拉取管理视角列表；POST /api/community/groups 新建；POST /api/community/groups/{id} 编辑；DELETE /api/community/groups/{id} 删除。
+ * - 管理语义：此页偏后台维护，只负责数据维护和列表刷新，不承担成员权限或帖子权限判定。
+ * - 返回结构：支持数组或 records 包装两种情况，前端统一做一次解包以适配不同后端实现。
+ */
 
 const loading = ref(false)
 const groups = ref<any[]>([])

@@ -29,6 +29,13 @@
 import { onMounted, ref } from 'vue'
 import { get, post } from '@/net'
 
+/**
+ * 前后端协同注释（评论列表）
+ * - 作用：围绕 `postId` 独立维护评论的读取和发布，适合在帖子详情弹窗中复用。
+ * - 接口：GET /api/community/posts/{postId}/comments 获取评论数组；POST 同一路径提交新评论。
+ * - 排序与格式化：前端按时间排序并做本地时间格式化，后端只需保证返回的时间字段可解析即可。
+ */
+
 const props = defineProps<{ postId?: string }>()
 
 const comments = ref<any[]>([])

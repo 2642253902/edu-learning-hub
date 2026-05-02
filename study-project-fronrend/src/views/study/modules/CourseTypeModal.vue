@@ -33,6 +33,12 @@ import { ref, reactive } from 'vue'
 import { post } from '@/net'
 import { ElMessage } from 'element-plus'
 
+/**
+ * 前后端协同注释（课程分类弹窗）
+ * - 接口示例：POST /study/cloudComputingCourseType/add 或 /edit；返回成功消息或新建对象。
+ * - 详情模式直接使用父组件传入的对象进行回显，不发起写操作；
+ * - 提交成功后通过 `emit('ok')` 通知父组件刷新数据，保证列表与后端一致性。
+ */
 const visible = ref(false)
 const title = ref('')
 const disabled = ref(false)

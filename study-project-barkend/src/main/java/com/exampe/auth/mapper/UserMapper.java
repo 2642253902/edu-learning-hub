@@ -11,7 +11,7 @@ import org.apache.ibatis.annotations.Update;
 import java.util.List;
 
 /**
- * 用户 Mapper 接口
+ * 用户 Mapper 接口，供前端查询需求与后端持久层共用。
  * <p>
  * 提供用户数据的数据库操作
  *

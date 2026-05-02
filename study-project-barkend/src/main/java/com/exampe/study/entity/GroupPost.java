@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 小组帖子实体类
+ * 小组帖子实体类，供前后端字段对齐和后端持久化共用。
  * 对应数据库表：group_post
  */
 @Data

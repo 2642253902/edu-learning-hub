@@ -7,8 +7,8 @@ import com.exampe.study.service.ICloudComputingCourseTypeService;
 import org.springframework.stereotype.Service;
 
 /**
- * 云计算课程分类服务实现类
- * <p>实现课程分类的基础CRUD操作</p>
+ * 云计算课程分类服务实现类，负责前端课程分类选择与后端分类数据维护协同。
+ * <p>实现课程分类的基础 CRUD 操作。</p>
  *
  * @author admin
  */

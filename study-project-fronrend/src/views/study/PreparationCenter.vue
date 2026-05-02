@@ -182,7 +182,15 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import CourseForm from './modules/CourseForm.vue'
-
+/**
+ * 前后端协同注释（备课中心）
+ * - 主要接口：
+ *   - 列表（分页）: GET /study/cloudComputingCourse/list?pageNo=...&pageSize=...
+ *   - 资源统计: GET /study/cloudComputingCourseResource/counts?id=... （返回按类型的计数映射）
+ *   - 分类列表: GET /study/cloudComputingCourseType/list
+ * - 返回约定：分页接口返回 `{ records: [], total }`，资源统计返回 `{ '1': number, '2': number, '3': number }` 等键值对。
+ * - 前端约定：异步补充每条记录的资源统计（避免阻塞主列表），并在收到新增/编辑/删除结果后调用 `loadData` 刷新。
+ */
 const router = useRouter()
 const route = useRoute()
 const loading = ref(false)

@@ -7,7 +7,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * Web MVC 配置类。
+ * Web MVC 配置类，供前端接口请求链路与后端登录态拦截规则协同。
  * <p>
  * 负责注册 MVC 拦截器，让权限校验只作用在需要登录的业务请求上。
  *
@@ -20,7 +20,7 @@ public class WebConfiguration implements WebMvcConfigurer {
     Authorizelnterceptor authorizelnterceptor;
 
     /**
-     * 添加自定义拦截器
+        * 添加自定义拦截器，统一前端业务接口的会话注入与权限校验。
      *
      * @param registry 拦截器注册表
      */

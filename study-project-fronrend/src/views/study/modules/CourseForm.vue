@@ -57,6 +57,13 @@ import { ref, reactive } from 'vue'
 import { get, post } from '@/net'
 import { ElMessage, type FormInstance } from 'element-plus'
 
+/**
+ * 前后端协同注释（CourseForm）
+ * - 目的：封装课程新增/编辑表单字段和验证规则，父组件通过 `add/edit` 方法调用并在提交成功后刷新列表。
+ * - 接口：GET /study/cloudComputingCourseType/list（分类），GET /api/user/list/teachers（教师字典），POST /study/cloudComputingCourse/add 或 /edit。
+ * - 字段约定：表单模型 `CourseFormModel` 对应后端 DTO 字段名，前端尽量保持同构以减少序列化差异。
+ */
+
 interface OptionItem {
   id: string | number
   courseTypeName?: string

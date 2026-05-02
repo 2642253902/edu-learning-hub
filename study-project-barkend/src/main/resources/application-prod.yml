@@ -1,4 +1,4 @@
-# 生产环境配置文件
+# 生产环境配置文件，供后端部署时与前端静态资源一并联调。
 spring:
   # 数据源配置（生产环境需要修改为实际的生产数据库配置）
   datasource:
@@ -23,7 +23,7 @@ spring:
           timeout: 10000             # 毫秒，读取响应超时 10s
           writetimeout: 10000        # 毫秒，写数据超时 10s
 
-  # Redis缓存配置（生产环境需要修改为实际的Redis服务器配置）
+  # Redis 缓存配置（生产环境需要修改为实际的 Redis 服务器配置）
   data:
     redis:
       database: 0
@@ -38,13 +38,21 @@ spring:
       max-file-size: 500MB
       # 整个请求最大大小
       max-request-size: 500MB
-      # 临时文件存储路径（生产环境建议使用Linux路径）
+      # 临时文件存储路径（生产环境建议使用 Linux 路径）
       location: /opt/upFiles
+  ai:
+    openai:
+      api-key: sk-1241ce0548c74552b2a4934c02f9f126
+      base-url: https://api.deepseek.com
+      chat:
+        options:
+          model: deepseek-chat
 
-# MyBatis配置
+
+# MyBatis 配置
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
 
-# MyBatis-Plus配置
+# MyBatis-Plus 配置
 mybatis-plus:
   mapper-locations: classpath:mapper/**/*.xml

@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 云计算课程管理控制器
+ * 云计算课程管理控制器，负责对接前端页面请求和后端业务逻辑。
  * <p>提供课程的增删改查、教师信息查询、课程状态管理等接口</p>
  *
  * @author admin

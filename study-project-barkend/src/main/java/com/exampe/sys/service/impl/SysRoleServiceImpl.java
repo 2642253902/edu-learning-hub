@@ -18,8 +18,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 系统角色服务实现类
- * <p>实现 ISysRoleService 接口，提供角色管理和角色路由关联的业务逻辑</p>
+ * 系统角色服务实现类，负责前端角色授权页面与后端角色路由关系维护协同。
+ * <p>实现 ISysRoleService 接口，提供角色管理和角色路由关联的业务逻辑。</p>
  * <p>主要功能：</p>
  * <ul>
  *   <li>查询角色关联的路由ID列表</li>

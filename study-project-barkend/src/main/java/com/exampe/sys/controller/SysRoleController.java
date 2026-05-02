@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 系统角色管理控制器
+ * 系统角色管理控制器，负责对接前端页面请求和后端业务逻辑。
  * <p>提供角色的增删改查、路由授权等功能</p>
  *
  * @author admin

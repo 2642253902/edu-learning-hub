@@ -11,6 +11,7 @@
     </el-card>
 
     <el-card shadow="never" class="mt-4 list-card">
+      <!-- 帖子管理表格：用于查看所属范围、作者、评论数和发布时间，适合后台审核/维护场景 -->
       <el-table :data="posts" v-loading="loading" border stripe>
         <el-table-column type="index" label="#" width="60" align="center" />
         <el-table-column label="所属范围" width="180" align="center">
@@ -37,6 +38,7 @@
     </el-card>
 
     <el-dialog v-model="dialogVisible" :title="dialogMode === 'add' ? '新建帖子' : '编辑帖子'" width="640px">
+      <!-- 帖子编辑表单：groupId 为空表示公共讨论区，有值则绑定到对应小组 -->
       <el-form :model="form" label-width="90px">
         <el-form-item label="所属范围">
           <el-select v-model="form.groupId" filterable clearable placeholder="公共讨论请留空" style="width: 100%">
@@ -64,6 +66,13 @@ import { onMounted, reactive, ref } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { deleteMapping, get, post } from '@/net'
+
+/**
+ * 前后端协同注释（帖子管理）
+ * - 接口：GET /api/community/posts/all 获取管理视角帖子列表；POST /api/community/posts 新增；POST /api/community/posts/{id} 编辑；DELETE /api/community/posts/{id} 删除。
+ * - 数据语义：groupId 为空代表公共讨论区，非空代表绑定到某个小组；评论数由后端统计返回，前端只展示不重复计算。
+ * - 交互：保存或删除后统一刷新列表，避免后台和展示页出现缓存差异。
+ */
 
 const loading = ref(false)
 const posts = ref<any[]>([])

@@ -65,6 +65,14 @@ import { Search, Plus } from '@element-plus/icons-vue'
 import CourseResourceModal from './modules/CourseResourceModal.vue'
 import { ElMessage } from 'element-plus'
 
+/**
+ * 前后端协同注释（课程资源列表）
+ * - 列表接口：GET /study/cloudComputingCourseResource/list?pageNo=&pageSize=&resourceName=&resourceType=
+ *   - 返回结构优先约定 `{ records: [], total }`，前端直接消费 `records` 并更新分页 `total`。
+ * - 上传/下载：文件上传由专门的上传服务（/upload）处理，前端需根据后端返回解析 `resourceUrl` 并回填到模型中。
+ * - 删除：DELETE /study/cloudComputingCourseResource/delete 接收 `{ id }`，删除成功后前端刷新当前页数据。
+ */
+
 const loading = ref(false)
 const dataSource = ref([])
 const queryParam = reactive({ fileName: '', resourceType: '' })

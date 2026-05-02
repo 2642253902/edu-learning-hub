@@ -11,13 +11,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 用户管理控制器
- * <p>
- * 所有接口都要求：
- * 1. 用户已登录
- * 2. 用户角色为管理员（role=1）
- *
- * @author admin
+ * 用户管理控制器，供前端用户管理页面执行分页查询、编辑、角色变更和密码重置。
  */
 @RestController
 @RequestMapping("/api/user/manage")
@@ -27,7 +21,7 @@ public class AccountManageController {
     private IAccountManageService accountManageService;
 
     /**
-     * 分页查询用户列表
+     * 分页查询用户列表，供前端用户管理表格加载。
      *
      * @param pageNo   页码
      * @param pageSize 每页数量
@@ -44,12 +38,12 @@ public class AccountManageController {
     }
 
     /**
-     * 新增用户
+     * 新增用户，供前端用户管理页面提交新账号。
      */
     @PostMapping("/add")
     public RestBean<String> addUser(@RequestBody Account account, HttpSession session) {
 
-        // 基本验证
+        // 基本验证，避免将无效数据写入后端。
         if (account.getUsername() == null || account.getUsername().isBlank()) {
             return RestBean.failure(400, "用户名不能为空");
         }
@@ -60,12 +54,12 @@ public class AccountManageController {
             return RestBean.failure(400, "密码不能为空");
         }
 
-        // 检查用户名唯一性
+        // 检查用户名唯一性，和前端校验形成双保险。
         if (!accountManageService.isUsernameUnique(account.getUsername())) {
             return RestBean.failure(400, "用户名已存在");
         }
 
-        // 检查邮箱唯一性
+        // 检查邮箱唯一性，防止前后端并发提交产生重复。
         if (!accountManageService.isEmailUnique(account.getEmail())) {
             return RestBean.failure(400, "邮箱已被使用");
         }
@@ -75,7 +69,7 @@ public class AccountManageController {
     }
 
     /**
-     * 编辑用户信息
+     * 编辑用户信息，供前端管理页面保存修改。
      */
     @RequestMapping(value = "/edit", method = {RequestMethod.POST, RequestMethod.PUT})
     public RestBean<String> editUser(@RequestBody Account account, HttpSession session) {
@@ -92,7 +86,7 @@ public class AccountManageController {
     }
 
     /**
-     * 删除用户
+     * 删除用户，供前端管理页面执行删除。
      */
     @DeleteMapping("/delete")
     public RestBean<String> deleteUser(@RequestParam String id, HttpSession session) {
@@ -101,7 +95,7 @@ public class AccountManageController {
             return RestBean.failure(400, "用户ID不能为空");
         }
 
-        // 防止删除默认管理员
+        // 防止删除默认管理员，避免前后端都失去管理入口。
         if ("1".equals(id)) {
             return RestBean.failure(400, "不能删除默认管理员账户");
         }
@@ -111,7 +105,7 @@ public class AccountManageController {
     }
 
     /**
-     * 重置用户密码为默认密码（123456）
+     * 重置用户密码为默认密码（123456），供前端管理页面触发。
      */
     @PostMapping("/resetPassword")
     public RestBean<String> resetPassword(@RequestParam String id, HttpSession session) {
@@ -125,7 +119,7 @@ public class AccountManageController {
     }
 
     /**
-     * 修改用户角色
+     * 修改用户角色，供前端权限管理页面同步角色调整。
      */
     @PostMapping("/changeRole")
     public RestBean<String> changeUserRole(@RequestParam String id, @RequestParam String role, HttpSession session) {
@@ -139,7 +133,7 @@ public class AccountManageController {
     }
 
     /**
-     * 检查用户名是否唯一
+     * 检查用户名是否唯一，供前端表单实时校验。
      */
     @GetMapping("/checkUsername")
     public RestBean<Boolean> checkUsername(@RequestParam String username) {
@@ -151,7 +145,7 @@ public class AccountManageController {
     }
 
     /**
-     * 检查邮箱是否唯一
+     * 检查邮箱是否唯一，供前端表单实时校验。
      */
     @GetMapping("/checkEmail")
     public RestBean<Boolean> checkEmail(@RequestParam String email) {

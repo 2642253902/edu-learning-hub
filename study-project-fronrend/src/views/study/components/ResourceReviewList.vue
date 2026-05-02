@@ -43,20 +43,27 @@ import { ref, onMounted } from 'vue'
 import { get, post } from '@/net'
 import { useUserStore } from '@/stores/user'
 
+/**
+ * 前后端协同注释（ResourceReviewList）
+ * - 列表接口：GET /api/community/reviews?resourceId=... 返回该资源下的评价数组（非分页）；
+ * - 点赞接口：POST /api/community/reviews/{id}/like，前端在成功后应本地同步 `likes` 与 `liked` 字段以优化 UX；
+ * - 插入新评价：父组件在收到 `saved` 事件时调用组件的 `addReview` 方法以实现即时回显，同时后台应保证最终一致性。
+ */
+
 const props = defineProps<{ resourceId: string }>()
 const reviews = ref<any[]>([])
 const userStore = useUserStore()
 
 const load = () => {
   get(`/api/community/reviews?resourceId=${encodeURIComponent(props.resourceId)}`, (_message: string, d: any) => {
-    // 后端返回后统一补一个 liked 字段，方便前端直接控制点赞状态
+    // 后端返回后统一补 liked 字段，方便前端直接控制点赞状态。
     reviews.value = (d || []).map((it: any) => ({ ...it, liked: !!it.liked }))
   })
 }
 
 const addReview = (r: any) => {
   if (!r) return
-  // 新评价插到最前面，保证提交后立刻可见
+  // 新评价插到最前面，保证前端提交后立刻可见且和后端时间线一致。
   const item = {
     id: r.id || `local-${Date.now()}`,
     username: r.username || userStore.auth.user?.username || '我',
@@ -73,7 +80,7 @@ const addReview = (r: any) => {
 const like = (r: any) => {
   if (String(r.userId) === String(userStore.auth.user?.id)) return
   if (r.liked) return
-  // 点赞接口只负责服务端累加，成功后本地同步 likes 和 liked
+  // 点赞接口只负责后端累加，成功后前端本地同步 likes 与 liked。
   post(`/api/community/reviews/${r.id}/like`, {}, () => {
     r.likes = (r.likes || 0) + 1
     r.liked = true
@@ -81,20 +88,20 @@ const like = (r: any) => {
 }
 
 const getInitial = (name: any) => {
-  // 头像首字母兜底，避免匿名或空用户名时显示异常
+  // 头像首字母兜底，避免匿名或空用户名在前端显示异常。
   const text = String(name || 'A').trim()
   return text ? text.slice(0, 1).toUpperCase() : 'A'
 }
 
 const formatDate = (s: any) => {
-  // 统一将时间格式化为本地可读字符串
+  // 统一将后端时间格式化为本地可读字符串。
   try { return new Date(s).toLocaleString() } catch (e) { return '' }
 }
 
-// 组件挂载后先拉取当前资源的评价列表
+// 组件挂载后先拉取当前资源评价列表，保持和后端最新数据同步。
 onMounted(load)
 
-// 暴露刷新与新增接口，供父组件在提交评价后调用
+// 暴露刷新与新增接口，供父组件在提交评价后联动更新列表。
 defineExpose({ load, addReview })
 </script>
 

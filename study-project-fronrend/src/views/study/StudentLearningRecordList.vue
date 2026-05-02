@@ -92,6 +92,14 @@ import { get, deleteMapping } from '@/net'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
+/**
+ * 前后端协同注释（学生学习记录列表）
+ * - 接口：GET /study/cloudComputingStudentLearningRecord/list?pageNo=&pageSize=&userId=&courseId=&contentId=&learningStatus=
+ *   - 返回约定 `{ records: [], total }`，前端用于分页展示与进度条计算。
+ * - 删除：DELETE /study/cloudComputingStudentLearningRecord/delete 接收 `{ id }` 并在成功后刷新列表。
+ * - 字典数据（学生/课程/资源）通过独立接口预加载以支持筛选与回显，避免在主列表接口传输大量冗余数据。
+ */
+
 const loading = ref(false)
 const dataSource = ref<any[]>([])
 const studentOptions = ref<any[]>([])

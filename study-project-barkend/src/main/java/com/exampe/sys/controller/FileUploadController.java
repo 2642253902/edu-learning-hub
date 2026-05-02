@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 文件上传控制器
+ * 文件上传控制器，负责对接前端页面请求和后端业务逻辑。
  * <p>提供文件上传、下载、删除等功能，支持路径安全防护</p>
  *
  * @author admin

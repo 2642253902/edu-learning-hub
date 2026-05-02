@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 云计算课程服务实现类
+ * 云计算课程服务实现类，负责前端课程管理/学习中心与后端课程数据操作协同。
  * <p>实现课程管理、教师信息查询、学习统计等业务逻辑</p>
  *
  * @author admin
@@ -28,6 +28,9 @@ public class CloudComputingCourseServiceImpl extends ServiceImpl<CloudComputingC
     @Autowired
     private CloudComputingCourseMapper courseMapper;
 
+    /**
+     * 查询课程资源并附带学习状态，供前端学习中心展示学习进度。
+     */
     @Override
     public List<CloudComputingCourseResourceVO> listWithLearningStatus(String courseId, String studentId) {
         return resourceMapper.listWithLearningStatus(courseId, studentId);

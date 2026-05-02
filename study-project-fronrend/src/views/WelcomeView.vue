@@ -48,6 +48,12 @@
 import { Reading, VideoPlay, Fold, Files } from '@element-plus/icons-vue'
 </script>
 
+<!--
+  WelcomeView: 站点欢迎页组件，主要用于展示产品卖点和承载登录注册路由视图。
+  说明：此页面不直接调用后端业务接口，但承载的登录/注册子路由需要与后端认证接口（/api/auth/**）配合。
+  建议：后端返回的站点配置信息（如站点名称、宣传文案）可考虑用接口下发，方便运营变更。
+-->
+
 <style scoped>
 .welcome-container {
   width: 100vw;
