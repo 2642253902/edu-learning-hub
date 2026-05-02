@@ -161,7 +161,7 @@ const getStatusText = (value: any) => {
 }
 
 const loadStudents = () => {
-  get('/api/user/manage/list?pageNo=1&pageSize=1000', (_msg, data) => {
+  get('/api/user/list/teachers?pageNo=1&pageSize=1000', (_msg, data) => {
     studentOptions.value = unwrapListData(data)
   })
 }

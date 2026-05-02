@@ -18,13 +18,13 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog title="创建小组" v-model="showCreate">
+    <el-dialog title="创建小组" v-model="showCreate" @close="resetForm">
       <!-- 表单字段和后端小组创建 DTO 保持同名，减少前后端映射成本 -->
-      <el-form :model="form">
-        <el-form-item label="名称">
+      <el-form ref="formRef" :model="form" :rules="rules">
+        <el-form-item label="名称" prop="name">
           <el-input v-model="form.name" />
         </el-form-item>
-        <el-form-item label="描述">
+        <el-form-item label="描述" prop="description">
           <el-input v-model="form.description" />
         </el-form-item>
       </el-form>
@@ -37,10 +37,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { get, post } from '@/net'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 
 /**
  * 前后端协同注释（学习小组列表）
@@ -52,7 +52,27 @@ import { ElMessage } from 'element-plus'
 const router = useRouter()
 const groups = ref<any[]>([])
 const showCreate = ref(false)
-const form = ref({ name: '', description: '' })
+const formRef = ref<FormInstance>()
+const form = reactive({ name: '', description: '' })
+
+const createGroupValidator = (_rule: any, value: string, callback: (error?: Error) => void) => {
+  if (!value || !value.trim()) {
+    callback(new Error('请输入内容'))
+    return
+  }
+  callback()
+}
+
+const rules: FormRules = {
+  name: [
+    { validator: createGroupValidator, trigger: ['blur', 'change'] },
+    { min: 2, max: 30, message: '名称长度为 2-30 个字符', trigger: ['blur', 'change'] }
+  ],
+  description: [
+    { validator: createGroupValidator, trigger: ['blur', 'change'] },
+    { min: 2, max: 200, message: '描述长度为 2-200 个字符', trigger: ['blur', 'change'] }
+  ]
+}
 
 const load = () => {
   get('/api/community/groups', (_message: string, d: any) => {
@@ -61,11 +81,28 @@ const load = () => {
 }
 
 const openCreate = () => { showCreate.value = true }
+
+const resetForm = () => {
+  formRef.value?.clearValidate()
+  form.name = ''
+  form.description = ''
+}
+
 const create = () => {
-  post('/api/community/groups', form.value, () => {
-    showCreate.value = false
-    form.value = { name: '', description: '' }
-    load()
+  formRef.value?.validate((valid: boolean) => {
+    if (!valid) {
+      ElMessage.warning('请填写小组名称和描述')
+      return
+    }
+
+    post('/api/community/groups', {
+      name: form.name.trim(),
+      description: form.description.trim()
+    }, () => {
+      showCreate.value = false
+      resetForm()
+      load()
+    })
   })
 }
 

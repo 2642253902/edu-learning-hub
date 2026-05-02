@@ -51,7 +51,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
-            // 先放行静态入口和认证接口，再对其余请求统一要求登录态，避免前端初始化就被拦截。
+                // 先放行静态入口和认证接口，再对其余请求统一要求登录态，避免前端初始化就被拦截。
                 .authorizeHttpRequests(auth -> {
                     // 首页、登录、聊天流接口直接开放，前端才能在未登录或首次进入时完成初始化。
                     auth.requestMatchers("/", "/api/auth/**", "/api/chat/**").permitAll();
@@ -60,33 +60,33 @@ public class SecurityConfiguration {
                     // 其余业务接口默认都需要认证，保持安全边界清晰。
                     auth.anyRequest().authenticated();
                 })
-            // 使用表单登录能力，但把登录处理结果改成 JSON，方便前端按统一响应体处理。
+                // 使用表单登录能力，但把登录处理结果改成 JSON，方便前端按统一响应体处理。
                 .formLogin(form -> form
-                // 登录请求由 Spring Security 拦截处理，不需要单独写登录 Controller。
+                        // 登录请求由 Spring Security 拦截处理，不需要单独写登录 Controller。
                         .loginProcessingUrl("/api/auth/login")
-                // 登录成功时返回统一 JSON，前端可直接提示并刷新用户状态。
+                        // 登录成功时返回统一 JSON，前端可直接提示并刷新用户状态。
                         .successHandler(this::onAuthenticationSuccess)
-                // 登录失败时也返回 JSON，避免前端还要解析默认跳转页。
+                        // 登录失败时也返回 JSON，避免前端还要解析默认跳转页。
                         .failureHandler(this::onAuthenticationFailure))
-            // 注销同样走统一 JSON 返回，前端清理状态和提示文案时更简单。
+                // 注销同样走统一 JSON 返回，前端清理状态和提示文案时更简单。
                 .logout(logout -> logout
-                // 注销请求路径与前端接口保持一致。
+                        // 注销请求路径与前端接口保持一致。
                         .logoutUrl("/api/auth/logout")
-                // 注销后仍复用成功处理器，统一返回 JSON。
+                        // 注销后仍复用成功处理器，统一返回 JSON。
                         .logoutSuccessHandler(this::onAuthenticationSuccess))
-            // remember-me 用于延长登录态，适合长时间浏览课程、资源和讨论区的场景。
+                // remember-me 用于延长登录态，适合长时间浏览课程、资源和讨论区的场景。
                 .rememberMe(remember -> remember
-                // 与前端勾选框字段保持一致，只有勾选后才会签发 remember-me token。
+                        // 与前端勾选框字段保持一致，只有勾选后才会签发 remember-me token。
                         .rememberMeParameter("remember")
-                // 记住我 token 有效期设为 3 天，兼顾体验和安全性。
+                        // 记住我 token 有效期设为 3 天，兼顾体验和安全性。
                         .tokenValiditySeconds(3 * 24 * 60 * 60)
                         .tokenRepository(this.tokenRepository()))
-            // 当前接口以 JSON API 为主，这里先关闭 CSRF，降低前后端联调门槛。
+                // 当前接口以 JSON API 为主，这里先关闭 CSRF，降低前后端联调门槛。
                 .csrf(AbstractHttpConfigurer::disable)
-            // 允许前端跨域访问，Cookie 登录态和 remember-me 都依赖这里正确放行。
+                // 允许前端跨域访问，Cookie 登录态和 remember-me 都依赖这里正确放行。
                 .cors(cors -> cors
                         .configurationSource(this.corsConfigurationSource()))
-            // 未认证时不要返回默认 HTML 登录页，直接返回统一 JSON 给前端处理。
+                // 未认证时不要返回默认 HTML 登录页，直接返回统一 JSON 给前端处理。
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(this::onAuthenticationFailure))
                 .build();
@@ -101,27 +101,27 @@ public class SecurityConfiguration {
     public PersistentTokenRepository tokenRepository() {
         JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
         tokenRepository.setDataSource(dataSource);
-                // 生产环境通常提前建好 remember-me 相关表，避免启动时自动修改数据库结构。
+        // 生产环境通常提前建好 remember-me 相关表，避免启动时自动修改数据库结构。
         tokenRepository.setCreateTableOnStartup(false);
         return tokenRepository;
     }
 
     /**
-         * 配置 CORS 跨域资源共享规则。
-         *
-         * 这里偏向开发期的宽松策略，生产环境应收紧到具体前端域名，并结合实际 Cookie 策略调整。
+     * 配置 CORS 跨域资源共享规则。
+     * <p>
+     * 这里偏向开发期的宽松策略，生产环境应收紧到具体前端域名，并结合实际 Cookie 策略调整。
      *
      * @return CORS 配置源
      */
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-                // 开发阶段先放开来源，便于本地前后端联调；上线后要改为明确域名白名单。
+        // 开发阶段先放开来源，便于本地前后端联调；上线后要改为明确域名白名单。
         config.addAllowedOriginPattern("*");
-                // 放开常见 HTTP 方法，避免预检请求阻断接口调用。
+        // 放开常见 HTTP 方法，避免预检请求阻断接口调用。
         config.addAllowedMethod("*");
-                // 放开请求头，兼容自定义头部和认证相关头部传递。
+        // 放开请求头，兼容自定义头部和认证相关头部传递。
         config.addAllowedHeader("*");
-                // 允许携带 Cookie，才能支持基于会话的登录态和 remember-me。
+        // 允许携带 Cookie，才能支持基于会话的登录态和 remember-me。
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -140,25 +140,25 @@ public class SecurityConfiguration {
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity httpSecurity) throws Exception {
         AuthenticationManagerBuilder builder = httpSecurity.getSharedObject(AuthenticationManagerBuilder.class);
-                // 把自定义用户查询服务挂到认证链路上，登录时会通过这里校验账号和密码。
+        // 把自定义用户查询服务挂到认证链路上，登录时会通过这里校验账号和密码。
         builder.userDetailsService(authorizeService);
         return builder.build();
     }
 
 
     /**
-      * 配置密码编码器，使用 BCrypt 算法加密密码。
+     * 配置密码编码器，使用 BCrypt 算法加密密码。
      *
      * @return BCryptPasswordEncoder 实例
      */
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
-                // 统一使用 BCrypt 存储密码摘要，避免明文或弱散列方案。
+        // 统一使用 BCrypt 存储密码摘要，避免明文或弱散列方案。
         return new BCryptPasswordEncoder();
     }
 
     /**
-      * 认证成功处理器，返回 JSON 格式响应。
+     * 认证成功处理器，返回 JSON 格式响应。
      *
      * @param request        HTTP 请求
      * @param response       HTTP 响应

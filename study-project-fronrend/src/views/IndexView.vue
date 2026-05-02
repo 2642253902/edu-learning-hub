@@ -1,98 +1,73 @@
 <template>
     <el-container class="layout-container">
-        <!-- 左侧侧边栏 -->
-        <el-aside :width="isCollapse ? '64px' : '240px'" class="aside-menu">
-            <div class="logo-container" :class="{ 'collapsed': isCollapse }">
-                <el-icon class="logo-icon">
-                    <Reading />
-                </el-icon>
-                <span v-show="!isCollapse" class="logo-text">校园智慧学习社区</span>
+        <!-- 顶部导航栏 -->
+        <el-header class="top-nav">
+            <div class="top-nav-brand">
+                <div class="logo-mark">
+                    <el-icon class="logo-icon">
+                        <Reading />
+                    </el-icon>
+                </div>
+                <div class="logo-copy">
+                    <span class="logo-text">校园智慧学习社区</span>
+                    <span class="logo-subtitle">Learning Hub Console</span>
+                </div>
             </div>
 
-            <el-menu :default-active="route.path" class="el-menu-vertical" :collapse="isCollapse"
-                background-color="#2b303b" text-color="#a3a6ad" active-text-color="#ffffff" router>
-                <!-- 固定首页菜单项 -->
-                <el-menu-item index="/index/home">
-                    <el-icon>
-                        <House />
-                    </el-icon>
-                    <template #title>工作台首页</template>
-                </el-menu-item>
-
-                <el-sub-menu index="/index/dashboard">
-                    <template #title>
+            <el-scrollbar class="top-nav-scroll">
+                <el-menu :default-active="route.path" class="el-menu-horizontal" mode="horizontal"
+                    background-color="#2b303b" text-color="#a3a6ad" active-text-color="#ffffff" router>
+                    <el-menu-item index="/index/home">
                         <el-icon>
-                            <DataBoard />
+                            <House />
                         </el-icon>
-                        <span>数据统计</span>
-                    </template>
-                    <el-menu-item index="/index/student-dashboard">
-                        <el-icon>
-                            <Reading />
-                        </el-icon>
-                        <template #title>学生统计</template>
+                        <template #title>工作台首页</template>
                     </el-menu-item>
-                    <el-menu-item index="/index/teacher-dashboard">
-                        <el-icon>
-                            <Monitor />
-                        </el-icon>
-                        <template #title>教师统计</template>
-                    </el-menu-item>
-                </el-sub-menu>
+                    <template v-for="menu in visibleMenuList">
+                        <el-sub-menu v-if="menu.children && menu.children.length > 0" :key="`${menu.id}-sub`"
+                            :index="menu.path">
+                            <template #title>
+                                <el-icon>
+                                    <Menu />
+                                </el-icon>
+                                <span>{{ menu.remark }}</span>
+                            </template>
 
-                <template v-for="menu in visibleMenuList">
-                    <!-- 如果有子级 -->
-                    <el-sub-menu v-if="menu.children && menu.children.length > 0" :key="`${menu.id}-sub`"
-                        :index="menu.path">
-                        <template #title>
+                            <template v-for="child in menu.children">
+                                <el-sub-menu v-if="child.children && child.children.length > 0" :key="`${child.id}-sub`"
+                                    :index="child.path">
+                                    <template #title>
+                                        <span>{{ child.remark }}</span>
+                                    </template>
+
+                                    <el-menu-item v-for="grandChild in child.children" :key="grandChild.id"
+                                        :index="grandChild.path">
+                                        {{ grandChild.remark }}
+                                    </el-menu-item>
+                                </el-sub-menu>
+
+                                <el-menu-item v-else :key="`${child.id}-item`" :index="child.path">
+                                    {{ child.remark }}
+                                </el-menu-item>
+                            </template>
+                        </el-sub-menu>
+
+                        <el-menu-item v-else :key="`${menu.id}-item`" :index="menu.path">
                             <el-icon>
                                 <Menu />
                             </el-icon>
-                            <span>{{ menu.remark }}</span>
-                        </template>
-
-                        <template v-for="child in menu.children">
-                            <!-- 二级菜单如果有三级子菜单 -->
-                            <el-sub-menu v-if="child.children && child.children.length > 0" :key="`${child.id}-sub`"
-                                :index="child.path">
-                                <template #title>
-                                    <span>{{ child.remark }}</span>
-                                </template>
-
-                                <!-- 三级菜单项 -->
-                                <el-menu-item v-for="grandChild in child.children" :key="grandChild.id"
-                                    :index="grandChild.path">
-                                    {{ grandChild.remark }}
-                                </el-menu-item>
-                            </el-sub-menu>
-
-                            <!-- 二级菜单项（无子级） -->
-                            <el-menu-item v-else :key="`${child.id}-item`" :index="child.path">
-                                {{ child.remark }}
-                            </el-menu-item>
-                        </template>
-                    </el-sub-menu>
-
-                    <!-- 如果没有子级（一级菜单项） -->
-                    <el-menu-item v-else :key="`${menu.id}-item`" :index="menu.path">
-                        <el-icon>
-                            <Menu />
-                        </el-icon>
-                        <template #title>{{ menu.remark }}</template>
-                    </el-menu-item>
-                </template>
-            </el-menu>
-        </el-aside>
+                            <template #title>{{ menu.remark }}</template>
+                        </el-menu-item>
+                    </template>
+                </el-menu>
+            </el-scrollbar>
+        </el-header>
 
         <!-- 右侧主体内容 -->
         <el-container class="main-container">
             <!-- 顶部通知/导航栏 -->
             <el-header class="header">
                 <div class="header-left">
-                    <el-icon class="collapse-btn" @click="isCollapse = !isCollapse">
-                        <Fold v-if="!isCollapse" />
-                        <Expand v-else />
-                    </el-icon>
                     <el-breadcrumb separator="/" class="breadcrumb">
                         <el-breadcrumb-item :to="{ path: '/index/home' }">首页</el-breadcrumb-item>
                         <el-breadcrumb-item>{{ currentPageTitle }}</el-breadcrumb-item>
@@ -175,7 +150,7 @@
             </el-main>
         </el-container>
     </el-container>
-    <AiChat  />
+    <AiChat />
 </template>
 
 <script setup lang="ts">
@@ -183,11 +158,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage } from "element-plus";
 import {
     Menu,
-    Monitor,
     Reading,
-    DataBoard,
-    Fold,
-    Expand,
     Bell,
     CaretBottom,
     User,
@@ -207,7 +178,6 @@ const menuStore = useMenuStore()
 const router = useRouter()
 const route = useRoute()
 
-const isCollapse = ref(false)
 const searchModulePath = ref('')
 const searchKeyword = ref('')
 const messageList = ref<any[]>([])
@@ -247,13 +217,7 @@ const flattenMenus = (menus: any[], parent = ''): Array<{ label: string; value: 
 }
 
 const moduleOptions = computed(() => {
-    const dynamicOptions = flattenMenus(visibleMenuList.value || [])
-    return [
-        { label: '首页 / 工作台首页', value: '/index/home' },
-        { label: '数据统计 / 学生统计', value: '/index/student-dashboard' },
-        { label: '数据统计 / 教师统计', value: '/index/teacher-dashboard' },
-        ...dynamicOptions,
-    ]
+    return flattenMenus(visibleMenuList.value || [])
 })
 
 const filteredModuleOptions = computed(() => {
@@ -348,63 +312,97 @@ onUnmounted(() => {
     height: 100vh;
     width: 100vw;
     background-color: #f5f7fa;
-}
-
-.aside-menu {
-    background-color: #2b303b;
-    transition: width 0.3s ease;
     display: flex;
     flex-direction: column;
-    box-shadow: 2px 0 8px rgba(0, 21, 41, 0.08);
-    z-index: 10;
 }
 
-.logo-container {
-    height: 60px;
+.top-nav {
+    height: 64px;
+    background: linear-gradient(135deg, #202733 0%, #2b303b 55%, #1f2937 100%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 20px;
+    box-shadow: 0 2px 8px rgba(0, 21, 41, 0.08);
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.top-nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #fff;
+    white-space: nowrap;
+    padding: 8px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+}
+
+.logo-mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
-    background-color: #22262e;
-    overflow: hidden;
-    white-space: nowrap;
+    background: linear-gradient(135deg, rgba(64, 158, 255, 0.28), rgba(96, 165, 250, 0.12));
+    border: 1px solid rgba(96, 165, 250, 0.25);
 }
 
 .logo-icon {
-    font-size: 24px;
-    color: #409EFF;
+    font-size: 22px;
+    color: #8ec5ff;
+}
+
+.logo-copy {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
 }
 
 .logo-text {
-    margin-left: 10px;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 600;
     letter-spacing: 1px;
+    color: #f8fafc;
 }
 
-.el-menu-vertical {
-    border-right: none;
+.logo-subtitle {
+    margin-top: 4px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: rgba(226, 232, 240, 0.72);
+    text-transform: uppercase;
+}
+
+.top-nav-scroll {
     flex: 1;
 }
 
-.el-menu-vertical:not(.el-menu--collapse) {
-    width: 240px;
+.el-menu-horizontal {
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    background-color: transparent;
 }
 
-/* 激活菜单样式美化 */
-:deep(.el-menu-item.is-active) {
-    background-color: #409EFF !important;
-    position: relative;
+:deep(.el-menu--horizontal > .el-menu-item),
+:deep(.el-menu--horizontal > .el-sub-menu .el-sub-menu__title) {
+    height: 64px;
+    line-height: 64px;
+    border-bottom: none;
 }
 
-:deep(.el-menu-item.is-active::before) {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background-color: #ffffff;
+:deep(.el-menu--horizontal > .el-menu-item.is-active) {
+    background-color: rgba(64, 158, 255, 0.15) !important;
+}
+
+:deep(.el-menu--horizontal > .el-sub-menu.is-active .el-sub-menu__title) {
+    background-color: rgba(64, 158, 255, 0.15) !important;
 }
 
 .main-container {
@@ -427,18 +425,6 @@ onUnmounted(() => {
 .header-left {
     display: flex;
     align-items: center;
-}
-
-.collapse-btn {
-    font-size: 20px;
-    cursor: pointer;
-    margin-right: 20px;
-    color: #606266;
-    transition: color 0.3s;
-}
-
-.collapse-btn:hover {
-    color: #409EFF;
 }
 
 .breadcrumb {

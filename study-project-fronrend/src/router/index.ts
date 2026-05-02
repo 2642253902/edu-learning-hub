@@ -39,19 +39,7 @@ const routes: Readonly<RouteRecordRaw[]> = [
         name: 'home',
         component: () => import('@/views/HomeView.vue'),
         meta: { title: '工作台首页' }
-      },
-      {
-        path: 'student-dashboard',
-        name: 'student-dashboard',
-        component: () => import('@/views/index/StudentStatsView.vue'),
-        meta: { title: '学生数据统计' }
-      },
-      {
-        path: 'teacher-dashboard',
-        name: 'teacher-dashboard',
-        component: () => import('@/views/index/TeacherStatsView.vue'),
-        meta: { title: '教师数据统计' }
-      },
+      }
     ]
   }
 ]
@@ -205,9 +193,7 @@ export const resetRoutes = () => {
       route.name !== 'welcome-register' &&
       route.name !== 'welcome-forget' &&
       route.name !== 'index' &&
-      route.name !== 'home' &&
-      route.name !== 'student-dashboard' &&
-      route.name !== 'teacher-dashboard'
+      route.name !== 'home'
     ) {
       router.removeRoute(route.name as string);
     }

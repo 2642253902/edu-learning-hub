@@ -10,8 +10,8 @@
 
                 <div class="hero-actions">
                     <el-button type="primary" @click="router.push(defaultPath)">{{ defaultAction }}</el-button>
-                    <el-button plain @click="router.push('/index/student-dashboard')">学生统计</el-button>
-                    <el-button plain @click="router.push('/index/teacher-dashboard')">教师统计</el-button>
+                    <el-button plain @click="router.push('/index/StudentStatsView')">学生统计</el-button>
+                    <el-button plain @click="router.push('/index/TeacherStatsView')">教师统计</el-button>
                 </div>
             </div>
         </el-card>
@@ -21,14 +21,14 @@
                 <el-card shadow="hover" class="feature-card feature-card-student">
                     <div class="feature-head">学生统计</div>
                     <p>查看课程学习、资源使用、小组互动和消息提醒。</p>
-                    <el-button type="primary" plain @click="router.push('/index/student-dashboard')">进入学生页</el-button>
+                    <el-button type="primary" plain @click="router.push('/index/StudentStatsView')">进入学生页</el-button>
                 </el-card>
             </el-col>
             <el-col :xs="24" :md="8">
                 <el-card shadow="hover" class="feature-card feature-card-teacher">
                     <div class="feature-head">教师统计</div>
                     <p>查看课程建设、资源分布、学生学习和评价反馈。</p>
-                    <el-button type="primary" plain @click="router.push('/index/teacher-dashboard')">进入教师页</el-button>
+                    <el-button type="primary" plain @click="router.push('/index/TeacherStatsView')">进入教师页</el-button>
                 </el-card>
             </el-col>
             <el-col :xs="24" :md="8">
@@ -64,12 +64,12 @@ const roleTip = computed(() => {
 
 const defaultPath = computed(() => {
     if (role.value === '2') {
-        return '/index/teacher-dashboard'
+        return '/index/StudentStatsView'
     }
     if (role.value === '3') {
-        return '/index/student-dashboard'
+        return '/index/StudentStatsView'
     }
-    return '/index/student-dashboard'
+    return '/index/StudentStatsView'
 })
 
 const defaultAction = computed(() => {
@@ -176,4 +176,3 @@ const defaultAction = computed(() => {
     }
 }
 </style>
-const handleResize = () => {

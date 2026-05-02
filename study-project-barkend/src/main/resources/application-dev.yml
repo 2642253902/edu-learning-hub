@@ -32,12 +32,17 @@ spring:
       max-request-size: 500MB
       # 临时文件存储路径（Windows 路径示例）
       location: D:/Desktop/opt
+
+  # AI 服务配置
   ai:
     openai:
+      # API 密钥，用于访问 AI 服务提供商的接口
       api-key: sk-1241ce0548c74552b2a4934c02f9f126
+      # AI 服务的 Base URL，当前配置为 DeepSeek 的 API 地址
       base-url: https://api.deepseek.com
       chat:
         options:
+          # 使用的 AI 模型名称，当前配置为 deepseek-chat
           model: deepseek-chat
 
 # MyBatis 配置

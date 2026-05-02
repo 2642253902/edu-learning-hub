@@ -21,5 +21,7 @@ app.use(createPinia())
 app.use(router)
 app.use(ElementPlus, { size: 'small', zIndex: 3000 })
 
-// 最后挂载到页面容器，前端应用从这里正式进入可交互状态。
-app.mount('#app')
+// 等待路由完成初始解析后再挂载，避免在路由尚未就绪时发生一次性导航丢失的情况。
+router.isReady().then(() => {
+	app.mount('#app')
+})

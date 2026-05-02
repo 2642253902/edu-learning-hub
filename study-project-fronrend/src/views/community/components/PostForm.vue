@@ -1,10 +1,10 @@
 <template>
   <div class="post-form-wrap">
-    <el-form :model="form" class="post-form">
-      <el-form-item label="标题" class="field-item">
+    <el-form ref="formRef" :model="form" :rules="rules" class="post-form">
+      <el-form-item label="标题" prop="title" class="field-item">
         <el-input v-model="form.title" placeholder="写一个吸引人的标题" />
       </el-form-item>
-      <el-form-item label="内容" class="field-item">
+      <el-form-item label="内容" prop="content" class="field-item">
         <el-input v-model="form.content" type="textarea" :rows="4" placeholder="分享你的问题、经验或者想法" />
       </el-form-item>
       <el-form-item class="submit-row">
@@ -15,7 +15,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
+import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { post } from '@/net'
 
 /**
@@ -28,13 +30,32 @@ import { post } from '@/net'
 const props = defineProps<{ groupId: string }>()
 const emit = defineEmits(['created'])
 
-const form = ref({ title: '', content: '', groupId: props.groupId })
+const formRef = ref<FormInstance>()
+const form = reactive({ title: '', content: '', groupId: props.groupId })
+
+const rules: FormRules = {
+  title: [
+    { required: true, message: '请输入标题', trigger: 'blur' },
+    { min: 2, max: 100, message: '标题长度为 2-100 个字符', trigger: ['blur', 'change'] }
+  ],
+  content: [
+    { required: true, message: '请输入内容', trigger: 'blur' },
+    { min: 2, max: 5000, message: '内容不能为空', trigger: ['blur', 'change'] }
+  ]
+}
 
 const submit = () => {
-  post('/api/community/posts', form.value, (_message: string, d: any) => {
-    emit('created', d)
-    form.value.title = ''
-    form.value.content = ''
+  formRef.value?.validate((valid: boolean) => {
+    if (!valid) {
+      ElMessage.warning('请先填写标题和内容')
+      return
+    }
+
+    post('/api/community/posts', form, (_message: string, d: any) => {
+      emit('created', d)
+      form.title = ''
+      form.content = ''
+    })
   })
 }
 </script>

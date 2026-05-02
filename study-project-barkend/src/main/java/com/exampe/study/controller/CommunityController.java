@@ -11,6 +11,7 @@ import com.exampe.study.service.IPostCommentService;
 import com.exampe.study.service.IResourceReviewService;
 import com.exampe.study.service.IStudyGroupService;
 import jakarta.annotation.Resource;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -120,6 +121,14 @@ public class CommunityController {
     @PostMapping("/posts")
     public RestBean<GroupPost> createPost(@RequestBody GroupPost post,
                                           @SessionAttribute("account") AccountUser accountUser) {
+        // 基本校验：标题和内容不能为空，避免前端绕过校验导致空帖写库
+        if (!StringUtils.hasText(post.getTitle())) {
+            return RestBean.failure(400, "标题不能为空");
+        }
+        if (!StringUtils.hasText(post.getContent())) {
+            return RestBean.failure(400, "内容不能为空");
+        }
+
         post.setUserId(accountUser.getId());
         post.setUsername(accountUser.getUsername());
         post.setCommentCount(0);
@@ -185,6 +194,11 @@ public class CommunityController {
     public RestBean<PostComment> addComment(@PathVariable String postId,
                                             @RequestBody PostComment comment,
                                             @SessionAttribute("account") AccountUser accountUser) {
+        // 校验评论内容不为空
+        if (!StringUtils.hasText(comment.getContent())) {
+            return RestBean.failure(400, "评论内容不能为空");
+        }
+
         comment.setPostId(postId);
         comment.setUserId(accountUser.getId());
         comment.setUsername(accountUser.getUsername());

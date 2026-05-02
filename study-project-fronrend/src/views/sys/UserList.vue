@@ -24,7 +24,7 @@
         <el-table-column prop="email" label="邮箱" />
         <el-table-column prop="roleDescription" label="角色" width="150" align="center">
           <template #default="{ row }">
-            <el-tag :type="getRoleTagType(row.role)">{{ row.roleDescription }}</el-tag>
+            <el-tag :type="getRoleTagType(row.role)">{{ getRoleLabel(row) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="300" align="center" fixed="right">
@@ -69,7 +69,8 @@
 
         <el-form-item label="角色" prop="role">
           <el-select v-model="userDialog.form.role" placeholder="选择角色" style="width: 100%">
-            <el-option v-for="role in roles" :key="role.id" :label="role.description" :value="Number(role.id)" />
+            <el-option v-for="role in roles" :key="role.id" :label="getRoleOptionLabel(role)"
+              :value="Number(role.id)" />
           </el-select>
         </el-form-item>
 
@@ -86,7 +87,7 @@
       <div class="role-select-wrap">
         <p class="user-info">用户: <strong>{{ roleDialog.username }}</strong></p>
         <el-select v-model="roleDialog.newRole" placeholder="选择新角色" style="width: 100%">
-          <el-option v-for="role in roles" :key="role.id" :label="role.description" :value="Number(role.id)" />
+          <el-option v-for="role in roles" :key="role.id" :label="getRoleOptionLabel(role)" :value="Number(role.id)" />
         </el-select>
       </div>
       <template #footer>
@@ -167,6 +168,27 @@ const getRoleTagType = (role: number) => {
   return types[role] || 'info'
 }
 
+const getRoleOptionLabel = (role: any) => {
+  return role?.name || role?.description || String(role?.id ?? '')
+}
+
+const isMeaningfulRoleText = (value: any) => {
+  if (value === null || value === undefined) return false
+  const text = String(value).trim()
+  if (!text) return false
+  return !/^\d+$/.test(text)
+}
+
+const getRoleLabel = (row: any) => {
+  const matchedRole = roles.value.find((role: any) => Number(role.id) === Number(row.role))
+  return (
+    matchedRole?.name ||
+    matchedRole?.description ||
+    (isMeaningfulRoleText(row.roleDescription) ? row.roleDescription : '') ||
+    String(row.role ?? '-')
+  )
+}
+
 const loadUsers = () => {
   loading.value = true
   // 列表接口同时承载分页与关键字搜索，保持参数来源统一，便于后续扩展筛选项。
@@ -213,7 +235,7 @@ const openEdit = (row: any) => {
     username: row.username,
     email: row.email,
     password: '',
-    role: row.role
+    role: Number(row.role)
   }
   userDialog.visible = true
 }
@@ -221,7 +243,7 @@ const openEdit = (row: any) => {
 const openChangeRole = (row: any) => {
   roleDialog.userId = row.id
   roleDialog.username = row.username
-  roleDialog.newRole = row.role
+  roleDialog.newRole = Number(row.role)
   roleDialog.visible = true
 }
 
