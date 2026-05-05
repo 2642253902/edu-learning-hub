@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, nextTick } from 'vue'
 import { deleteMapping, get, post } from '@/net'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -150,8 +150,63 @@ const openGrant = (row: any) => {
 
   // 每次打开都重新拉取已授权菜单，确保弹窗展示的是最新授权结果。
   get(`/api/role/routes?roleId=${row.id}`, (_, data) => {
-    const checked = Array.isArray(data) ? data : []
-    treeRef.value?.setCheckedKeys(checked)
+    const returned = Array.isArray(data) ? data : []
+
+    // 计算出应当完全选中的节点与应当半选的节点，避免直接把父节点当作完全选中，从而误将其子节点全部勾选。
+    const computeChecked = (treeData: any[], selected: any[]) => {
+      const selSet = new Set((selected || []).map((s: any) => String(s)))
+      const checkedKeys: string[] = []
+      const halfCheckedKeys: string[] = []
+
+      const dfs = (node: any) => {
+        const id = String(node.id)
+        if (!node.children || !node.children.length) {
+          const isSel = selSet.has(id)
+          if (isSel) checkedKeys.push(id)
+          return { total: 1, sel: isSel ? 1 : 0 }
+        }
+
+        let total = 0
+        let sel = 0
+        for (const c of node.children) {
+          const res = dfs(c)
+          total += res.total
+          sel += res.sel
+        }
+
+        if (sel === 0) {
+          // none selected -> nothing
+        } else if (sel === total) {
+          // 子节点全部选中，标记父节点为完全选中
+          checkedKeys.push(id)
+        } else {
+          // 部分选中 -> 半选
+          halfCheckedKeys.push(id)
+        }
+
+        return { total, sel }
+      }
+
+      for (const n of treeData) dfs(n)
+
+      return { checkedKeys, halfCheckedKeys }
+    }
+
+    const { checkedKeys, halfCheckedKeys } = computeChecked(routeTree.value || [], returned)
+
+    // 等待树渲染完成后再回填勾选状态
+    nextTick(() => {
+      const tree = treeRef.value
+      if (!tree) return
+      // Element Plus 的 setCheckedKeys 支持传入对象以同时设置全选和半选
+      try {
+        ;(tree as any).setCheckedKeys({ checked: checkedKeys, halfChecked: halfCheckedKeys })
+      } catch (e) {
+        // 兼容老版本：回退到只设置完全选中节点
+        (tree as any).setCheckedKeys(checkedKeys)
+        // 半选节点在老版本上可能无法回填，这里无更多操作
+      }
+    })
   })
 }
 

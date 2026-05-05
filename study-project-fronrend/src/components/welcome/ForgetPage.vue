@@ -177,6 +177,8 @@ function startReset() {
                 code: form.code
             }, () => active.value++)
         }
+    }, (message) => {
+        ElMessage.error(message)
     })
 }
 
@@ -191,6 +193,8 @@ function doReset() {
             }, (message) => {
                 ElMessage.success(message)
                 router.push('/')
+            }, (message) => {
+                ElMessage.error(message)
             })
         }
     })

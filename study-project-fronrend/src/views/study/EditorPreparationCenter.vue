@@ -53,11 +53,7 @@
 
               <el-col :xl="8" :lg="8" :md="12" :sm="24">
                 <el-form-item label="负责教师" prop="teacherId">
-                  <el-select v-model="form.teacherId" placeholder="请选择负责教师" class="w-full"
-                    :disabled="isTeacherSelectDisabled">
-                    <el-option v-for="teacher in teacherList" :key="teacher.id" :label="getTeacherLabel(teacher)"
-                      :value="String(teacher.id)" />
-                  </el-select>
+                  <el-input :model-value="selectedTeacherLabel" placeholder="请选择负责教师" class="w-full" disabled />
                 </el-form-item>
               </el-col>
 
@@ -283,7 +279,6 @@ const confirmLoading = ref(false)
 const disabled = ref(false)
 const isAddMode = ref(false)
 const activeTab = ref('video')
-const isTeacherSelectDisabled = ref(false)
 
 // 数据
 const form = reactive({
@@ -368,7 +363,7 @@ const loadCourseTypes = () => {
 }
 
 const loadTeachers = () => {
-  get('/api/user/list/teachers', (_message: string, data: any) => {
+  get('/api/user/manage/list', (_message: string, data: any) => {
     teacherList.value = data?.data || data?.records || data || []
   })
 }
@@ -411,6 +406,11 @@ const handleCourseTypeChange = (val: string) => {
 const getTeacherLabel = (teacher: TeacherItem) => {
   return teacher.realname || teacher.username || teacher.email || teacher.name || '-'
 }
+
+const selectedTeacherLabel = computed(() => {
+  const teacher = teacherList.value.find((item: TeacherItem) => String(item.id) === String(form.teacherId))
+  return teacher ? getTeacherLabel(teacher) : form.teacherId || '-'
+})
 
 const handleSubmit = () => {
   if (!form.courseTypeId) {

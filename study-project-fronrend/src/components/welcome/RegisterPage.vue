@@ -161,6 +161,8 @@ function register() {
         } else {
             ElMessage.warning('请完整填写注册表单内容！')
         }
+    }, (message) => {
+        ElMessage.error(message)
     })
 }
 
@@ -179,6 +181,8 @@ function validateEmail() {
     }, (message) => {
         ElMessage.warning(message)
         coldTime.value = 0
+    }, (message) => {
+        ElMessage.error(message)
     })
 }
 </script>

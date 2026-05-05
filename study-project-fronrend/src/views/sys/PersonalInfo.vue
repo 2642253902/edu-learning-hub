@@ -9,7 +9,10 @@
             <p class="subtitle">查看当前登录账号的基础资料与角色信息。</p>
           </div>
         </div>
-        <el-button @click="router.back()">返回</el-button>
+        <div class="hero-actions">
+          <el-button @click="openEdit">编辑资料</el-button>
+          <el-button @click="router.back()">返回</el-button>
+        </div>
       </div>
     </el-card>
 
@@ -43,18 +46,64 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <el-dialog v-model="editDialog.visible" title="编辑个人信息" width="520px" @close="resetForm">
+      <el-form ref="formRef" :model="editDialog.form" label-width="90px" :rules="formRules">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="editDialog.form.username" placeholder="请输入用户名" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="editDialog.form.email" placeholder="请输入邮箱" type="email" />
+        </el-form-item>
+        <el-form-item label="新密码" prop="password">
+          <el-input v-model="editDialog.form.password" placeholder="留空表示不修改密码" type="password" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialog.visible = false">取消</el-button>
+        <el-button type="primary" @click="submitProfile">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { get } from '@/net'
+import { get, post } from '../../net'
+import { ElMessage } from 'element-plus'
+import type { FormInstance } from 'element-plus'
 
 const router = useRouter()
 const loading = ref(false)
 const profile = ref<any>({})
+const formRef = ref<FormInstance>()
 const avatarUrl = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+
+const editDialog = reactive({
+  visible: false,
+  form: {
+    id: '',
+    username: '',
+    email: '',
+    password: '',
+    role: ''
+  }
+})
+
+const formRules = {
+  username: [
+    { required: true, message: '用户名不能为空', trigger: 'blur' },
+    { min: 3, max: 20, message: '用户名长度为 3-20 个字符', trigger: 'blur' }
+  ],
+  email: [
+    { required: true, message: '邮箱不能为空', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+  ],
+  password: [
+    { min: 6, max: 16, message: '密码长度为 6-16 个字符', trigger: 'blur' }
+  ]
+}
 
 // 与后端角色码保持一致，集中在计算属性中做展示映射，模板层只消费结果。
 const roleText = computed(() => {
@@ -73,6 +122,22 @@ const roleTagType = computed(() => {
   return 'warning'
 })
 
+const openEdit = () => {
+  editDialog.form = {
+    id: String(profile.value?.id || ''),
+    username: profile.value?.username || '',
+    email: profile.value?.email || '',
+    password: '',
+    role: String(profile.value?.role || '')
+  }
+  editDialog.visible = true
+}
+
+const resetForm = () => {
+  formRef.value?.clearValidate()
+  editDialog.form.password = ''
+}
+
 const loadProfile = () => {
   loading.value = true
   // 统一从登录态接口获取“当前用户”信息，避免依赖本地缓存造成数据漂移。
@@ -81,6 +146,36 @@ const loadProfile = () => {
     loading.value = false
   }, () => {
     loading.value = false
+  })
+}
+
+const submitProfile = async () => {
+  if (!formRef.value) return
+
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  const payload: Record<string, any> = {
+    id: editDialog.form.id,
+    username: editDialog.form.username,
+    email: editDialog.form.email
+  }
+
+  if (editDialog.form.password.trim()) {
+    payload.password = editDialog.form.password
+  }
+
+  post('/api/user/manage/edit', payload, (msg) => {
+    ElMessage.success(msg || '保存成功')
+    editDialog.visible = false
+    profile.value = {
+      ...profile.value,
+      username: editDialog.form.username,
+      email: editDialog.form.email
+    }
+    if (editDialog.form.password.trim()) {
+      editDialog.form.password = ''
+    }
   })
 }
 
@@ -105,6 +200,13 @@ onMounted(loadProfile)
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .avatar-block {

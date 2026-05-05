@@ -9,6 +9,7 @@
 <script>
 import { SuspendedBallChat } from 'ai-suspended-ball-chat'
 import axios from 'axios'
+import { useUserStore } from '@/stores/user'
 
 export default {
     name: 'App',
@@ -18,8 +19,9 @@ export default {
     data() {
         // 统一从 axios 的 baseURL 取后端地址，避免本地和部署环境写死不同域名。
         const base = (axios.defaults.baseURL || '').replace(/\/$/, '')
-        // 这里先用固定会话标识，后续如果接入真实登录态，可替换成当前用户 ID 或 token 解析结果。
-        const sessionId = 'user123'
+        // 优先使用当前登录用户的唯一 id 作为会话隔离标识，避免多用户共享同一上下文。
+        const userStore = useUserStore()
+        const sessionId = userStore.auth.user?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2,8)}`
 
         // 这些回调主要用于埋点、日志和异常观察，不介入插件内部的消息发送逻辑。
         const callbacks = {

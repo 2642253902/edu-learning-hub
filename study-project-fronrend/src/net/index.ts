@@ -1,5 +1,8 @@
 import axios from "axios";
 import { ElMessage } from "element-plus";
+import { resetRoutes } from '@/router'
+import { useUserStore } from '@/stores/user'
+import { useMenuStore } from '@/stores/menu'
 
 // 默认失败处理统一提示业务消息，避免前端每个调用点重复写同一段兜底逻辑。
 const defaultFailure = (message: string) => ElMessage.warning(message)
@@ -25,6 +28,19 @@ const handleAuthError = () => {
     const storage = typeof window !== 'undefined' ? window.localStorage : null
     storage?.removeItem('user')
     storage?.removeItem('menuList')
+
+    // 同步清理内存中的状态和动态路由，保证 SPA 会话内不再保留旧角色的菜单与路由。
+    try {
+        // 清空路由与持久化菜单
+        resetRoutes()
+        const userStore = useUserStore()
+        const menuStore = useMenuStore()
+        userStore.auth.user = null
+        menuStore.menuList = []
+    } catch (e) {
+        // 在非常罕见的时序情况下（Pinia 未安装或其他），仍然保证 localStorage 被清理并跳转。
+        console.warn('handleAuthError: reset stores/routes failed', e)
+    }
 
     ElMessage.error('会话已过期，请重新登录')
 
@@ -71,6 +87,9 @@ export function postForm(
     }).then(response => {
         const resData = response.data;
         if (resData.status === 401 || resData.status === 403) {
+            // 先把后端的认证失败信息交给调用方处理（比如登录页需要显示具体失败原因），
+            // 然后再执行统一的会话失效流程（会在登录页被短路）。
+            try { failure(resData.message, resData.data) } catch (e) {}
             handleAuthError()
             return
         }
@@ -94,6 +113,7 @@ export function post(
     return axios.post(url, data, { withCredentials: true }).then(response => {
         const resData = response.data;
         if (resData.status === 401 || resData.status === 403) {
+            try { failure(resData.message, resData.data) } catch (e) {}
             handleAuthError()
             return
         }
@@ -119,6 +139,7 @@ export function get(
         const resData = response.data;
         // 有些接口会返回 200 但把失败状态放在业务字段里，这里再补一层前后端协商判断。
         if (resData.status === 401 || resData.status === 403) {
+            try { failure(resData.message, resData.data) } catch (e) {}
             handleAuthError()
             return
         }
@@ -161,6 +182,7 @@ export function deleteMapping(
     }).then(response => {
         const resData = response.data;
         if (resData.status === 401 || resData.status === 403) {
+            try { failure(resData.message, resData.data) } catch (e) {}
             handleAuthError()
             return
         }

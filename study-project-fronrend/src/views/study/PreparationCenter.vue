@@ -173,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { get, deleteMapping } from '@/net'
 import {
@@ -182,6 +182,7 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import CourseForm from './modules/CourseForm.vue'
+import { useUserStore } from '@/stores/user'
 /**
  * 前后端协同注释（备课中心）
  * - 主要接口：
@@ -206,6 +207,10 @@ const queryParam = reactive({ courseName: '', status: '' })
 const ipagination = reactive({ current: 1, pageSize: 10, total: 0 })
 const courseTypeList = ref<any[]>([])
 
+const userStore = useUserStore()
+
+const role = computed(() => String(userStore.auth.user?.role ?? ''))
+
 const loadCourseTypes = () => {
   get('/study/cloudComputingCourseType/list?pageNo=1&pageSize=1000', (msg, data) => {
     // 课程分类用于表格中显示分类标签与筛选
@@ -223,12 +228,13 @@ const loadData = (arg = 1) => {
   if (arg === 1) ipagination.current = 1
   loading.value = true
   const params = new URLSearchParams()
+  params.append('teacherId', userStore.auth.user?.id || '')
   params.append('pageNo', String(ipagination.current))
   params.append('pageSize', String(ipagination.pageSize))
   if (queryParam.courseName) params.append('courseName', queryParam.courseName)
   if (queryParam.status !== '' && queryParam.status !== null) params.append('courseStatus', String(queryParam.status))
 
-  get(`/study/cloudComputingCourse/list?${params.toString()}`, (msg, data) => {
+  get(`/study/cloudComputingCourse/listByTeacherId?${params.toString()}`, (msg, data) => {
     const records = data?.records || []
     dataSource.value = records
     ipagination.total = data?.total || 0

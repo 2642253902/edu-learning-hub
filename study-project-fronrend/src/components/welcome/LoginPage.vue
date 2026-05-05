@@ -85,6 +85,8 @@ const login = () => {
                     router.push({ name: 'index' })
                 }
             })
+        }, (message) => {
+            ElMessage.error(message)
         })
     }
 }

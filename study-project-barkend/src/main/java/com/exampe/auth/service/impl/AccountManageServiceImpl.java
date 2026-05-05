@@ -96,7 +96,8 @@ public class AccountManageServiceImpl implements IAccountManageService {
         accountAdd.setPassword(passwordEncoder.encode(account.getPassword()));
         // 默认学生角色
         accountAdd.setRole("3");
-        return userMapper.insert(account) > 0;
+        // 确保插入已经补齐密码和默认角色的对象
+        return userMapper.insert(accountAdd) > 0;
     }
 
     /**
@@ -139,9 +140,12 @@ public class AccountManageServiceImpl implements IAccountManageService {
             accountUpdate.setPassword(passwordEncoder.encode(account.getPassword()));
         }
 
-        // 角色不为 0 时更新
-        if ((account.getRole().toString()) != " 0") {
-            accountUpdate.setRole(account.getRole());
+        // 角色不为 "0" 时更新。使用安全的空指针检查并用 equals 比较字符串。
+        if (account.getRole() != null) {
+            String roleStr = account.getRole().toString().trim();
+            if (!"0".equals(roleStr)) {
+                accountUpdate.setRole(roleStr);
+            }
         }
 
         return userMapper.updateById(accountUpdate) > 0;
