@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 资源评价实体类，供前后端字段对齐和后端持久化共用。
+ * 课程评价实体类，供前后端字段对齐和后端持久化共用。
  * 对应数据库表：resource_review
  */
 @Data
@@ -24,11 +24,6 @@ public class ResourceReview implements Serializable {
      */
     @TableId(type = IdType.ASSIGN_ID)
     private String id;
-
-    /**
-     * 资源ID
-     */
-    private String resourceId;
 
     /**
      * 课程ID

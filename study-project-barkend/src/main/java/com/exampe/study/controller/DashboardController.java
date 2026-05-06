@@ -103,7 +103,7 @@ public class DashboardController {
                 card("学习资源", resourceCount, "个", "学习过的资源数量"),
                 card("加入小组", groupCount, "个", "参与的小组数量"),
                 card("发表帖子", postCount, "条", "在小组内发表的帖子数量"),
-                card("资源评价", reviewCount, "条", "对课程资源发表的评价数量")
+                card("课程评价", reviewCount, "条", "对课程发表的评价数量")
         ));
 
         List<Map<String, Object>> activityPie = List.of(
@@ -111,7 +111,7 @@ public class DashboardController {
                 pieItem("小组参与", groupCount),
                 pieItem("帖子发布", postCount),
                 pieItem("评论互动", commentCount),
-                pieItem("资源评价", reviewCount),
+                pieItem("课程评价", reviewCount),
                 pieItem("未读消息", unreadCount)
         );
 
@@ -126,7 +126,7 @@ public class DashboardController {
         summary.put("highlights", List.of(
                 highlight("未读消息", unreadCount + " 条"),
                 highlight("互动评论", commentCount + " 条"),
-                highlight("资源评价", reviewCount + " 条")
+                highlight("课程评价", reviewCount + " 条")
         ));
         return summary;
     }
@@ -157,7 +157,7 @@ public class DashboardController {
                 card("学习学生", studentCount, "人", "参与学习的学生数量"),
                 card("完成学生", completedStudentCount, "人", "学习状态为已完成的学生数量"),
                 card("学习时长", studyHours, "小时", "名下课程累计学习时长"),
-                card("资源评价", reviewCount, "条", "课程资源获得的评价数量"),
+                card("课程评价", reviewCount, "条", "课程获得的评价数量"),
                 card("未读消息", unreadCount, "条", "当前账号未读消息数量")
         ));
 
@@ -172,7 +172,7 @@ public class DashboardController {
         summary.put("highlights", List.of(
                 highlight("已发布课程", publishedCourseCount + " 门"),
                 highlight("完成学生", completedStudentCount + " 人"),
-                highlight("资源评价", reviewCount + " 条")
+                highlight("课程评价", reviewCount + " 条")
         ));
         return summary;
     }

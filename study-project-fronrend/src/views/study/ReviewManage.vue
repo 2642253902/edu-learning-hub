@@ -4,7 +4,7 @@
       <div class="header-flex">
         <div>
           <h2 class="title">课程评价管理</h2>
-          <p class="desc">管理员可查看、编辑、删除课程和资源评价。</p>
+          <p class="desc">管理员可查看、编辑、删除课程评价。</p>
         </div>
         <el-button type="primary" :icon="Plus" @click="openAdd">新增评价</el-button>
       </div>
@@ -15,9 +15,6 @@
         <el-table-column type="index" label="#" width="60" align="center" />
         <el-table-column label="课程" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">{{ getCourseLabel(row.courseId) }}</template>
-        </el-table-column>
-        <el-table-column label="资源" min-width="200" show-overflow-tooltip>
-          <template #default="{ row }">{{ getResourceLabelById(row.resourceId) }}</template>
         </el-table-column>
         <el-table-column prop="username" label="评价人" width="120" align="center" />
         <el-table-column label="评分" width="100" align="center">
@@ -49,12 +46,6 @@
               :value="String(item.id)" />
           </el-select>
         </el-form-item>
-        <el-form-item label="资源">
-          <el-select v-model="form.resourceId" filterable clearable placeholder="请选择资源" style="width: 100%">
-            <el-option v-for="item in resourceOptions" :key="item.id" :label="getResourceLabel(item)"
-              :value="String(item.id)" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="评分">
           <el-rate v-model="form.rating" />
         </el-form-item>
@@ -78,19 +69,18 @@ import { deleteMapping, get, post } from '@/net'
 
 /**
  * 前后端协同注释（评价管理）
- * - 列表接口：GET /api/community/reviews/all 或管理员筛选接口，返回评价对象数组或分页结构；
- * - 新增/编辑：POST /api/community/reviews（创建）或 /api/community/reviews/{id}（编辑）；
- * - 删除：DELETE /api/community/reviews/{id}，管理端操作应记录日志并返回明确的成功消息。
- * - 前端约定：评价对象包含 { id, courseId, resourceId, username, userId, rating, content, likes, createTime }，组件按此契约渲染。
+ * - 列表接口：GET /api/study/reviews/all 或管理员筛选接口，返回评价对象数组或分页结构；
+ * - 新增/编辑：POST /api/study/reviews（创建）或 /api/study/reviews/{id}（编辑）；
+ * - 删除：DELETE /api/study/reviews/{id}，管理端操作应记录日志并返回明确的成功消息。
+ * - 前端约定：评价对象包含 { id, courseId, username, userId, rating, content, likes, createTime }，组件按此契约渲染。
  */
 
 const loading = ref(false)
 const reviews = ref<any[]>([])
 const courseOptions = ref<any[]>([])
-const resourceOptions = ref<any[]>([])
 const dialogVisible = ref(false)
 const dialogMode = ref<'add' | 'edit'>('add')
-const form = reactive({ id: '', courseId: '', resourceId: '', rating: 5, content: '' })
+const form = reactive({ id: '', courseId: '', rating: 5, content: '' })
 
 const unwrapList = (payload: any) => {
   // 兼容不同接口返回格式，统一为数组
@@ -106,16 +96,9 @@ const loadCourses = () => {
   })
 }
 
-const loadResources = () => {
-  get('/study/cloudComputingCourseResource/list?pageNo=1&pageSize=1000', (_msg, data) => {
-    // 加载资源下拉用于评价关联选择
-    resourceOptions.value = unwrapList(data)
-  })
-}
-
 const loadData = () => {
   loading.value = true
-  get('/api/community/reviews/all', (_msg, data) => {
+  get('/api/study/reviews/all', (_msg, data) => {
     // 管理端直接拉取全部评价用于表格展示
     reviews.value = unwrapList(data)
     loading.value = false
@@ -130,19 +113,10 @@ const getCourseLabel = (courseId: any) => {
   return match ? match.courseName || '-' : String(courseId || '-')
 }
 
-const getResourceLabel = (item: any) => item?.resourceName || item?.fileName || item?.name || '-'
-
-const getResourceLabelById = (resourceId: any) => {
-  const match = resourceOptions.value.find(item => String(item.id) === String(resourceId))
-  // 将资源对象解析为展示文本，未命中则显示 id
-  return match ? getResourceLabel(match) : String(resourceId || '-')
-}
-
 const openAdd = () => {
   dialogMode.value = 'add'
   form.id = ''
   form.courseId = ''
-  form.resourceId = ''
   form.rating = 5
   form.content = ''
   dialogVisible.value = true
@@ -152,7 +126,6 @@ const openEdit = (row: any) => {
   dialogMode.value = 'edit'
   form.id = row.id
   form.courseId = row.courseId || ''
-  form.resourceId = row.resourceId || ''
   form.rating = Number(row.rating || 5)
   form.content = row.content || ''
   dialogVisible.value = true
@@ -161,11 +134,10 @@ const openEdit = (row: any) => {
 const submit = () => {
   const payload = {
     courseId: form.courseId,
-    resourceId: form.resourceId,
     rating: form.rating,
     content: form.content
   }
-  const url = dialogMode.value === 'add' ? '/api/community/reviews' : `/api/community/reviews/${form.id}`
+  const url = dialogMode.value === 'add' ? '/api/study/reviews' : `/api/study/reviews/${form.id}`
   post(url, dialogMode.value === 'add' ? payload : { ...payload, id: form.id }, (msg) => {
     // 新增/编辑后刷新列表并关闭对话框
     ElMessage.success(msg)
@@ -175,7 +147,7 @@ const submit = () => {
 }
 
 const handleDelete = (row: any) => {
-  deleteMapping(`/api/community/reviews/${row.id}`, { id: row.id }, (msg) => {
+  deleteMapping(`/api/study/reviews/${row.id}`, { id: row.id }, (msg) => {
     // 删除后重新加载列表
     ElMessage.success(msg)
     loadData()
@@ -183,9 +155,8 @@ const handleDelete = (row: any) => {
 }
 
 onMounted(() => {
-  // 页面初始化：准备课程/资源字典并加载评价数据
+  // 页面初始化：准备课程字典并加载评价数据
   loadCourses()
-  loadResources()
   loadData()
 })
 </script>

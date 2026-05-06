@@ -16,10 +16,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.stream.Collectors;
 
-import jakarta.servlet.http.HttpServletRequest;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -37,7 +33,8 @@ import java.util.Map;
 public class CloudComputingCourseResourceController {
 
     @Autowired
-    private ICloudComputingCourseResourceService cloudComputingCourseResourceService;
+    private ICloudComputingCourseResourceService
+            cloudComputingCourseResourceService;
 
     /**
      * 根据课程ID统计各资源类型数量
@@ -47,8 +44,10 @@ public class CloudComputingCourseResourceController {
      * @return 资源类型统计结果，key为资源类型，value为数量
      */
     @GetMapping(value = "/counts")
-    public RestBean<Map<String, Long>> getResourceCounts(@RequestParam(name = "id", required = true) String id) {
-        Map<String, Long> counts = cloudComputingCourseResourceService.countByCourseIdGrouped(id);
+    public RestBean<Map<String, Long>> getResourceCounts(
+            @RequestParam(name = "id", required = true) String id) {
+        Map<String, Long> counts =
+                cloudComputingCourseResourceService.countByCourseIdGrouped(id);
         return RestBean.success(counts);
     }
 
@@ -63,7 +62,8 @@ public class CloudComputingCourseResourceController {
     @GetMapping(value = "/listWithStatus")
     public RestBean<List<CloudComputingCourseResourceVO>> listWithStatus(@RequestParam(name = "courseId", required = true) String courseId,
                                                                          @SessionAttribute("account") AccountUser accountUser) {
-        List<CloudComputingCourseResourceVO> list = cloudComputingCourseResourceService.listWithLearningStatus(courseId, accountUser.getId());
+        List<CloudComputingCourseResourceVO> list =
+                cloudComputingCourseResourceService.listWithLearningStatus(courseId, accountUser.getId());
         return RestBean.success(list);
     }
 
@@ -150,10 +150,16 @@ public class CloudComputingCourseResourceController {
             try {
                 RestBean<String> stringRestBean = fileUploadController.deleteFile(resourceUrl);
                 if (!stringRestBean.isSuccess()) {
+                    if (stringRestBean.getStatus() == 404) {
+                        boolean removed = cloudComputingCourseResourceService.removeById(id);
+                        return removed
+                                ? RestBean.success("文件不存在，已删除资源记录")
+                                : RestBean.failure(500, "删除失败");
+                    }
                     return RestBean.failure(500, "文件删除失败：" + stringRestBean.getMessage());
                 }
             } catch (Exception e) {
-                return RestBean.failure(500, "文件删除失败：" + e.getMessage());
+                return RestBean.failure(500, "文件删除异常：" + e.getMessage());
             }
         }
 
@@ -185,16 +191,46 @@ public class CloudComputingCourseResourceController {
             try {
                 RestBean<Object> batchDeleteResult = fileUploadController.batchDeleteFiles(fileNames);
 
-                // 检查批量删除是否全部成功
                 if (!batchDeleteResult.isSuccess()) {
-                    log.warn("批量删除资源时部分文件删除失败: {}", batchDeleteResult.getMessage());
-                    // 不阻断资源删除流程，继续执行
-                } else {
-                    log.info("批量删除资源的 {} 个文件删除成功", fileNames.size());
+                    Object data = batchDeleteResult.getData();
+                    boolean hasMissingFiles = false;
+                    boolean hasOtherFailures = false;
+                    if (data instanceof Map<?, ?> resultMap) {
+                        Object failedFiles = resultMap.get("failedFiles");
+                        if (failedFiles instanceof List<?> failedList) {
+                            for (Object item : failedList) {
+                                if (item instanceof Map<?, ?> failedInfo) {
+                                    Object reason = failedInfo.get("reason");
+                                    String reasonText = reason == null ? "" : reason.toString();
+                                    if (reasonText.contains("文件不存在")) {
+                                        hasMissingFiles = true;
+                                    } else {
+                                        hasOtherFailures = true;
+                                        break;
+                                    }
+                                } else {
+                                    hasOtherFailures = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (hasOtherFailures) {
+                        return RestBean.failure(500, "文件删除失败：" + batchDeleteResult.getMessage());
+                    }
+
+                    if (hasMissingFiles) {
+                        boolean removed = cloudComputingCourseResourceService.removeByIds(idList);
+                        return removed
+                                ? RestBean.success("部分文件不存在，已删除资源记录")
+                                : RestBean.failure(500, "批量删除失败");
+                    }
+
+                    return RestBean.failure(500, "文件删除失败：" + batchDeleteResult.getMessage());
                 }
             } catch (Exception e) {
-                log.error("批量删除资源文件异常", e);
-                // 不阻断资源删除流程，继续执行
+                return RestBean.failure(500, "批量删除资源文件异常：" + e.getMessage());
             }
         }
 

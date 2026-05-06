@@ -217,8 +217,8 @@
 
     <el-dialog v-model="reviewDialogVisible" :title="reviewDialogMode === 'add' ? '新增评价' : '编辑评价'" width="680px">
       <el-form ref="reviewFormRef" :model="reviewForm" :rules="reviewRules" label-width="90px">
-        <el-form-item label="所属资源">
-          <el-input :model-value="getReviewResourceLabel(form.id)" disabled />
+        <el-form-item label="所属课程">
+          <el-input :model-value="getReviewCourseLabel(form.id)" disabled />
         </el-form-item>
         <el-form-item label="评价人" prop="username">
           <el-input v-model="reviewForm.username" placeholder="当前登录用户" disabled />
@@ -305,7 +305,7 @@ const reviewSaving = ref(false)
 const reviewFormRef = ref()
 const reviewForm = reactive({
   id: '',
-  resourceId: '',
+  courseId: '',
   username: '',
   rating: 5,
   content: ''
@@ -318,7 +318,7 @@ const reviewRules = {
 
 const resourceModalRef = ref()
 
-const getReviewResourceLabel = (resourceId: string) => {
+const getReviewCourseLabel = (courseId: string) => {
   return '课程 ' + (form.courseName || form.id || '')
 }
 
@@ -392,7 +392,7 @@ const loadResources = (id: string) => {
     videoFiles.value = resources.filter((r: any) => String(r.resourceType) === '1')
     lectureFiles.value = resources.filter((r: any) => String(r.resourceType) === '2')
     experimentFiles.value = resources.filter((r: any) => String(r.resourceType) === '3')
-    // no-op for reviewResourceId: reviews are by course id
+    // no-op: reviews are bound to the current course id
   })
 }
 
@@ -456,8 +456,8 @@ const handleResourceModalOk = () => {
 const loadReviews = () => {
   if (!form.id) return
   reviewLoading.value = true
-  // 该页面按“课程维度”管理评价，因此 resourceId 固定使用课程 id
-  get(`/api/community/reviews?resourceId=${encodeURIComponent(form.id)}`, (_message: string, data: any[]) => {
+  // 该页面按“课程维度”管理评价，因此 query 参数使用 courseId
+  get(`/api/study/reviews?courseId=${encodeURIComponent(form.id)}`, (_message: string, data: any[]) => {
     reviewList.value = data || []
     reviewLoading.value = false
   }, () => {
@@ -468,7 +468,7 @@ const loadReviews = () => {
 const openReviewDialog = (record?: any) => {
   reviewDialogMode.value = record ? 'edit' : 'add'
   reviewForm.id = record?.id || ''
-  reviewForm.resourceId = form.id
+  reviewForm.courseId = form.id
   // 新增时优先使用当前登录用户，编辑时回填已有作者信息
   reviewForm.username = currentUsername.value || record?.username || ''
   reviewForm.rating = Number(record?.rating || 5)
@@ -483,8 +483,8 @@ const submitReview = async () => {
     reviewSaving.value = true
     const payload = {
       courseId: form.id,
-      // 社区评价接口沿用 resourceId 字段，这里约定写入课程 id
-      resourceId: form.id,
+      // 学习模块课程评价接口写入课程 id
+      courseId: form.id,
       username: currentUsername.value || reviewForm.username,
       rating: reviewForm.rating,
       content: reviewForm.content
@@ -495,7 +495,7 @@ const submitReview = async () => {
     }
 
     if (reviewDialogMode.value === 'add') {
-      post('/api/community/reviews', payload, (_message: string) => {
+      post('/api/study/reviews', payload, (_message: string) => {
         ElMessage.success(_message)
         reviewDialogVisible.value = false
         loadReviews()
@@ -504,7 +504,7 @@ const submitReview = async () => {
       return
     }
 
-    post(`/api/community/reviews/${reviewForm.id}`, { ...payload, id: reviewForm.id }, (_message: string) => {
+    post(`/api/study/reviews/${reviewForm.id}`, { ...payload, id: reviewForm.id }, (_message: string) => {
       ElMessage.success(_message)
       reviewDialogVisible.value = false
       loadReviews()
@@ -514,7 +514,7 @@ const submitReview = async () => {
 }
 
 const handleDeleteReview = (record: any) => {
-  deleteMapping(`/api/community/reviews/${record.id}`, { id: record.id }, () => {
+  deleteMapping(`/api/study/reviews/${record.id}`, { id: record.id }, () => {
     ElMessage.success('删除成功')
     loadReviews()
   })

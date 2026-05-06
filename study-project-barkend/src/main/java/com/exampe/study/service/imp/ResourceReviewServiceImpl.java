@@ -9,17 +9,17 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * 资源评价服务实现类，负责前端评价区与后端评价数据维护协同。
+ * 课程评价服务实现类，负责前端评价区与后端评价数据维护协同。
  */
 @Service
 public class ResourceReviewServiceImpl extends ServiceImpl<ResourceReviewMapper, ResourceReview> implements IResourceReviewService {
 
     /**
-     * 查询资源评价列表，供前端评价模块展示与刷新。
+     * 查询课程评价列表，供前端评价模块展示与刷新。
      */
     @Override
-    public List<ResourceReview> listByResourceId(String resourceId) {
-        return baseMapper.listByResourceId(resourceId);
+    public List<ResourceReview> listByCourseId(String courseId) {
+        return baseMapper.listByCourseId(courseId);
     }
 
     /**

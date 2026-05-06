@@ -44,26 +44,24 @@ import { get, post } from '@/net'
 import { useUserStore } from '@/stores/user'
 
 /**
- * 前后端协同注释（ResourceReviewList）
- * - 列表接口：GET /api/community/reviews?resourceId=... 返回该资源下的评价数组（非分页）；
- * - 点赞接口：POST /api/community/reviews/{id}/like，前端在成功后应本地同步 `likes` 与 `liked` 字段以优化 UX；
+ * 前后端协同注释（CourseReviewList）
+ * - 列表接口：GET /api/study/reviews?courseId=... 返回该课程下的评价数组（非分页）；
+ * - 点赞接口：POST /api/study/reviews/{id}/like，前端在成功后应本地同步 `likes` 与 `liked` 字段以优化 UX；
  * - 插入新评价：父组件在收到 `saved` 事件时调用组件的 `addReview` 方法以实现即时回显，同时后台应保证最终一致性。
  */
 
-const props = defineProps<{ resourceId: string }>()
+const props = defineProps<{ courseId: string }>()
 const reviews = ref<any[]>([])
 const userStore = useUserStore()
 
 const load = () => {
-  get(`/api/community/reviews?resourceId=${encodeURIComponent(props.resourceId)}`, (_message: string, d: any) => {
-    // 后端返回后统一补 liked 字段，方便前端直接控制点赞状态。
+  get(`/api/study/reviews?courseId=${encodeURIComponent(props.courseId)}`, (_message: string, d: any) => {
     reviews.value = (d || []).map((it: any) => ({ ...it, liked: !!it.liked }))
   })
 }
 
 const addReview = (r: any) => {
   if (!r) return
-  // 新评价插到最前面，保证前端提交后立刻可见且和后端时间线一致。
   const item = {
     id: r.id || `local-${Date.now()}`,
     username: r.username || userStore.auth.user?.username || '我',
@@ -80,28 +78,23 @@ const addReview = (r: any) => {
 const like = (r: any) => {
   if (String(r.userId) === String(userStore.auth.user?.id)) return
   if (r.liked) return
-  // 点赞接口只负责后端累加，成功后前端本地同步 likes 与 liked。
-  post(`/api/community/reviews/${r.id}/like`, {}, () => {
+  post(`/api/study/reviews/${r.id}/like`, {}, () => {
     r.likes = (r.likes || 0) + 1
     r.liked = true
   })
 }
 
 const getInitial = (name: any) => {
-  // 头像首字母兜底，避免匿名或空用户名在前端显示异常。
   const text = String(name || 'A').trim()
   return text ? text.slice(0, 1).toUpperCase() : 'A'
 }
 
 const formatDate = (s: any) => {
-  // 统一将后端时间格式化为本地可读字符串。
   try { return new Date(s).toLocaleString() } catch (e) { return '' }
 }
 
-// 组件挂载后先拉取当前资源评价列表，保持和后端最新数据同步。
 onMounted(load)
 
-// 暴露刷新与新增接口，供父组件在提交评价后联动更新列表。
 defineExpose({ load, addReview })
 </script>
 
@@ -139,69 +132,59 @@ defineExpose({ load, addReview })
 }
 
 .review-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
 .review-item {
   border-radius: 14px;
-  border: 1px solid #edf2f7;
-  background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
+  border: 1px solid #e8eef7;
 }
 
 .review-item-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 16px;
+  gap: 12px;
 }
 
 .review-user {
   display: flex;
-  align-items: flex-start;
   gap: 12px;
+  align-items: center;
 }
 
 .review-meta {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .review-name-row {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
 
 .review-name {
-  font-weight: 600;
-  color: #1f2937;
+  font-weight: 700;
+  color: #111827;
 }
 
 .review-date {
-  color: #9ca3af;
   font-size: 12px;
+  color: #6b7280;
 }
 
 .review-content {
-  margin-top: 14px;
-  line-height: 1.7;
+  margin-top: 12px;
   color: #374151;
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 14px 16px;
+  line-height: 1.7;
   white-space: pre-wrap;
 }
 
-.like-btn {
-  color: #409eff;
-}
-
 @media (max-width: 640px) {
-
   .review-list-head,
   .review-item-top {
     flex-direction: column;

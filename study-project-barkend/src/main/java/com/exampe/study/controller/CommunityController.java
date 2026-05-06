@@ -4,11 +4,9 @@ import com.exampe.auth.entity.user.AccountUser;
 import com.exampe.common.RestBean;
 import com.exampe.study.entity.GroupPost;
 import com.exampe.study.entity.PostComment;
-import com.exampe.study.entity.ResourceReview;
 import com.exampe.study.entity.StudyGroup;
 import com.exampe.study.service.IGroupPostService;
 import com.exampe.study.service.IPostCommentService;
-import com.exampe.study.service.IResourceReviewService;
 import com.exampe.study.service.IStudyGroupService;
 import jakarta.annotation.Resource;
 import org.springframework.util.StringUtils;
@@ -18,7 +16,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * 社区控制器，统一为前端社区页提供学习小组、帖子、评论和资源评价接口。
+ * 社区控制器，统一为前端社区页提供学习小组、帖子和评论接口。
  */
 @RestController
 @RequestMapping("/api/community")
@@ -32,9 +30,6 @@ public class CommunityController {
     
     @Resource
     private IPostCommentService postCommentService;
-    
-    @Resource
-    private IResourceReviewService resourceReviewService;
 
     /**
      * 获取前端小组列表页需要的学习小组数据。
@@ -216,80 +211,5 @@ public class CommunityController {
     @GetMapping("/posts/{postId}/comments")
     public RestBean<List<PostComment>> getComments(@PathVariable String postId) {
         return RestBean.success(postCommentService.listByPostId(postId));
-    }
-
-    /**
-     * 添加资源评价
-     * @param review 评价信息
-     * @param accountUser 当前用户账户信息
-     * @return 添加的评价
-     */
-    @PostMapping("/reviews")
-    public RestBean<ResourceReview> addReview(@RequestBody ResourceReview review,
-                                              @SessionAttribute("account") AccountUser accountUser) {
-        review.setUserId(accountUser.getId());
-        review.setUsername(accountUser.getUsername());
-        review.setCreateTime(new Date());
-        if (review.getLikes() == null) {
-            review.setLikes(0);
-        }
-        resourceReviewService.save(review);
-        return RestBean.success(review);
-    }
-
-    /**
-     * 获取指定资源的评论列表
-     * @param resourceId 资源ID
-     * @return 评价列表
-     */
-    @GetMapping("/reviews")
-    public RestBean<List<ResourceReview>> listReviews(@RequestParam String resourceId) {
-        return RestBean.success(resourceReviewService.listByResourceId(resourceId));
-    }
-
-    /**
-     * 获取所有资源评价列表
-     * @return 评价列表
-     */
-    @GetMapping("/reviews/all")
-    public RestBean<List<ResourceReview>> listAllReviews() {
-        return RestBean.success(resourceReviewService.list());
-    }
-
-    /**
-     * 点赞资源评价
-     * @param id 评价ID
-     * @return 点赞结果
-     */
-    @PostMapping("/reviews/{id}/like")
-    public RestBean<String> likeReview(@PathVariable String id) {
-        return resourceReviewService.likeReview(id) ? RestBean.success("点赞成功") : RestBean.failure(404, "未找到评论");
-    }
-
-    /**
-     * 更新资源评价
-     * @param id 评价ID
-     * @param review 更新的评价信息
-     * @param accountUser 当前用户账户信息
-     * @return 更新后的评价信息
-     */
-    @RequestMapping(value = "/reviews/{id}", method = {RequestMethod.POST, RequestMethod.PUT})
-    public RestBean<ResourceReview> updateReview(@PathVariable String id,
-                                                 @RequestBody ResourceReview review,
-                                                 @SessionAttribute("account") AccountUser accountUser) {
-        review.setId(id);
-        boolean ok = resourceReviewService.updateById(review);
-        return ok ? RestBean.success(review) : RestBean.failure(500, "更新失败");
-    }
-
-    /**
-     * 删除资源评价
-     * @param id 评价ID
-     * @return 删除结果
-     */
-    @DeleteMapping("/reviews/{id}")
-    public RestBean<String> deleteReview(@PathVariable String id) {
-        boolean ok = resourceReviewService.removeById(id);
-        return ok ? RestBean.success("删除成功") : RestBean.failure(500, "删除失败");
     }
 }

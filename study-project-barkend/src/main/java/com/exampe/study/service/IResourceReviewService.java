@@ -6,16 +6,16 @@ import com.exampe.study.entity.ResourceReview;
 import java.util.List;
 
 /**
- * 资源评价服务接口，供前端资源评价区与后端评价持久化流程共用。
+ * 课程评价服务接口，供前端课程评价区与后端评价持久化流程共用。
  */
 public interface IResourceReviewService extends IService<ResourceReview> {
     
     /**
-        * 根据资源ID查询评价列表，供前端评价列表加载与刷新。
-     * @param resourceId 资源ID
+        * 根据课程ID查询评价列表，供前端评价列表加载与刷新。
+        * @param courseId 课程ID
      * @return 评价列表
      */
-    List<ResourceReview> listByResourceId(String resourceId);
+        List<ResourceReview> listByCourseId(String courseId);
 
     /**
      * 点赞评价，供前端点赞按钮交互后更新统计。

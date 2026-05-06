@@ -161,9 +161,9 @@
                 <span class="review-count">{{ courseId ? '支持实时发表与查看' : '暂无课程 ID' }}</span>
               </div>
             </template>
-            <resource-review-form v-if="courseId" :resourceId="courseId" @saved="handleReviewSaved" />
+            <course-review-form v-if="courseId" :courseId="courseId" @saved="handleReviewSaved" />
             <div class="review-list-wrap">
-              <resource-review-list ref="detailReviewListRef" v-if="courseId" :resourceId="courseId" />
+              <course-review-list ref="detailReviewListRef" v-if="courseId" :courseId="courseId" />
             </div>
           </el-card>
         </div>
@@ -201,8 +201,8 @@ import VueOfficeExcel from '@vue-office/excel'
 import '@vue-office/excel/lib/index.css'
 import VueOfficePdf from '@vue-office/pdf'
 
-import ResourceReviewForm from './components/ResourceReviewForm.vue'
-import ResourceReviewList from './components/ResourceReviewList.vue'
+import CourseReviewForm from './components/CourseReviewForm.vue'
+import CourseReviewList from './components/CourseReviewList.vue'
 
 /**
  * 前后端协同注释（课程详情/资源预览）
@@ -210,6 +210,7 @@ import ResourceReviewList from './components/ResourceReviewList.vue'
  *   - 课程详情: GET /study/cloudComputingCourse/{id} 或 /study/cloudComputingCourse/get?id=...
  *   - 资源列表: GET /study/cloudComputingCourseResource/list?courseId=...
  *   - 学习记录: GET/POST /study/learningRecord/**
+ *   - 课程评价: GET/POST /api/study/reviews
  * - 预览文件处理：前端通过 `getBlob` 或后端返回带鉴权的 URL 获取二进制，渲染组件应接收 blob URL（`renderedUrl`）。
  * - 异步加载：建议后端保证资源列表与详情接口字段稳定（file url, resourceType），前端对 `records/total` 做兜底处理以兼容分页格式。
  */
