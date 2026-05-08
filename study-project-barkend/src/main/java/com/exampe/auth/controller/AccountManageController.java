@@ -8,6 +8,7 @@ import com.exampe.auth.service.IAccountManageService;
 import com.exampe.common.RestBean;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -16,6 +17,10 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/user/manage")
 public class AccountManageController {
+
+    private final String emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+.[A-Za-z]{2,}$";
+    private final String usernameRegex = "^[A-Za-z0-9\\p{IsHan}]+$";
+
 
     @Resource
     private IAccountManageService accountManageService;
@@ -47,6 +52,10 @@ public class AccountManageController {
         if (account.getUsername() == null || account.getUsername().isBlank()) {
             return RestBean.failure(400, "用户名不能为空");
         }
+        if (!account.getUsername().matches(usernameRegex)) {
+            return RestBean.failure(400, "用户名只能包含字母、数字和汉字");
+        }
+
         if (account.getEmail() == null || account.getEmail().isBlank()) {
             return RestBean.failure(400, "邮箱不能为空");
         }
@@ -148,7 +157,7 @@ public class AccountManageController {
      * 检查邮箱是否唯一，供前端表单实时校验。
      */
     @GetMapping("/checkEmail")
-    public RestBean<Boolean> checkEmail(@RequestParam String email) {
+    public RestBean<Boolean> checkEmail(@Pattern(regexp = emailRegex) @RequestParam String email) {
         if (email == null || email.isBlank()) {
             return RestBean.success(false);
         }

@@ -1,14 +1,22 @@
 <template>
   <div class="post-form-wrap">
+    <el-alert
+      v-if="disabled"
+      type="info"
+      show-icon
+      :closable="false"
+      title="加入小组后才能发布帖子"
+      class="permission-tip"
+    />
     <el-form ref="formRef" :model="form" :rules="rules" class="post-form">
       <el-form-item label="标题" prop="title" class="field-item">
-        <el-input v-model="form.title" placeholder="写一个吸引人的标题" />
+        <el-input v-model="form.title" placeholder="写一个吸引人的标题" :disabled="disabled" />
       </el-form-item>
       <el-form-item label="内容" prop="content" class="field-item">
-        <el-input v-model="form.content" type="textarea" :rows="4" placeholder="分享你的问题、经验或者想法" />
+        <el-input v-model="form.content" type="textarea" :rows="4" placeholder="分享你的问题、经验或者想法" :disabled="disabled" />
       </el-form-item>
       <el-form-item class="submit-row">
-        <el-button type="primary" @click="submit">发布</el-button>
+        <el-button type="primary" :disabled="disabled" @click="submit">发布</el-button>
       </el-form-item>
     </el-form>
   </div>
@@ -27,7 +35,9 @@ import { post } from '@/net'
  * - 事件：`created` 由父组件接收，通常用于重新拉取帖子列表，确保刚发布的内容立刻可见。
  */
 
-const props = defineProps<{ groupId: string }>()
+const props = withDefaults(defineProps<{ groupId: string; disabled?: boolean }>(), {
+  disabled: false,
+})
 const emit = defineEmits(['created'])
 
 const formRef = ref<FormInstance>()
@@ -45,6 +55,11 @@ const rules: FormRules = {
 }
 
 const submit = () => {
+  if (props.disabled) {
+    ElMessage.warning('请先加入小组后再发布帖子')
+    return
+  }
+
   formRef.value?.validate((valid: boolean) => {
     if (!valid) {
       ElMessage.warning('请先填写标题和内容')
@@ -63,6 +78,11 @@ const submit = () => {
 <style scoped>
 .post-form-wrap {
   padding: 4px 0;
+}
+
+.permission-tip {
+  margin-bottom: 12px;
+  border-radius: 12px;
 }
 
 .post-form :deep(.el-form-item__label) {

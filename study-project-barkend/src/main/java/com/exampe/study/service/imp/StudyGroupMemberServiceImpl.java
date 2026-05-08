@@ -20,4 +20,12 @@ public class StudyGroupMemberServiceImpl extends ServiceImpl<StudyGroupMemberMap
         Integer count = baseMapper.countMembership(groupId, userId);
         return count != null && count > 0;
     }
+
+    /**
+     * 按加入时间升序返回小组成员，方便详情页按自然顺序展示。
+     */
+    @Override
+    public java.util.List<StudyGroupMember> listByGroupId(String groupId) {
+        return baseMapper.listByGroupId(groupId);
+    }
 }

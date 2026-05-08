@@ -127,8 +127,7 @@
             </div>
             <div class="info-row"><span class="label">标签:</span> <el-tag size="small">{{ selectedCourse.courseTag
                 }}</el-tag></div>
-            <div class="info-row"><span class="label">所属教师:</span> <span>{{ selectedCourse.teacherName || '管理员'
-                }}</span>
+            <div class="info-row"><span class="label">所属教师:</span> <span>{{ getTeacherLabelByCourse(selectedCourse) }}</span>
             </div>
             <div class="info-row"><span class="label">建议学时:</span> <span>{{ selectedCourse.courseHours }}h</span></div>
           </div>
@@ -206,6 +205,7 @@ const courseFormRef = ref()
 const queryParam = reactive({ courseName: '', status: '' })
 const ipagination = reactive({ current: 1, pageSize: 10, total: 0 })
 const courseTypeList = ref<any[]>([])
+const teacherList = ref<any[]>([])
 
 const userStore = useUserStore()
 
@@ -218,10 +218,26 @@ const loadCourseTypes = () => {
   })
 }
 
+const loadTeachers = () => {
+  get('/api/user/manage/list', (_message: string, data: any) => {
+    teacherList.value = data?.data || data?.records || data || []
+  })
+}
+
 const getCourseTypeText = (row: any) => {
   if (row.courseTypeName) return row.courseTypeName
   const match = courseTypeList.value.find(item => String(item.id) === String(row.courseTypeId))
   return match ? match.courseTypeName : '-'
+}
+
+const getTeacherLabel = (teacher: any) => {
+  return teacher?.realname || teacher?.realName || teacher?.username || teacher?.email || teacher?.name || '-'
+}
+
+const getTeacherLabelByCourse = (course: any) => {
+  if (!course) return '-'
+  const teacher = teacherList.value.find(item => String(item.id) === String(course.teacherId))
+  return teacher ? getTeacherLabel(teacher) : (course.teacherId || '-')
 }
 
 const loadData = (arg = 1) => {
@@ -311,6 +327,7 @@ const handleDelete = (row: any) => {
 onMounted(() => {
   // 初始化：加载分类与列表数据
   loadCourseTypes()
+  loadTeachers()
   loadData()
 })
 

@@ -34,7 +34,7 @@
       </div>
 
       <!-- 右侧列表 -->
-      <div class="right-panel" v-if="currentModule !== 'Details'&&currentModule !== 'Reviews'">
+      <div class="right-panel" v-if="currentModule !== 'Details' && currentModule !== 'Reviews'">
         <div class="panel-header">
           <span class="panel-title">{{ panelTitle }}</span>
           <el-icon>
@@ -78,14 +78,14 @@
           <div class="preview-container" v-loading="previewLoading" @scroll="handleDocScroll">
             <!-- 重点：讲义内容需要一个内部容器来撑开高度以便外层 preview-container 产生滚动条 -->
             <div v-if="renderedUrl && currentModule === 'lecture'" class="office-preview-wrapper"
-              :style="{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }">
-              <vue-office-docx v-if="getFileType(currentList[currentItemIndex]?.url) === 'docx'" :src="renderedUrl"
-                style="min-height: 100%;" @rendered="onOfficeRendered" />
-              <vue-office-excel
-                v-else-if="getFileType(currentList[currentItemIndex]?.url) === 'xlsx' || getFileType(currentList[currentItemIndex]?.url) === 'xls'"
-                :src="renderedUrl" style="min-height: 100%;" @rendered="onOfficeRendered" />
-              <vue-office-pdf v-else-if="getFileType(currentList[currentItemIndex]?.url) === 'pdf'" :src="renderedUrl"
-                style="min-height: 100%;" @rendered="onOfficeRendered" />
+              :class="{ 'pdf-preview-wrapper': currentFileType === 'pdf' }"
+              :style="currentFileType === 'pdf' ? undefined : { transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }">
+              <vue-office-docx v-if="currentFileType === 'docx'" :src="renderedUrl" class="office-preview-component"
+                @rendered="onOfficeRendered" />
+              <vue-office-excel v-else-if="currentFileType === 'xlsx' || currentFileType === 'xls'" :src="renderedUrl"
+                class="office-preview-component" @rendered="onOfficeRendered" />
+              <vue-office-pdf v-else-if="currentFileType === 'pdf'" :src="renderedUrl"
+                class="office-preview-component pdf-preview-component" @rendered="onOfficeRendered" />
               <div v-else class="unknown-file-type">
                 <el-result icon="warning" title="不支持的预览格式" sub-title="该文件格式暂不支持在线预览">
                   <template #extra>
@@ -94,7 +94,7 @@
                 </el-result>
               </div>
             </div>
-           <div v-else-if="currentModule === 'data' && currentList[currentItemIndex]" class="data-download-center">
+            <div v-else-if="currentModule === 'data' && currentList[currentItemIndex]" class="data-download-center">
               <el-result icon="info" title="资料下载" sub-title="点击下方按钮下载参考资料，下载完成后将自动标记为已学">
                 <template #extra>
                   <el-button type="success" size="large" :icon="Document"
@@ -148,10 +148,10 @@
             </el-descriptions>
           </div>
 
-         
+
         </div>
-          <div v-if="currentModule === 'Reviews'" class="detail-stack">
-           <el-card shadow="never" class="review-card">
+        <div v-if="currentModule === 'Reviews'" class="detail-stack">
+          <el-card shadow="never" class="review-card">
             <template #header>
               <div class="review-card-head">
                 <div>
@@ -175,7 +175,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getApiBaseURL, get, getBlob, post } from '@/net'
@@ -226,22 +226,25 @@ const courseId = ref(route.query.courseId as string)
 const currentModule = ref(route.query.resourceType as string || 'video')
 const currentItemIndex = ref(0)
 const zoomLevel = ref(100)
+const videoRef = ref<HTMLVideoElement | null>(null)
 const courseDetails = ref<any>({})
 const courseTypeDict = ref<any[]>([])
 const allResources = ref<any[]>([])
 const detailReviewListRef = ref()
 
-// 预览相关状态：renderedUrl 始终是带鉴权后的 blob URL，而不是后端原始路径
+// 预览相关状态：renderedUrl 直接使用带鉴权的后端 URL，便于浏览器/预览组件流式加载
 const renderedUrl = ref('')
+const previewBlobUrl = ref('')
 const previewLoading = ref(false)
 const previewBoxRef = ref<HTMLElement | null>(null)
+const pdfScrollElement = ref<HTMLElement | null>(null)
 
 const menuItems = [
   { key: 'video', label: '视频课程', icon: VideoPlay },
   { key: 'lecture', label: '课件讲义', icon: Files },
   { key: 'data', label: '参考资料', icon: FolderOpened },
   { key: 'Details', label: '课程详情', icon: InfoFilled },
-   { key: 'Reviews', label: '课程评价', icon: InfoFilled }
+  { key: 'Reviews', label: '课程评价', icon: InfoFilled }
 ]
 
 // --- 计算属性 ---
@@ -250,6 +253,8 @@ const courseTypeName = computed(() => {
   const match = courseTypeDict.value.find(item => String(item.id) === String(courseDetails.value.courseTypeId))
   return match ? match.courseTypeName : '-'
 })
+
+const currentFileType = computed(() => currentList.value[currentItemIndex.value]?.fileType || '')
 
 const currentList = computed(() => {
   const typeMap: Record<string, string> = { 'video': '1', 'lecture': '2', 'data': '3' }
@@ -305,6 +310,14 @@ const toggleFullScreen = () => {
 }
 
 const handleVideoEnded = () => {
+  completionPending.value = true
+  learningRecord.value.learningStatus = '1'
+  const currentRes = currentList.value[currentItemIndex.value]
+  if (currentRes) {
+    currentRes.isCompleted = 1
+  }
+  stopProgressSaveTimer()
+  void saveLearningProgress()
   markAsCompleted()
 }
 
@@ -369,7 +382,10 @@ const createLearningRecord = (contentId: string) => {
 // 标记为完成 (参考 CourseDetailsFrom 的 updateLearningRecord 逻辑)
 const markAsCompleted = () => {
   const currentRes = currentList.value[currentItemIndex.value]
-  if (!currentRes || currentRes.isCompleted) return
+  if (!currentRes || (currentRes.isCompleted && !completionPending.value)) {
+    completionPending.value = false
+    return
+  }
 
   const now = new Date().toISOString().replace('T', ' ').substring(0, 19)
   const updateData = {
@@ -382,6 +398,7 @@ const markAsCompleted = () => {
   // 注意：如果是 POST 方式，调用 post 工具函数即可
   post('/study/cloudComputingStudentLearningRecord/edit', updateData, (msg, data) => {
     learningRecord.value.learningStatus = '1'
+    completionPending.value = false
     // 更新当前资源项的勾选状态
     // 注意：如果是通过计算属性得到的 currentList，直接修改 item 属性可能不响应，我们需要修改源数据 allResources
     const targetItem = allResources.value.find(r => r.id === currentRes.id)
@@ -390,6 +407,7 @@ const markAsCompleted = () => {
     }
     ElMessage.success('学习完成！')
   }, (err) => {
+    completionPending.value = false
     console.error('更新学习状态失败:', err)
     ElMessage.error('无法同步学习状态')
   })
@@ -397,13 +415,27 @@ const markAsCompleted = () => {
 
 // 视频播放记录逻辑
 const progressSaveTimer = ref<any>(null)
-const lastSaveTime = ref(0)
+const lastWatchedSecond = ref(0)
+const completionPending = ref(false)
+
+const getCurrentVideoElement = () => videoRef.value || document.querySelector('video') as HTMLVideoElement | null
+
+const submitLearningRecord = (payload: any) => {
+  return new Promise<void>((resolve, reject) => {
+    post('/study/cloudComputingStudentLearningRecord/edit', payload, () => resolve(), (err) => reject(err))
+  })
+}
 
 const handleVideoPlay = () => {
+  const video = getCurrentVideoElement()
+  if (video) {
+    lastWatchedSecond.value = Math.floor(video.currentTime || 0)
+  }
   startProgressSaveTimer()
 }
 
 const handleVideoPause = () => {
+  void saveLearningProgress()
   stopProgressSaveTimer()
 }
 
@@ -416,17 +448,50 @@ const startProgressSaveTimer = () => {
 
 const stopProgressSaveTimer = () => {
   if (progressSaveTimer.value) {
+    void saveLearningProgress()
     clearInterval(progressSaveTimer.value)
     progressSaveTimer.value = null
   }
 }
 
-const saveLearningProgress = () => {
-  const video = document.querySelector('video')
-  if (video) {
-    // 预留：后续可在此接入断点续播接口，避免打断现有学习流程
-    // 这里可以调用接口保存视频进度，如果需要
-    // const currentTime = Math.floor(video.currentTime)
+const clearPreviewBlobUrl = () => {
+  if (previewBlobUrl.value) {
+    URL.revokeObjectURL(previewBlobUrl.value)
+    previewBlobUrl.value = ''
+  }
+}
+
+const saveLearningProgress = async () => {
+  const video = getCurrentVideoElement()
+  const currentRes = currentList.value[currentItemIndex.value]
+  if (!video || !currentRes || !learningRecord.value.id) return
+
+  const currentSecond = Math.floor(video.currentTime || 0)
+  const delta = Math.max(0, currentSecond - lastWatchedSecond.value)
+  if (delta <= 0 && !learningRecord.value.id) return
+
+  const currentLearningTime = Number(learningRecord.value.learningTime || 0)
+  const nextLearningTime = currentLearningTime + delta
+  const now = new Date().toISOString().replace('T', ' ').substring(0, 19)
+  const updateData = {
+    ...learningRecord.value,
+    learningStatus: completionPending.value || currentRes.isCompleted || learningRecord.value.learningStatus === '1'
+      ? '1'
+      : (learningRecord.value.learningStatus || '1'),
+    learningTime: nextLearningTime,
+    lastLearnTime: now
+  }
+
+  learningRecord.value.learningTime = nextLearningTime
+  learningRecord.value.lastLearnTime = now
+  if (delta > 0) {
+    lastWatchedSecond.value = currentSecond
+  }
+
+  try {
+    await submitLearningRecord(updateData)
+  } catch (err) {
+    console.error('保存学习时长失败:', err)
   }
 }
 
@@ -435,6 +500,21 @@ const onOfficeRendered = () => {
   console.log('Office 组件渲染完成')
   // 检查是否内容太短没有滚动条
   const container = document.querySelector('.preview-container')
+
+  if (currentFileType.value === 'pdf') {
+    bindPdfScrollListener()
+    if (container) {
+      const { scrollHeight, clientHeight } = container
+      if (scrollHeight <= clientHeight + 20) {
+        console.log('检测到 PDF 文档较短，无须滚动，自动标记完成')
+        if (learningRecord.value.learningStatus !== '1') {
+          markAsCompleted()
+        }
+      }
+    }
+    return
+  }
+
   if (container) {
     const { scrollHeight, clientHeight } = container
     console.log('检查内容高度:', { scrollHeight, clientHeight })
@@ -447,6 +527,45 @@ const onOfficeRendered = () => {
     } else {
       ElMessage.info('文档已加载，向下滚动可完成学习')
     }
+  }
+}
+
+const cleanupPdfScrollListener = () => {
+  if (pdfScrollElement.value) {
+    pdfScrollElement.value.removeEventListener('scroll', handlePdfScroll)
+    pdfScrollElement.value = null
+  }
+}
+
+const bindPdfScrollListener = () => {
+  cleanupPdfScrollListener()
+
+  window.setTimeout(() => {
+    const element = document.querySelector('.preview-container .vue-office-pdf') as HTMLElement | null
+    if (!element) return
+
+    pdfScrollElement.value = element
+    element.addEventListener('scroll', handlePdfScroll, { passive: true })
+
+    const { scrollHeight, clientHeight } = element
+    if (scrollHeight <= clientHeight + 20 && learningRecord.value.learningStatus !== '1') {
+      console.log('PDF 预览无需滚动，自动标记完成')
+      markAsCompleted()
+    }
+  }, 0)
+}
+
+const handlePdfScroll = (e: Event) => {
+  if (currentModule.value !== 'lecture' || currentFileType.value !== 'pdf') return
+
+  const target = e.target as HTMLElement | null
+  if (!target) return
+
+  const { scrollTop, scrollHeight, clientHeight } = target
+  const scrollRatio = (scrollTop + clientHeight) / scrollHeight
+  if (scrollRatio >= 0.98 && learningRecord.value.learningStatus !== '1') {
+    console.log('PDF 已滚动到底部，触发标记完成')
+    markAsCompleted()
   }
 }
 
@@ -485,12 +604,34 @@ const handleDownload = async (item: any) => {
   }
 
   try {
-    const blob = await getBlob(item.url)
     const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = item.fileName
+    const url = item.url
+
+    // 尝试从 URL 推断扩展名，如果 fileName 没有扩展名则补上
+    const inferExtFromUrl = (u: string) => {
+      try {
+        const parsed = new URL(u)
+        const path = parsed.pathname || ''
+        const maybe = path.split('.').pop() || ''
+        return maybe && maybe.length <= 6 ? maybe.toLowerCase() : ''
+      } catch (e) {
+        const maybe = u.split('?')[0].split('.').pop() || ''
+        return maybe && maybe.length <= 6 ? maybe.toLowerCase() : ''
+      }
+    }
+
+    const ext = inferExtFromUrl(url)
+    let filename = item.fileName || 'download'
+    if (ext && !filename.toLowerCase().endsWith('.' + ext)) {
+      filename = filename + '.' + ext
+    }
+
+    link.href = url
+    link.download = filename
+    // 兼容性：先加入 DOM 再触发，随后移除
+    document.body.appendChild(link)
     link.click()
-    URL.revokeObjectURL(link.href)
+    link.remove()
   } catch (err) {
     console.error('下载过程中发生错误:', err)
     // 注意：即使报错我们也保留之前的 markAsCompleted 状态，除非你想报错时撤回
@@ -498,30 +639,42 @@ const handleDownload = async (item: any) => {
   }
 }
 
-// 监听当前选中的 URL 变化，手动获取 Blob 以携带认证信息
+// 监听当前选中的 URL 变化，直接切换到后端文件 URL，让浏览器和预览组件按需流式加载
 watch(() => currentList.value[currentItemIndex.value]?.url, async (newUrl) => {
   // 如果当前不是预览模块，则不处理
   if (currentModule.value !== 'lecture' && currentModule.value !== 'data') {
+    cleanupPdfScrollListener()
+    clearPreviewBlobUrl()
     renderedUrl.value = ''
     return
   }
 
   if (!newUrl) {
+    cleanupPdfScrollListener()
+    clearPreviewBlobUrl()
     renderedUrl.value = ''
     return
   }
 
   previewLoading.value = true
   try {
-    const blob = await getBlob(newUrl)
-    // 释放旧的 URL 内存
-    if (renderedUrl.value) {
-      URL.revokeObjectURL(renderedUrl.value)
+    const currentItem = currentList.value[currentItemIndex.value]
+    const fileType = currentItem?.fileType || getFileType(newUrl, currentItem?.fileName)
+    const useBlobPreview = ['docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt', 'pdf'].includes(fileType)
+
+    clearPreviewBlobUrl()
+
+    if (useBlobPreview) {
+      const blob = await getBlob(newUrl)
+      previewBlobUrl.value = URL.createObjectURL(blob)
+      renderedUrl.value = previewBlobUrl.value
+    } else {
+      renderedUrl.value = newUrl
     }
-    renderedUrl.value = URL.createObjectURL(blob)
   } catch (err: any) {
     console.error('获取预览文件失败:', err)
     ElMessage.error('无法加载预览文件，请检查登录状态或权限')
+    clearPreviewBlobUrl()
     renderedUrl.value = ''
   } finally {
     previewLoading.value = false
@@ -531,18 +684,36 @@ watch(() => currentList.value[currentItemIndex.value]?.url, async (newUrl) => {
 // 监听模块切换，主动释放旧 blob URL，避免多次切换后的内存累积
 watch(currentModule, (newVal) => {
   if (newVal === 'video' || newVal === 'Details') {
-    if (renderedUrl.value) {
-      URL.revokeObjectURL(renderedUrl.value)
-      renderedUrl.value = ''
-    }
+    cleanupPdfScrollListener()
+    clearPreviewBlobUrl()
+    renderedUrl.value = ''
   }
 })
 
+onBeforeUnmount(() => {
+  cleanupPdfScrollListener()
+  clearPreviewBlobUrl()
+})
+
 // 获取文件后缀类型
-const getFileType = (url: string) => {
-  if (!url) return ''
-  const part = url.split('.').pop()
-  return part ? part.toLowerCase() : ''
+const getFileType = (url: string, fallbackName = '') => {
+  const extractCandidateName = (source: string): string => {
+    const cleanedSource = (String(source || '').split('#')[0] || '')
+    if (!cleanedSource) return ''
+
+    const queryMatch = cleanedSource.match(/[?&](?:fileName|filename)=([^&#]+)/i)
+    if (queryMatch?.[1]) {
+      return decodeURIComponent(String(queryMatch[1]))
+    }
+
+    const withoutQuery = (cleanedSource.split('?')[0] || '')
+    const lastSegment = String(withoutQuery.split('/').pop() || withoutQuery || '')
+    return decodeURIComponent(lastSegment)
+  }
+
+  const candidate = extractCandidateName(url) || extractCandidateName(fallbackName)
+  const part = candidate.split('.').pop()
+  return part && part !== candidate ? part.toLowerCase() : ''
 }
 
 // 拼接完整的后端路径：资源字段可能是完整 URL，也可能是后端存储文件名
@@ -584,6 +755,7 @@ const initData = async () => {
       ...item,
       fileName: item.resourceName, // 适配组件内的 fileName 引用
       url: getFullUrl(item.resourceUrl),
+      fileType: getFileType(item.resourceUrl, item.resourceName),
       isCompleted: 0 // 默认未完成，稍后通过学习记录同步
     }))
 
@@ -876,6 +1048,22 @@ const handleReviewSaved = (d: any) => {
   transition: transform 0.2s ease;
 }
 
+.pdf-preview-wrapper {
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+}
+
+.office-preview-component {
+  display: block;
+  width: 100%;
+}
+
+.pdf-preview-component {
+  height: 100%;
+  min-height: 0;
+}
+
 .unknown-file-type {
   display: flex;
   justify-content: center;
@@ -932,5 +1120,19 @@ const handleReviewSaved = (d: any) => {
 
 .review-list-wrap {
   margin-top: 18px;
+}
+
+/* 覆盖 vue-office-pdf 组件默认的灰色背景与内边距，避免渲染完成后被灰色块遮挡 */
+::v-deep .vue-office-pdf-wrapper {
+  background: transparent !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+::v-deep .vue-office-pdf {
+  background: transparent !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
 }
 </style>

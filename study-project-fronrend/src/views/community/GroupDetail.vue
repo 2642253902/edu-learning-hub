@@ -13,7 +13,21 @@
     <el-card shadow="never" class="composer-card">
       <div class="section-title">发布新帖</div>
       <!-- 发帖表单直接把 groupId 透传给子组件，确保后端创建帖子时能正确挂到当前小组 -->
-      <post-form :groupId="groupId" @created="loadPosts" />
+      <post-form :groupId="groupId" :disabled="!isMember" @created="loadPosts" />
+    </el-card>
+
+    <el-card shadow="never" class="members-card">
+      <div class="members-head">
+        <div class="section-title">小组成员</div>
+        <div class="members-chip">{{ members.length }} 人</div>
+      </div>
+      <el-table :data="members" stripe class="members-table">
+        <el-table-column prop="username" label="成员名称" min-width="180" />
+        <el-table-column prop="createTime" label="加入时间" min-width="180" />
+        <template #empty>
+          <div class="table-empty">还没有成员信息</div>
+        </template>
+      </el-table>
     </el-card>
 
     <el-card shadow="never" class="posts-card">
@@ -40,7 +54,7 @@
         <div class="mt-2">{{ currentPost.content }}</div>
         <div class="mt-4">
           <!-- 评论列表以 postId 为锚点，和后端评论接口保持一对一对应 -->
-          <comment-list v-if="currentPost?.id" :postId="String(currentPost.id)" />
+          <comment-list v-if="currentPost?.id" :postId="String(currentPost.id)" :disabled="!isMember" />
         </div>
       </div>
     </el-dialog>
@@ -53,6 +67,7 @@ import { get } from '@/net'
 import PostForm from './components/PostForm.vue'
 import CommentList from './components/CommentList.vue'
 import { useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 /**
  * 前后端协同注释（小组详情）
@@ -62,11 +77,14 @@ import { useRoute } from 'vue-router'
  */
 
 const route = useRoute()
+const userStore = useUserStore()
 const groupId = String(route.params.id || route.query.id || '')
 const group = ref<any>(null)
 const posts = ref<any[]>([])
+const members = ref<any[]>([])
 const showPost = ref(false)
 const currentPost = ref<any>(null)
+const isMember = ref(false)
 
 const loadGroup = () => {
   get('/api/community/groups', (_message: string, d: any) => {
@@ -81,12 +99,25 @@ const loadPosts = () => {
   })
 }
 
+const loadMembers = () => {
+  get(`/api/community/groups/${encodeURIComponent(groupId)}/members`, (_message: string, d: any) => {
+    members.value = d || []
+    const currentUserId = String(userStore.auth.user?.id || '')
+    isMember.value = members.value.some((item: any) => String(item.userId) === currentUserId)
+  })
+}
+
+const refreshMembership = () => {
+  const currentUserId = String(userStore.auth.user?.id || '')
+  isMember.value = members.value.some((item: any) => String(item.userId) === currentUserId)
+}
+
 const openPost = (id: string) => {
   currentPost.value = posts.value.find((p: any) => p.id === id)
   showPost.value = true
 }
 
-onMounted(() => { loadGroup(); loadPosts() })
+onMounted(() => { loadGroup(); loadPosts(); loadMembers(); refreshMembership() })
 </script>
 
 <style scoped>
@@ -100,6 +131,7 @@ onMounted(() => { loadGroup(); loadPosts() })
 
 .hero-card,
 .composer-card,
+.members-card,
 .posts-card {
   border-radius: 18px;
   border: 1px solid #e5e7eb;
@@ -107,8 +139,31 @@ onMounted(() => { loadGroup(); loadPosts() })
 }
 
 .hero-card,
-.composer-card {
+.composer-card,
+.members-card {
   margin-bottom: 16px;
+}
+
+.members-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.members-chip {
+  height: 30px;
+  border-radius: 999px;
+  padding: 0 12px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  color: #1d4ed8;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .hero-wrap {
@@ -157,6 +212,10 @@ onMounted(() => { loadGroup(); loadPosts() })
 }
 
 .posts-table {
+  width: 100%;
+}
+
+.members-table {
   width: 100%;
 }
 

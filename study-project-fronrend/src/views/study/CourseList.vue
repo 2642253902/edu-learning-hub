@@ -26,7 +26,7 @@
           </div>
           <div class="header-right">
             <el-button type="primary" :icon="Plus" @click="handleAdd">新增课程</el-button>
-            <el-button :icon="Download" plain @click="handleExport">导出数据</el-button>
+            <!-- <el-button :icon="Download" plain @click="handleExport">导出数据</el-button> -->
           </div>
         </div>
       </template>

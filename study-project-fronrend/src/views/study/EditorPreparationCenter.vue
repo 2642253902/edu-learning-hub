@@ -175,7 +175,7 @@
                     <el-button v-if="!disabled" type="primary" @click="openReviewDialog()">新增评价</el-button>
                   </div>
 
-                  <el-alert type="info" show-icon :closable="false" title="这里用于课程备课阶段查看和管理本课程的评价记录，不提供学生发表入口。"
+                  <el-alert type="info" show-icon :closable="false" 
                     class="mb-4" />
 
                   <el-table :data="reviewList" v-loading="reviewLoading" border stripe>

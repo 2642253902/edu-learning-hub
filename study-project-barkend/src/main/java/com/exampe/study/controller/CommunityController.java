@@ -4,9 +4,11 @@ import com.exampe.auth.entity.user.AccountUser;
 import com.exampe.common.RestBean;
 import com.exampe.study.entity.GroupPost;
 import com.exampe.study.entity.PostComment;
+import com.exampe.study.entity.StudyGroupMember;
 import com.exampe.study.entity.StudyGroup;
 import com.exampe.study.service.IGroupPostService;
 import com.exampe.study.service.IPostCommentService;
+import com.exampe.study.service.IStudyGroupMemberService;
 import com.exampe.study.service.IStudyGroupService;
 import jakarta.annotation.Resource;
 import org.springframework.util.StringUtils;
@@ -30,6 +32,9 @@ public class CommunityController {
     
     @Resource
     private IPostCommentService postCommentService;
+
+    @Resource
+    private IStudyGroupMemberService studyGroupMemberService;
 
     /**
      * 获取前端小组列表页需要的学习小组数据。
@@ -108,6 +113,16 @@ public class CommunityController {
     }
 
     /**
+     * 获取小组成员列表，供前端详情页展示组内成员。
+     * @param groupId 小组ID
+     * @return 成员列表
+     */
+    @GetMapping("/groups/{groupId}/members")
+    public RestBean<List<StudyGroupMember>> listGroupMembers(@PathVariable String groupId) {
+        return RestBean.success(studyGroupMemberService.listByGroupId(groupId));
+    }
+
+    /**
      * 创建新帖子，供前端公共讨论区和小组详情页共用。
      * @param post 帖子信息
      * @param accountUser 当前用户账户信息
@@ -122,6 +137,9 @@ public class CommunityController {
         }
         if (!StringUtils.hasText(post.getContent())) {
             return RestBean.failure(400, "内容不能为空");
+        }
+        if (StringUtils.hasText(post.getGroupId()) && !studyGroupMemberService.existsMembership(post.getGroupId(), accountUser.getId())) {
+            return RestBean.failure(403, "请先加入小组后再发帖");
         }
 
         post.setUserId(accountUser.getId());
@@ -192,6 +210,12 @@ public class CommunityController {
         // 校验评论内容不为空
         if (!StringUtils.hasText(comment.getContent())) {
             return RestBean.failure(400, "评论内容不能为空");
+        }
+
+        GroupPost currentPost = groupPostService.getById(postId);
+        if (currentPost != null && StringUtils.hasText(currentPost.getGroupId())
+                && !studyGroupMemberService.existsMembership(currentPost.getGroupId(), accountUser.getId())) {
+            return RestBean.failure(403, "请先加入小组后再评论");
         }
 
         comment.setPostId(postId);

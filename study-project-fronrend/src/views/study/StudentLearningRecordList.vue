@@ -24,8 +24,7 @@
           <el-form-item label="状态">
             <el-select v-model="queryParam.learningStatus" placeholder="请选择" clearable style="width: 120px">
               <el-option label="未开始" :value="0" />
-              <el-option label="学习中" :value="1" />
-              <el-option label="已完成" :value="2" />
+              <el-option label="已完成" :value="1" />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -54,13 +53,14 @@
         </el-table-column>
         <el-table-column label="观看进度" width="220" align="center">
           <template #default="{ row }">
-            <el-progress :percentage="getProgress(row)" :status="getProgress(row) >= 100 ? 'success' : ''" />
+            <el-progress :percentage="getProgressPercent(row)" :status="getProgressStatus(row)"
+              :format="() => getProgressText(row)" />
           </template>
         </el-table-column>
         <el-table-column label="最后学习时间" prop="lastLearnTime" align="center" width="180" />
         <el-table-column label="状态" prop="learningStatus" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="String(row.learningStatus) === '2' ? 'success' : 'warning'">
+            <el-tag :type="String(row.learningStatus) === '1' ? 'success' : 'info'">
               {{ getStatusText(row.learningStatus) }}
             </el-tag>
           </template>
@@ -147,22 +147,35 @@ const getResourceLabelById = (id: any, fallback?: string) => {
   return match ? getResourceLabel(match) : (fallback || String(id))
 }
 
-const getProgress = (row: any) => {
-  // 兼容不同历史字段命名：watchProgress/learningProgress/progress
-  const value = Number(row.watchProgress ?? row.learningProgress ?? row.progress ?? 0)
-  return Number.isNaN(value) ? 0 : Math.max(0, Math.min(100, value))
+const getProgressPercent = (row: any) => {
+  const learningTime = Number(row.learningTime ?? 0)
+
+  // 后端实际使用的是 0=未开始、1=已完成；完成后直接展示满进度。
+  if (String(row.learningStatus) === '1') return 100
+
+  // 未完成时用累计学习秒数做一个可视化进度条，避免列表中只显示一串秒数。
+  return Number.isNaN(learningTime) ? 0 : Math.max(0, Math.min(99, learningTime))
+}
+
+const getProgressStatus = (row: any) => {
+  return String(row.learningStatus) === '1' ? 'success' : ''
+}
+
+const getProgressText = (row: any) => {
+  if (String(row.learningStatus) === '1') return '已完成'
+  const learningTime = Number(row.learningTime ?? 0)
+  return `${Number.isNaN(learningTime) ? 0 : Math.max(0, learningTime)}秒`
 }
 
 const getStatusText = (value: any) => {
-  // 当前页面按 0/1/2 展示状态文案，和后端枚举保持一致
-  if (String(value) === '2') return '已完成'
-  if (String(value) === '1') return '学习中'
+  // 后端实际使用的状态值为 0=未开始、1=已完成。
+  if (String(value) === '1') return '已完成'
   return '未开始'
 }
 
 const loadStudents = () => {
-  get('/api/user/list/teachers?pageNo=1&pageSize=1000', (_msg, data) => {
-    studentOptions.value = unwrapListData(data)
+  get('/api/user/manage/list?pageNo=1&pageSize=1000', (_msg, data) => {
+    studentOptions.value = unwrapListData(data).filter((item: any) => String(item.role) === '3')
   })
 }
 

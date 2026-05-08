@@ -2,6 +2,7 @@ package com.exampe.sys.controller;
 
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.exampe.common.RestBean;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -94,10 +96,13 @@ public class FileUploadController {
      * <p>通过文件名下载文件，支持浏览器预览PDF等格式</p>
      *
      * @param fileName 文件相对路径（数据库中存储的路径）
+     * @param request HTTP请求对象，用于支持 Range 分片下载
      * @param response HTTP响应对象
      */
     @GetMapping("/download")
-    public void downloadFile(@RequestParam("fileName") String fileName, HttpServletResponse response) {
+    public void downloadFile(@RequestParam("fileName") String fileName,
+                             HttpServletRequest request,
+                             HttpServletResponse response) {
         try {
             if (fileName == null || fileName.isEmpty()) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -119,31 +124,86 @@ public class FileUploadController {
                 return;
             }
 
-            try (FileInputStream fis = new FileInputStream(file);
-                 OutputStream os = response.getOutputStream()) {
+            long fileLength = file.length();
+            String contentType = Files.probeContentType(resolved);
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+            response.setContentType(contentType);
+            response.setHeader("Accept-Ranges", "bytes");
+            response.setHeader("Cache-Control", "private, max-age=3600");
 
-                // 设置内容类型
-                String contentType = Files.probeContentType(resolved);
-                if (contentType == null) {
-                    contentType = "application/octet-stream";
+            String rawFileName = resolved.getFileName().toString();
+            // 解决下载文件名乱码问题
+            String headerFileName = URLEncoder.encode(rawFileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+            response.setHeader("Content-Disposition", "inline;filename=" + headerFileName);
+
+            String rangeHeader = request.getHeader("Range");
+            if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
+                long start = 0;
+                long end = fileLength - 1;
+                String rangeValue = rangeHeader.substring("bytes=".length()).trim();
+                int dashIndex = rangeValue.indexOf('-');
+                if (dashIndex >= 0) {
+                    String startPart = rangeValue.substring(0, dashIndex).trim();
+                    String endPart = rangeValue.substring(dashIndex + 1).trim();
+                    if (!startPart.isEmpty()) {
+                        start = Long.parseLong(startPart);
+                    }
+                    if (!endPart.isEmpty()) {
+                        end = Long.parseLong(endPart);
+                    }
                 }
-                response.setContentType(contentType);
 
-                String rawFileName = resolved.getFileName().toString();
-                // 解决下载文件名乱码问题
-                String headerFileName = URLEncoder.encode(rawFileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
-                response.setHeader("Content-Disposition", "inline;filename=" + headerFileName);
-
-                byte[] buffer = new byte[8192];
-                int len;
-                while ((len = fis.read(buffer)) != -1) {
-                    os.write(buffer, 0, len);
+                if (start >= fileLength) {
+                    response.setStatus(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+                    response.setHeader("Content-Range", "bytes */" + fileLength);
+                    return;
                 }
-                os.flush();
+
+                if (end >= fileLength) {
+                    end = fileLength - 1;
+                }
+
+                long contentLength = end - start + 1;
+                response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
+                response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileLength);
+                response.setContentLengthLong(contentLength);
+
+                try (RandomAccessFile raf = new RandomAccessFile(file, "r");
+                     OutputStream os = response.getOutputStream()) {
+                    raf.seek(start);
+                    byte[] buffer = new byte[64 * 1024];
+                    long remaining = contentLength;
+                    while (remaining > 0) {
+                        int len = raf.read(buffer, 0, (int) Math.min(buffer.length, remaining));
+                        if (len == -1) {
+                            break;
+                        }
+                        os.write(buffer, 0, len);
+                        remaining -= len;
+                    }
+                    os.flush();
+                }
+            } else {
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.setContentLengthLong(fileLength);
+
+                try (FileInputStream fis = new FileInputStream(file);
+                     OutputStream os = response.getOutputStream()) {
+                    byte[] buffer = new byte[64 * 1024];
+                    int len;
+                    while ((len = fis.read(buffer)) != -1) {
+                        os.write(buffer, 0, len);
+                    }
+                    os.flush();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        } catch (NumberFormatException e) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         }
     }
 

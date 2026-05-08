@@ -45,7 +45,8 @@ public class CloudComputingCourseController {
      * @return 教师信息
      */
     @GetMapping(value = "/addByUser")
-    public RestBean<Map<String, Object>> addByUser(@RequestParam(name = "userId", required = true) String userId) {
+    public RestBean<Map<String, Object>> addByUser(
+            @RequestParam(name = "userId", required = true) String userId) {
         List<Map> teacher = cloudComputingCourseService.getTeacher();
         for (Map i : teacher) {
             if (i.get("value").equals(userId)) {
@@ -64,7 +65,8 @@ public class CloudComputingCourseController {
      * @return 操作结果
      */
     @PostMapping(value = "/editCourseStatus/{courseId}/{status}")
-    public RestBean<String> editCourseStatus(@PathVariable String courseId, @PathVariable int status) {
+    public RestBean<String> editCourseStatus(
+            @PathVariable String courseId, @PathVariable int status) {
         CloudComputingCourse byId = cloudComputingCourseService.getById(courseId);
         byId.setCourseStatus(status);
         cloudComputingCourseService.updateById(byId);
@@ -97,7 +99,8 @@ public class CloudComputingCourseController {
      * @return 分页结果
      */
     @GetMapping(value = "/listByTeacherId")
-    public RestBean<IPage<CloudComputingCourse>> queryPageListByTeacherId(CloudComputingCourse cloudComputingCourse,
+    public RestBean<IPage<CloudComputingCourse>>
+    queryPageListByTeacherId(CloudComputingCourse cloudComputingCourse,
                                                                           @RequestParam(name = "teacherId", required = false) String teacherId,
                                                                           @RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
                                                                           @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize,
@@ -125,7 +128,8 @@ public class CloudComputingCourseController {
      * @return 操作结果
      */
     @DeleteMapping(value = "/deleteCourse")
-    public RestBean<String> deleteCourse(@RequestParam(name = "courseId", required = true) String courseId) {
+    public RestBean<String>
+    deleteCourse(@RequestParam(name = "courseId", required = true) String courseId) {
         // 查询该课程的所有资源
         List<CloudComputingCourseResource> resourceList =
                 cloudComputingCourseResourceService.list(

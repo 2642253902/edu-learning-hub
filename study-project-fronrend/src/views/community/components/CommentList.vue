@@ -1,12 +1,20 @@
 <template>
   <div class="comment-panel">
     <el-card class="reply-card" shadow="never">
+      <el-alert
+        v-if="disabled"
+        type="info"
+        show-icon
+        :closable="false"
+        title="加入小组后才能发表评论"
+        class="permission-tip"
+      />
       <el-form :model="form" class="reply-form">
         <el-form-item>
-          <el-input v-model="form.content" type="textarea" :rows="3" placeholder="写回复..." />
+          <el-input v-model="form.content" type="textarea" :rows="3" placeholder="写回复..." :disabled="disabled" />
         </el-form-item>
         <el-form-item class="reply-actions">
-          <el-button type="primary" @click="submit">回复</el-button>
+          <el-button type="primary" :disabled="disabled" @click="submit">回复</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -36,7 +44,9 @@ import { get, post } from '@/net'
  * - 排序与格式化：前端按时间排序并做本地时间格式化，后端只需保证返回的时间字段可解析即可。
  */
 
-const props = defineProps<{ postId?: string }>()
+const props = withDefaults(defineProps<{ postId?: string; disabled?: boolean }>(), {
+  disabled: false,
+})
 
 const comments = ref<any[]>([])
 const form = ref({ content: '' })
@@ -54,6 +64,7 @@ const load = () => {
 
 const submit = () => {
   if (!props.postId) return
+  if (props.disabled) return
   if (!form.value.content.trim()) return
   post(`/api/community/posts/${props.postId}/comments`, form.value, () => {
     form.value.content = ''
@@ -90,6 +101,11 @@ onMounted(load)
 
 .reply-card {
   padding: 4px;
+}
+
+.permission-tip {
+  margin-bottom: 12px;
+  border-radius: 12px;
 }
 
 .reply-form :deep(.el-textarea__inner) {
