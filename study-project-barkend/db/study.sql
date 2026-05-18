@@ -11,7 +11,7 @@
  Target Server Version : 50726 (5.7.26)
  File Encoding         : 65001
 
- Date: 09/05/2026 00:31:58
+ Date: 15/05/2026 17:43:44
 */
 
 SET NAMES utf8mb4;
@@ -237,7 +237,7 @@ CREATE TABLE `cloud_computing_student_learning_record`  (
 -- ----------------------------
 -- Records of cloud_computing_student_learning_record
 -- ----------------------------
-INSERT INTO `cloud_computing_student_learning_record` VALUES ('2052765810754785282', NULL, NULL, NULL, 'COURSE004', '2052697664752599042', 'RES_JAVA_1', '0', 0, '2026-05-08', '2026-05-08 15:01:22');
+INSERT INTO `cloud_computing_student_learning_record` VALUES ('2052765810754785282', NULL, 'admin', '2026-05-10 10:49:45', 'COURSE004', '2052697664752599042', 'RES_JAVA_1', '1', 4145, '2026-05-10', '2026-05-08 15:01:22');
 INSERT INTO `cloud_computing_student_learning_record` VALUES ('2052769095842729985', NULL, 'admin', '2026-05-08 23:14:26', 'COURSE004', '1', 'RES_JAVA_2', '1', 0, '2026-05-08', '2026-05-08 15:14:25');
 INSERT INTO `cloud_computing_student_learning_record` VALUES ('2052769099047178242', NULL, NULL, NULL, 'COURSE004', '1', 'RES_JAVA_3', '0', 0, '2026-05-08', '2026-05-08 15:14:26');
 
@@ -260,7 +260,7 @@ CREATE TABLE `group_post`  (
 -- ----------------------------
 -- Records of group_post
 -- ----------------------------
-INSERT INTO `group_post` VALUES ('POST_SOFT_2', '', '2052289849938415618', 'xs1', '自动化测试框架选型求助', 'Selenium、Cypress、Playwright哪个更适合我们项目？求指导。', 0, '2026-05-07 10:00:00');
+INSERT INTO `group_post` VALUES ('POST_SOFT_2', '', '2052289849938415618', 'xs1', '自动化测试框架选型求助', 'Selenium、Cypress、Playwright哪个更适合我们项目？求指导。', 1, '2026-05-07 10:00:00');
 INSERT INTO `group_post` VALUES ('POST_PY_1', 'GRP001', '1', 'admin', 'Python学习路线分享', '从基础语法到Flask/Django再到数据分析，附学习资源链接。', 3, '2026-05-01 09:30:00');
 INSERT INTO `group_post` VALUES ('POST_PY_2', 'GRP001', '2052289567506567170', 'user', '遇到一个诡异的闭包问题', 'for循环中lambda的延迟绑定，如何正确捕获变量？', 1, '2026-05-02 10:30:00');
 INSERT INTO `group_post` VALUES ('POST_PY_3', 'GRP001', '2052289849938415618', 'xs1', '第一周作业打卡', '已经完成环境搭建和第一个脚本，未来可期！', 2, '2026-05-03 11:30:00');
@@ -328,6 +328,8 @@ INSERT INTO `message_notice_read` VALUES ('2052265869319868417', '20519839148861
 INSERT INTO `message_notice_read` VALUES ('2052295582893477890', '2052295566963511297', '1', '2026-05-07 07:52:51');
 INSERT INTO `message_notice_read` VALUES ('2052295600459223041', '2052295566963511297', '2052289567506567170', '2026-05-07 07:52:56');
 INSERT INTO `message_notice_read` VALUES ('2052300222917775362', '2052295566963511297', '2052289849938415618', '2026-05-07 08:11:18');
+INSERT INTO `message_notice_read` VALUES ('2052840202977349633', 'MSG005', '1', '2026-05-09 03:56:59');
+INSERT INTO `message_notice_read` VALUES ('2052840202977349634', 'MSG003', '1', '2026-05-09 03:56:59');
 INSERT INTO `message_notice_read` VALUES ('READ001', 'MSG001', '1', '2026-05-01 09:00:00');
 INSERT INTO `message_notice_read` VALUES ('READ002', 'MSG001', '2052289567506567170', '2026-05-01 09:05:00');
 INSERT INTO `message_notice_read` VALUES ('READ003', 'MSG002', '1', '2026-05-06 10:00:00');
@@ -399,6 +401,7 @@ INSERT INTO `post_comment` VALUES ('COMM_AI_1_1', 'POST_AI_1', '1', 'admin', '�
 INSERT INTO `post_comment` VALUES ('COMM_AI_1_2', 'POST_AI_1', '2052289567506567170', 'user', '用的PyTorch，更灵活一些。', '2026-05-05 14:30:00');
 INSERT INTO `post_comment` VALUES ('COMM_FE_1_1', 'POST_FE_1', '1', 'admin', '写得不错，React的useEffect 和 Vue的watch 确实有区别。', '2026-05-06 15:00:00');
 INSERT INTO `post_comment` VALUES ('COMM_PMP_1_1', 'POST_PMP_1', '2052289567506567170', 'user', '备考资料有推荐吗？', '2026-05-07 16:00:00');
+INSERT INTO `post_comment` VALUES ('2053000502821216257', 'POST_SOFT_2', '2052697568052920322', 'teacher', '1', '2026-05-09 14:33:57');
 
 -- ----------------------------
 -- Table structure for resource_review
@@ -427,6 +430,11 @@ INSERT INTO `resource_review` VALUES ('REV_DOCKER_1', 'RES_DOCKER_1', 'COURSE007
 INSERT INTO `resource_review` VALUES ('REV_ML_1', 'RES_ML_1', 'COURSE008', '2052289567506567170', 'user', 5, '梯度下降的数学推导和代码实现结合得很好。', 4, '2026-05-08 14:00:00');
 INSERT INTO `resource_review` VALUES ('REV_VUE_1', 'RES_VUE_1', 'COURSE014', '2052289849938415618', 'xs1', 3, '响应式原理讲得有点快，建议配合图解慢一点。', 1, '2026-05-08 15:00:00');
 INSERT INTO `resource_review` VALUES ('REV_GO_1', 'RES_GO_1', 'COURSE012', '1', 'admin', 5, 'goroutine例子非常生动，一看就懂。', 6, '2026-05-08 16:00:00');
+INSERT INTO `resource_review` VALUES ('2053009432754479105', NULL, 'COURSE004', '1', 'admin', 5, '123', 0, '2026-05-09 15:09:26');
+INSERT INTO `resource_review` VALUES ('2053017626277011457', NULL, 'COURSE004', '1', 'admin', 3, '123', 0, '2026-05-09 15:42:00');
+INSERT INTO `resource_review` VALUES ('2053018959461703681', NULL, 'COURSE004', '1', 'admin', 3, '123', 0, '2026-05-09 15:47:18');
+INSERT INTO `resource_review` VALUES ('2053024799522512897', NULL, 'COURSE004', '1', 'admin', 4, '123', 0, '2026-05-09 16:10:30');
+INSERT INTO `resource_review` VALUES ('2053026854312030209', NULL, 'COURSE004', '1', 'admin', 3, 'asd1123', 0, '2026-05-09 16:18:40');
 
 -- ----------------------------
 -- Table structure for study_group
